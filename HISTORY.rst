@@ -4,6 +4,19 @@ History
 -------
 
 ------------------
+4.8.0 (2016-03-29)
+------------------
+
+ * New event builder version (#336)
+
+------------------
+4.7.0 (2016-03-21)
+------------------
+
+ * Geant4 input to waveform simulator
+ * Tuning classification for XENON1T gas-mode zero-field.
+
+------------------
 4.6.1 (2016-03-07)
 ------------------
 

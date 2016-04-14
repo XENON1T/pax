@@ -56,7 +56,7 @@ class TestReprocessing(unittest.TestCase):
             del mypax
             output2_filename += '.hdf5'
 
-            gc.collect()        # Somehow this is necessary to really close all files file...
+            gc.collect()        # Somehow this is necessary to really close all files...
             os.remove(output1_filename)
 
             # Open the resulting HDF5

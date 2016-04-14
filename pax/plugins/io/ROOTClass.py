@@ -5,6 +5,9 @@ import array
 import json
 import pickle
 import hashlib
+import sysconfig
+import time
+import logging
 
 import numpy as np
 import ROOT
@@ -13,6 +16,8 @@ from rootpy import stl
 import pax  # For version number
 from pax import plugin, datastructure, exceptions
 from pax.datastructure import EventProxy
+
+log = logging.getLogger('ROOTClass_helpers')
 
 # Header for the automatically generated C++ code
 # Must be separate from CLASS_TEMPLATE, since final file includes several classes
@@ -56,10 +61,11 @@ class EncodeROOTClass(plugin.TransformPlugin):
     def transform_event(self, event):
         if self.class_code is None:
             # Generate and load the pax event class code
-            # TODO: This creates problems if a new event class is run for the first time in multiprocessing
-            # Then several cores will be trying to update the rootpy cache.
+            # Only master (in standalone mode) and processing_0 (in multiprocessing mode) are allowed to compile the lib
+            # to avoid race conditions / clashes
             self.class_code = OVERALL_HEADER + self._build_model_class(event)
-            load_event_class_code(self.class_code)
+            load_event_class_code(self.class_code,
+                                  other_process_compiles=(self.processor.worker_id not in ['master', 'processing_0']))
 
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
@@ -86,27 +92,28 @@ class EncodeROOTClass(plugin.TransformPlugin):
             if field_name in fields_to_ignore:
                 continue
 
-            elif isinstance(field_value, list) or field_name in ('hits', 'all_hits'):
+            elif isinstance(field_value, list) or field_name in self.config['structured_array_fields']:
                 # Collection field -- recursively initialize collection elements
-                if field_name in ('hits', 'all_hits'):
-                    # Special handling for hit fields:
-                    # Convert the hits from numpy array to ordinary pax data models
-                    hits_list = []
+                if field_name in self.config['structured_array_fields']:
+                    # Convert the entries from numpy structured array to ordinary pax data models
+                    element_model_name = self.config['structured_array_fields'][field_name]
+                    pax_class = getattr(pax.datastructure, element_model_name)
+                    pax_object_list = []
                     for h in field_value:
-                        hits_list.append(datastructure.Hit(**{k: h[k] for k in field_value.dtype.names}))
-                    field_value = hits_list
-                    element_name = 'Hit'
+                        pax_object_list.append(pax_class(**{k: h[k] for k in field_value.dtype.names}))
+                    field_value = pax_object_list
+
                 else:
-                    element_name = list_field_info[field_name].__name__
+                    element_model_name = list_field_info[field_name].__name__
 
                 root_vector = getattr(root_object, field_name)
 
                 root_vector.clear()
                 for element_python_object in field_value:
-                    element_root_object = getattr(ROOT, element_name)()
+                    element_root_object = getattr(ROOT, element_model_name)()
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
-                self.last_collection[element_name] = field_value
+                self.last_collection[element_model_name] = field_value
 
             elif isinstance(field_value, np.ndarray):
                 # Unfortunately we can't store numpy arrays directly into ROOT's ROOT.PyXXXBuffer.
@@ -151,14 +158,14 @@ class EncodeROOTClass(plugin.TransformPlugin):
                 continue
 
             # Collections (e.g. event.peaks)
-            elif field_name in list_field_info or field_name in ('hits', 'all_hits'):
-                if field_name in ('hits', 'all_hits'):
-                    # Special handling for hit fields. These are stored as numpy structured arrays in the datastructure,
-                    # but will be converted to 'ordinary' pax data models for storage (see set_root_object_attrs).
-                    # field_value = [] makes sure the code below makes a new instance of Hit
+            elif field_name in list_field_info or field_name in self.config['structured_array_fields']:
+                if field_name in self.config['structured_array_fields']:
+                    # Special handling for structure array fields.
+                    # We need to convert these to 'ordinary' pax data models for storage (see set_root_object_attrs).
+                    # field_value = [] makes sure the code below makes a new instance of the pax model
                     # rather than taking the first element of the array (which is a np.void object)
-                    element_model_name = 'Hit'
-                    element_model = datastructure.Hit
+                    element_model_name = self.config['structured_array_fields'][field_name]
+                    element_model = getattr(pax.datastructure, element_model_name)
                     field_value = []
                 else:
                     element_model_name = list_field_info[field_name].__name__
@@ -226,8 +233,8 @@ class WriteROOTClass(plugin.OutputPlugin):
     def write_event(self, event_proxy):
         if not self.tree_created:
             # Load the event class code, ships with event_proxy
-            # We won't have to compile the library again, EncodeROOTCLass should have already done it.
-            load_event_class_code(event_proxy.data['class_code'])
+            load_event_class_code(event_proxy.data['class_code'],
+                                  other_process_compiles=(self.processor.worker_id != 'master'))
 
             # Store the event class code in pax_event_class
             ROOT.TNamed('pax_event_class', event_proxy.data['class_code']).Write()
@@ -299,13 +306,14 @@ class ReadROOTClass(plugin.InputPlugin):
                 self.log.debug("%s not in root object?" % field_name)
                 continue
 
-            if field_name in ('hits', 'all_hits'):
+            if field_name in self.config['structured_array_fields']:
                 # Special case for hit fields
                 # Convert from root objects to numpy array
-                hit_dtype = datastructure.Hit.get_dtype()
-                result = np.array([tuple([getattr(hit, fn)
-                                          for fn in hit_dtype.names])
-                                   for hit in root_value], dtype=hit_dtype)
+                pax_class = getattr(datastructure, self.config['structured_array_fields'][field_name])
+                dtype = pax_class.get_dtype()
+                result = np.array([tuple([getattr(x, fn)
+                                          for fn in dtype.names])
+                                   for x in root_value], dtype=dtype)
 
             elif isinstance(default_value, list):
                 child_class_name = py_object.get_list_field_info()[field_name].__name__
@@ -355,37 +363,39 @@ def find_class_names(filename):
     return classnames
 
 
-def load_event_class_code(class_code):
-    """Loads the pax event class contained in code.
+def load_event_class_code(class_code, other_process_compiles=False):
+    """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
+    If other_process_compiles = True,  will not compile the code, but waits for another process to do so.
     """
     checksum = hashlib.md5(class_code.encode()).hexdigest()
-
-    # Write the pax event class
-    # TODO: Can this cause conflicts if several threads try to read & write at the same time?
-    # If so, resolve by using temporary directory.
     class_filename = 'pax_event_class-%s.cpp' % checksum
-    with open(class_filename, mode='w') as outfile:
-        outfile.write(class_code)
+    libfile = get_libname(class_filename)
 
-    # Compile the class (or decide we don't have to), then clean up the directory
+    if other_process_compiles:
+        # TODO: use file locks instead, timers are unreliable
+        while not os.path.exists(libfile):
+            log.debug("Waiting for another process to compile the pax event class")
+            time.sleep(5)
+        log.info("Compiled pax event class has been found, "
+                 "sleeping 20 sec to ensure compilation and dictionary generation have finished")
+        time.sleep(20)
+    else:
+        with open(class_filename, mode='w') as outfile:
+            outfile.write(class_code)
+
+    # Compile the class (or decide we don't have to)
     load_event_class(os.path.abspath(class_filename))
 
 
 def load_event_class(filename, force_recompile=False):
     """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
     """
-    # Load (and if necessary compile) the file in ROOT
+    # Load , or if necessary compile, the file in ROOT
     # Unfortunately this must happen in the current directory.
     # I tried rootpy.register_file, but it is very weird: compilation is triggered only when you make an object
-    # tried making a object right after, then get weird segfault later... don't we all just love C++...
-    libname = os.path.splitext(filename)[0] + "_cpp"
-    import sysconfig
-    if six.PY2:
-        libname = libname + sysconfig.get_config_var('SO')
-    else:
-        libname = libname + sysconfig.get_config_var('SHLIB_SUFFIX')
-
+    # I then tried to make a object right after, but get a weird segfault later... don't we all just love C++...
+    libname = get_libname(filename)
     if os.path.exists(libname) and not force_recompile:
         if ROOT.gSystem.Load(libname) not in (0, 1):
             raise RuntimeError("failed to load the library '{0}'".format(libname))
@@ -396,6 +406,11 @@ def load_event_class(filename, force_recompile=False):
     # If you don't do this, the vectors will actually be useless sterile root objects
     for name in find_class_names(filename):
         stl.generate("std::vector<%s>" % name, ['<vector>', "%s" % filename], True)
+
+
+def get_libname(cppname):
+    """Returns name of cpp file that would be obtained after compiling"""
+    return os.path.splitext(cppname)[0] + "_cpp" + sysconfig.get_config_var('SO' if six.PY2 else 'SHLIB_SUFFIX')
 
 
 def load_pax_event_class_from_root(rootfilename):

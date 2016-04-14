@@ -9,13 +9,11 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 import time
 
 import numpy as np
-import numba
 import snappy
 import pymongo
 
-import pax    # For version
 from pax.datastructure import Event, Pulse, EventProxy
-from pax import plugin, units
+from pax import plugin, trigger, units
 
 
 class MongoDBReader:
@@ -44,12 +42,8 @@ class MongoDBReader:
         self.runs = mm.get_database('run').get_collection('runs_new')
         self.refresh_run_doc()
 
-        # Do we need to use monary?
+        # Can we use monary?
         # Only relevant for readuntriggered... code stink
-        if self.config['mega_events']:
-            # In this mode the "trigger" just checks if there are any actually pulses, nothing more
-            self.use_monary = False
-
         if self.use_monary:
             if not mm.monary_enabled:
                 self.log.error("Use of monary was requested, but monary did not import. Reverting to pymongo.")
@@ -67,19 +61,23 @@ class MongoDBReader:
         else:
             raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
 
-        nfo = self.input_info     # shorthand
-        self.input_info['database'] = nfo['location'].split('/')[-1]
+        self.input_info['database'] = self.input_info['location'].split('/')[-1]
+        if self.input_info['database'] == 'admin':
+            self.log.warning("According to the runs db, the data resides in the 'admin' database... "
+                             "Guessing 'untriggered' instead.")
+            self.input_info['database'] = 'untriggered'
         if self.use_monary:
-            self.monary_client = mm.get_database(database_name=nfo['database'],
-                                                 uri=nfo['location'],
+            self.monary_client = mm.get_database(database_name=self.input_info['database'],
+                                                 uri=self.input_info['location'],
                                                  monary=True)
 
-        self.log.debug("Grabbing collection %s" % nfo['collection'])
-        self.input_collection = mm.get_database(database_name=nfo['database'],
-                                                uri=nfo['location']).get_collection(nfo['collection'])
+        self.log.debug("Grabbing collection %s" % self.input_info['collection'])
+        self.input_collection = mm.get_database(
+            database_name=self.input_info['database'],
+            uri=self.input_info['location']).get_collection(self.input_info['collection'])
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
-        self.log.debug("Succesfully grabbed collection %s" % nfo['collection'])
+        self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
 
     def do_monary_query(self, query, fields, types, **kwargs):
         if not self.use_monary:
@@ -115,7 +113,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
     This will perform a sliding window trigger on the pulse midpoint times.
     No PMT pulse data is read in this class to ensure speed.
     """
-    last_event_number = 0
     use_monary = True
     do_output_check = False
 
@@ -129,204 +126,144 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
+        self.log.info("Starting event builder")
 
-        self.log.info("Building events with:")
-        self.log.info("\tSearch window: %s s", self.search_window / units.s)
-        if self.config['mega_events']:
-            self.log.info("\t'Mega-event' mode: no trigger, just segment data in fixed chunks (size of search window)")
-        else:
-            self.log.info("\tCoincidence trigger mode")
-            self.log.info("\tMultiplicity: %d coincident pulses", self.config['multiplicity'])
-            self.log.info("\tSliding window: %0.2f us", self.config['window'] / units.us)
-            self.log.info("\tLeft extension: %0.2f us", self.config['left_extension'] / units.us)
-            self.log.info("\tRight extension: %0.2f us", self.config['right_extension'] / units.us)
+        self.trigger = trigger.Trigger(pax_config=self.processor.config)
+
+    def get_last_pulse_time(self):
+        """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
+        It would have been nicer to know the last stop time, but pulses are sorted by start time.
+        """
+        cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
+        return self._from_mt(list(cu)[0][self.stop_key])
 
     def get_events(self):
+        self.refresh_run_doc()
+
         last_time_searched = 0  # ns
-        pulses_read = 0         # Number of pulses read by the event builder
-        pulses_in_collection = self.input_collection.count()
-        total_event_length = 0  # ns
+        last_time_to_search = None
+        next_event_number = 0
 
-        # Used to timeout if DAQ crashes and no data will come
-        time_of_last_daq_response = time.time()
-        last_time_to_search = float('inf')
-        if pulses_in_collection == 0:
-            raise ValueError("This run does not even contain one pulse!")
+        more_data_coming = True
 
-        self.log.info("Total number of pulses in collection: %d" % pulses_in_collection)
+        if self.data_taking_ended:
+            last_pulse_time = self.get_last_pulse_time()
+            self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_pulse_time))
+            # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
+            end_of_run_t = (self.run_doc['end'].timestamp() -
+                            self.run_doc['start'].timestamp()) * units.s
+            if end_of_run_t > last_pulse_time + 60 * units.s:
+                self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
+                                 "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
+                                                         pax_to_human_time(last_pulse_time)))
 
-        while True:
-            # If the run is still ongoing, update the run document, so we know if the run ended.
-            # This must happen before querying for more data, to avoid a race condition where the run ends
-            # while the query is in process.
+            # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
+            last_time_to_search = last_pulse_time + self.search_window
+
+        while more_data_coming:
+
             if not self.data_taking_ended:
+                # Update the run document, so we know if the run ended.
+                # This must happen before querying for more data, to avoid a race condition where the run ends
+                # while the query is in process.
                 self.refresh_run_doc()
-
-            if self.data_taking_ended and last_time_to_search == float('inf'):
-                # If the run ended, find the "last" pulse
-                # best would be to query for the last stop time, but don't want to trigger a re-sort!
-                cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
-                last_time_to_search = self._from_mt(list(cu)[0][self.stop_key])
-                self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_time_to_search))
-
-                # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
-                end_of_run_t = (self.run_doc['end'].timestamp() -
-                                self.run_doc['start'].timestamp()) * units.s
-                if end_of_run_t > last_time_to_search + 60 * units.s:
-                    self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
-                                     "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
-                                                             pax_to_human_time(last_time_to_search)))
-
-                # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
-                last_time_to_search += self.search_window
+                last_pulse_time = self.get_last_pulse_time()
+                if self.data_taking_ended:
+                    # Data taking just ended, we can define the time we should stop searching.
+                    last_time_to_search = last_pulse_time + self.search_window
+                else:
+                    # Make sure we only query data that is at least one search window away from the last pulse time,
+                    # to avoid querying near the ragged edge (where readers are inserting asynchronously).
+                    # Also make sure we only query once a full search window of such safe data is available (to avoid
+                    # mini-queries). So if search_window = 60 sec, we'll wait for 2 mins of data before our first query.
+                    if last_pulse_time - 2 * self.search_window < last_time_searched:
+                        self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
+                        time.sleep(5)
 
             # Query for pulse start & stop times within a large search window
-            search_after = last_time_searched   # TODO: add configurable delay?
+            self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
 
-            if self.config['mega_events']:
-                if not self.data_taking_ended:
-                    raise ValueError("Mega event mode not available if run is still ongoing")
+            query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
+                                      '$lt': self._to_mt(last_time_searched + self.search_window)}}
 
-                # Segment the data in fixed-size chunks
-                event_ranges = np.array([[search_after, search_after + self.search_window]])
-
-                # Advance an entire search window
-                last_time_searched += self.search_window
+            if self.use_monary:
+                if self.config['can_get_area']:
+                    times, modules, channels, areas = self.do_monary_query(
+                        query=query,
+                        fields=[self.start_key, 'module', 'channel', 'integral'],
+                        types=['int64', 'int32', 'int32', 'float64'],
+                        **self.mongo_find_options
+                    )
+                else:
+                    times, modules, channels = self.do_monary_query(
+                        query=query,
+                        fields=[self.start_key, 'module', 'channel'],
+                        types=['int64', 'int32', 'int32'],
+                        **self.mongo_find_options
+                    )
+                    areas = np.zeros(len(times), dtype=np.float64)
+                times = times * self.sample_duration
 
             else:
-                # Run the coincidence trigger algorithm
-                self.log.info("Searching for pulses after %s", pax_to_human_time(search_after))
-
-                query = {self.start_key: {'$gt': self._to_mt(search_after),
-                                          '$lt': self._to_mt(search_after + self.search_window)}}
-
-                if self.use_monary:
-                    # TODO: pass sort key
-                    start_times, stop_times = self.do_monary_query(query=query,
-                                                                   fields=[self.start_key, self.stop_key],
-                                                                   sort=self.start_key,
-                                                                   types=['int64', 'int64'])
-                    # Note: no fence post +1, pulse right boundary should be inclusive of the last sample
-                    x = start_times * self.sample_duration
-
-                else:
-                    times = list(self.input_collection.find(query,
+                time_docs = list(self.input_collection.find(query,
                                                             projection=[self.start_key],
                                                             **self.mongo_find_options))
-                    # Convert response from list of dictionaries of start & stop time in samples
-                    # to numpy array of pulse midpoint times in pax time units (ns)
-                    x = np.zeros(len(times), dtype=np.int64)
-                    for i, doc in enumerate(times):
-                        x[i] = self._from_mt(doc[self.start_key])
+                # Convert response from list of dictionaries to numpy arrays
+                # Pulse times must be converted to pax time units (ns)
+                times = np.zeros(len(time_docs), dtype=np.int64)
+                channels = np.zeros(len(time_docs), dtype=np.int32)
+                modules = np.zeros(len(time_docs), dtype=np.int32)
+                areas = np.zeros(len(time_docs), dtype=np.int32)
+                can_get_area = self.config['can_get_area']
+                for i, doc in enumerate(time_docs):
+                    times[i] = self._from_mt(doc[self.start_key])
+                    channels[i] = doc['channel']
+                    modules[i] = doc['module']
+                    if can_get_area:
+                        areas[i] = doc['area']
 
-                pulses_read += len(x)
+            if len(times):
+                self.log.info("Acquired pulse time data in range [%s, %s]",
+                              pax_to_human_time(times[0]),
+                              pax_to_human_time(times[-1]))
+            else:
+                self.log.info("No pulse data found.")
 
-                if len(x):
-                    self.log.info("Acquired pulse time data in range [%s, %s]",
-                                  pax_to_human_time(x[0]),
-                                  pax_to_human_time(x[-1]))
-                    # Compute the last pulse start time, for search window advancement
-                    if self.use_monary:
-                        last_start_time = self._from_mt(start_times[-1])
-                    else:
-                        last_start_time = self._from_mt(times[-1][0][-1])
+            # Record advancement of the search window
+            # We've ensured above that a full search window is always queried, even in live mode.
+            last_time_searched += self.search_window
 
-                elif not self.data_taking_ended:
-                    # We may be running ahead of the DAQ, then sleep a bit
-                    # TODO: this wait condition isalso triggered if there is a big hole in the data.
-                    # In that case we won't continue until the run has ended...
-                    self.log.info("No pulses in search window, but run is still ongoing: "
-                                  "sleeping a bit, not advancing search window.")
-                    if time.time() - time_of_last_daq_response > 60:  # seconds
-                        if not self.secret_mode:
-                            status = self.runs.update_one(
-                                {'_id': self.config['run_doc_id']},
-                                {'$set': {'trigger.status': 'timeout',
-                                          'trigger.ended': True}})
-                            self.log.debug("Answer from updating rundb doc: %s" % status)
-                        raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-                    time.sleep(1)  # TODO: configure
-                    continue
+            more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
+            if not more_data_coming:
+                self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
+                    pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
 
-                else:
-                    self.log.info("No pulse data found")
+            # Send the new data to the trigger
+            for data in self.trigger.run(last_time_searched=last_time_searched,
+                                         start_times=times,
+                                         channels=channels,
+                                         modules=modules,
+                                         areas=areas,
+                                         last_data=not more_data_coming):
+                self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
+                yield EventProxy(event_number=next_event_number, data=data)
+                next_event_number += 1
 
-                # Do the sliding window coindidence trigger
-                event_ranges = self.sliding_window(x,
-                                                   window=self.config['window'],
-                                                   multiplicity=self.config['multiplicity'],
-                                                   left=self.config['left_extension'],
-                                                   right=self.config['right_extension'])
-                self.log.info("Found %d event ranges", len(event_ranges))
-                self.log.debug(event_ranges)
-
-                # Advance the search window
-                if self.data_taking_ended:
-                    last_time_searched += self.search_window
-                else:
-                    # We can't advance the entire search window, since the DAQ may not have filled it all the way.
-                    # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with.
-                    # Notice we can't use x[-1], but need last_start_time, to avoid boundary problems
-                    # since the query is on the start_time, but x is the pulse midpoint time.
-                    last_time_searched = last_start_time
-
-            if last_time_searched > last_time_to_search:
-                self.log.info("Searched beyond last pulse in run collection: stopping event builder")
-                break
-
-            for i, (t0, t1) in enumerate(event_ranges):
-                total_event_length += t1 - t0   # Note: no fence post +1, t1 is stop time of last sample
-                yield EventProxy(event_number=self.last_event_number, data=[t0, t1])
-                self.last_event_number += 1
-
-            # Update time of last DAQ reponse
-            # This must be done here: building events and getting them all into the queue can take a long time
-            # especially since the queue must maintain a fixed size.
-            # We don't want to think the DAQ has crashed just because we're using too few CPUS.
-            time_of_last_daq_response = time.time()
+            # Trigger stopped giving event ranges; if more data is coming,
+            # we'll stay in loop and get more data for the trigger.
 
         # All went well - print out status information
-        # Unfortunately this contains only very basic status information: we only know event ranges in this plugin,
-        # not e.g. which channels see what.
-        events_built = self.last_event_number + 1
-        mean_event_length = total_event_length / events_built if events_built else 0
-        end_of_run_info = {'trigger.events_built': events_built,
-                           'trigger.mean_event_length': mean_event_length,
-                           'trigger.last_time_searched': last_time_searched,
-                           'trigger.timestamp': time.time(),
-                           'trigger.pulses_read': pulses_read,
-                           'trigger.pulses_in_collection': pulses_in_collection,
-                           'trigger.ended': True,
-                           'trigger.status': 'processed',
-                           'trigger.version': pax.__version__,
-                           'trigger.config': {k: self.config.get(k)
-                                              for k in ['window', 'left_extension', 'right_extension', 'search_window',
-                                                        'multiplicity', 'mega_events', 'detector',
-                                                        # 'user', 'password',   # :-)
-                                                        'host', 'port']}}
+        # Get the end of run info from the trigger, and add the 'trigger.' prefix
+        # Also add some MongoDB specific stuff
+        end_of_run_info = self.trigger.shutdown()
+        end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
+        end_of_run_info['trigger.ended'] = True
+        end_of_run_info['trigger.status'] = 'processed'
+
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
                                  {'$set': end_of_run_info})
-        self.log.info("Event building complete. Information: %s" % end_of_run_info)
-
-    def sliding_window(self, x, window=1000, multiplicity=3, left=-10, right=7):
-        """Sliding window cluster finder (with range extension)
-
-        x is a list of times.  A window will slide over the values in x and
-        this function will return all ranges with more than 'multiplicity'
-        of pulses.
-        Also, left and right will be added to ranges, where left can be the
-        drift length.
-        """
-        if left > 0:
-            raise ValueError("Left offset must be negative!")
-        self.pulse_ranges_buffer *= -1
-        n_ranges_found = _sliding_window_numba(x, window, multiplicity,
-                                               left, right, self.pulse_ranges_buffer,
-                                               len(self.pulse_ranges_buffer))
-        if n_ranges_found >= len(self.pulse_ranges_buffer):
-            self.log.fatal("Too many pulse ranges to fit in buffer... :-(?")
-        return self.pulse_ranges_buffer[:n_ranges_found]
+        self.log.info("Event building complete. Trigger information: %s" % end_of_run_info)
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
@@ -341,7 +278,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
 
     def transform_event(self, event_proxy):
-        t0, t1 = event_proxy.data  # ns
+        (t0, t1), trigger_signals = event_proxy.data  # ns
         self.log.debug("Fetching data for event with range [%s, %s]",
                        pax_to_human_time(t0),
                        pax_to_human_time(t1))
@@ -351,7 +288,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                       sample_duration=self.sample_duration,
                       stop_time=t1 + self.time_of_run_start,
                       dataset_name=self.run_doc['name'],
-                      event_number=event_proxy.event_number)
+                      event_number=event_proxy.event_number,
+                      trigger_signals=trigger_signals)
+
+        # Convert trigger signal times to ns since start of event (now in ns since start of run)
+        event.trigger_signals['left_time'] -= t0
+        event.trigger_signals['right_time'] -= t0
+        event.trigger_signals['time_mean'] -= t0
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},
@@ -398,40 +341,6 @@ class MongoDBWriteTriggered(plugin.OutputPlugin):
         # Convert event class to pymongo-able dictionary, then insert into the database
         event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
         self.output_collection.write(event_dict)
-
-
-# TODO: This needs tests!!!
-@numba.jit(numba.int64(numba.int64[:],
-                       numba.int64, numba.int64, numba.int64, numba.int64,
-                       numba.int64[:, :], numba.int64), nopython=True)
-def _sliding_window_numba(x,
-                          window, multiplicity, left, right,
-                          ranges_buffer, ranges_buffer_size):
-    current_range = -1
-    i = 0  # Start of range to test
-    j = 0  # End of range to test
-
-    while j < x.size:  # For every pulse... extend end
-        if x[j] - x[i] > window:  # If time diff greater than window, form new cluster
-            if j - i > multiplicity:  # If more than 100 pulses, trigger
-                if current_range != -1 and ranges_buffer[current_range, 1] + window > x[i]:
-                    ranges_buffer[current_range, 1] = x[j - 1] + right
-                else:
-                    current_range += 1
-                    if current_range > ranges_buffer_size - 1:
-                        break
-                    ranges_buffer[current_range, 0] = x[i] + left
-                    ranges_buffer[current_range, 1] = x[j - 1] + right
-            i += 1
-        else:
-            j += 1
-
-    if j - i > multiplicity and current_range < ranges_buffer_size - 1:
-        current_range += 1
-        ranges_buffer[current_range, 0] = x[i] + left
-        ranges_buffer[current_range, 1] = x[j - 1] + right
-
-    return current_range + 1
 
 
 def pax_to_human_time(num):

@@ -39,13 +39,12 @@ class InterpolatingMap(object):
     """Construct s a scalar function using linear interpolation, weighted by euclidean distance.
 
     The map must be specified as a json translating to a dictionary like this:
-        'coordinate_system' :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
-        'map' :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+        'coordinate_system' :   [[x1, y1], [x2, y2], [x3, y3], [x4, y4], ...],
+        'map' :                 [value1, value2, value3, value4, ...]
         'another_map' :         idem
         'name':                 'Nice file with maps',
         'description':          'Say what the maps are, who you are, your favorite food, etc',
         'timestamp':            unix epoch seconds timestamp
-        'use_points':           number of points to use for linear interpolation (with euclidean distance weights)
     with the straightforward generalization to 1d and 3d. The default map name is 'map', I'd recommend you use that.
 
     For a 0d placeholder map, use
@@ -70,7 +69,10 @@ class InterpolatingMap(object):
             with open(filename) as data_file:
                 self.data = json.load(data_file)
         self.coordinate_system = cs = self.data['coordinate_system']
-        self.dimensions = len(cs)
+        if not len(cs):
+            self.dimensions = 0
+        else:
+            self.dimensions = len(cs[0])
         self.interpolators = {}
         self.map_names = sorted([k for k in self.data.keys() if k not in self.data_field_names])
         self.log.debug('Map name: %s' % self.data['name'])

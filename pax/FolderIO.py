@@ -201,18 +201,19 @@ class WriteToFolder(plugin.OutputPlugin):
 
         self.output_dir = self.config['output_name']
         if os.path.exists(self.output_dir):
-            if self.config.get('overwrite_output', False):
-                if self.config['overwrite_output'] == 'confirm':
-                    print("\n\nOutput dir %s already exists. Overwrite? [y/n]:" % self.output_dir)
-                    if input().lower() not in ('y', 'yes'):
-                        print("\nFine, Exiting pax...\n")
-                        exit()
-                self.log.info("Overwriting output directory %s" % self.output_dir)
-                shutil.rmtree(self.output_dir)
-                os.mkdir(self.output_dir)
-            else:
-                raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
-                    self.output_dir, self.file_extension))
+            if not self.config.get('ignore_existing_dir', False):
+                if self.config.get('overwrite_output', False):
+                    if self.config['overwrite_output'] == 'confirm':
+                        print("\n\nOutput dir %s already exists. Overwrite? [y/n]:" % self.output_dir)
+                        if input().lower() not in ('y', 'yes'):
+                            print("\nFine, Exiting pax...\n")
+                            exit()
+                    self.log.info("Overwriting output directory %s" % self.output_dir)
+                    shutil.rmtree(self.output_dir)
+                    os.mkdir(self.output_dir)
+                else:
+                    raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
+                        self.output_dir, self.file_extension))
         else:
             self.log.info("Creating output directory %s" % self.output_dir)
             os.mkdir(self.output_dir)

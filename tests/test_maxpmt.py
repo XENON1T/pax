@@ -47,8 +47,8 @@ class TestPosRecMaxPMT(unittest.TestCase):
         self.assertEqual(len(e.peaks[0].reconstructed_positions), 1)
         rp = e.peaks[0].reconstructed_positions[0]
         self.assertEqual(rp.algorithm, self.plugin.name)
-        self.assertEqual(rp.x, self.plugin.config['pmt_locations'][ch]['x'])
-        self.assertEqual(rp.y, self.plugin.config['pmt_locations'][ch]['y'])
+        self.assertEqual(rp.x, self.plugin.config['pmts'][ch]['position']['x'])
+        self.assertEqual(rp.y, self.plugin.config['pmts'][ch]['position']['y'])
 
 if __name__ == '__main__':
     unittest.main()
