@@ -133,15 +133,17 @@ def main():
                 runs.update({'name': run_doc['name'], 'detector' : args.detector},
                             {'$set': {status_name: 'error'}})
 
+            # Copy the log file to the output dir, then clear it for the next run
+            shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
+            open('eventbuilder.log', mode='w').close()
+
             if not args.secret_mode:
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host' : data_info_entry['host']},
                             {'$set': {'data.$' : data_info_entry}})
 
-            # Copy the log file to the output dir, then clear it for the next run
-            shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
-            open('eventbuilder.log', mode='w').close()
+
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
