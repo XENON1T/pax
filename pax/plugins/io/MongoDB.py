@@ -134,8 +134,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
         It would have been nicer to know the last stop time, but pulses are sorted by start time.
         """
-        cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
-        return self._from_mt(list(cu)[0][self.stop_key])
+        cu = self.input_collection.find().sort(self.start_key,
+                                               direction=pymongo.DESCENDING).limit(1)
+        if cu == None:
+            return 0
+
+        value = list(cu)[0]
+        if self.stop_key in value:
+            value = value[self.stop_key]
+        else:
+            value = value[self.start_key]
+
+        return self._from_mt(value)
 
     def get_events(self):
         self.refresh_run_doc()
