@@ -217,7 +217,7 @@ def _signal_finder(times, signal_separation,
                 # Signal has ended: store its quantities and move on
                 s.right_time = t
                 s.time_rms = (m2 / s.n_pulses)**0.5
-                s.n_contributing_channels = np.sum(area_per_channel != 0)
+                s.n_contributing_channels = does_channel_contribute.sum()
                 s.area = area_per_channel.sum()
                 if s.n_contributing_channels == 2:
                     indices = np.nonzero(does_channel_contribute)[0]
