@@ -126,8 +126,7 @@ def main():
                 p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
                                    config_paths=args.config_path,
                                    config_dict=config_dict)
-                p.run()
-                p.shutdown()
+                p.run()     # The run() method includes a call to shutdown()
 
             # If a timeout occurred, set the status of this run to 'error'
             # Add other exceptions as they come during commissioning
@@ -145,8 +144,6 @@ def main():
                 runs.update({'_id': run_doc['_id'],
                              'data.host' : data_info_entry['host']},
                             {'$set': {'data.$' : data_info_entry}})
-
-
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
