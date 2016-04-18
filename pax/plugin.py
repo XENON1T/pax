@@ -114,14 +114,18 @@ class OutputPlugin(ProcessPlugin):
         # We need to do this here, rather than in paxer, otherwise user couldn't specify output_name in config
         # (paxer would override it)
         if 'output_name' not in self.config:
-            # Is there an input plugin? If so, try to use the input plugin's input name + _paxVERSION
-            # We can't just change extensions: some inputs/outputs have no extension (e.g. directories, database names)
+            # Is there an input plugin? If so, try to use the input plugin's input name without extension.
+            # This will give problems when both input and output have no extension (e.g. directories, databases),
+            # but is very convenient otherwise.
+            # Appending e.g. '_procesed' inevitably leads to '_processed_processed_...'
             ip = self.processor.input_plugin
             if ip is not None and 'input_name' in ip.config:
                 self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
             else:
                 # Deep fallback: timestamp-based name.
                 self.config['output_name'] = 'output_pax%s_%s' % (pax.__version__, strftime('%y%m%d_%H%M%S'))
+        if self.config['output_name'].endswith('/'):
+            raise ValueError("Output names should not end with a slash. See issue #340.")
         ProcessPlugin._pre_startup(self)
 
     def write_event(self, event):
