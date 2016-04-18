@@ -50,8 +50,8 @@ class PlotBase(plugin.OutputPlugin):
 
         # Grab PMT numbers and x, y locations
         self.pmts = {array: self.config['channels_%s' % array] for array in ('top', 'bottom')}
-        self.pmt_locations = np.array([[self.config['pmt_locations'][ch]['x'],
-                                        self.config['pmt_locations'][ch]['y']]
+        self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
+                                        self.config['pmts'][ch]['position']['y']]
                                        for ch in range(self.config['n_channels'])])
 
         self.hitpattern_limits = (1e-1, 1e4)
@@ -241,7 +241,9 @@ class PlotBase(plugin.OutputPlugin):
         # Plot the PMT numbers
         for pmt in pmts_hit:
             ax.text(self.pmt_locations[pmt, 0], self.pmt_locations[pmt, 1], pmt,
-                    fontsize=6, va='center', ha='center', color='black')
+                    fontsize=8 if peak.is_channel_saturated[pmt] else 6,
+                    va='center', ha='center',
+                    color='white' if peak.is_channel_saturated[pmt] else 'black')
 
         # Plot the detector radius
         r = self.config['tpc_radius']

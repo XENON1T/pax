@@ -6,8 +6,8 @@ processing and other data processing on the XENON100/XENON1T raw data.
 * Free software: BSD license
 * Documentation: http://xenon1t.github.io/pax/.
 
-.. image:: https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&branch=master
-    :target: https://magnum.travis-ci.com/XENON1T/pax
+.. image:: https://travis-ci.org/XENON1T/pax.svg?branch=master
+    :target: https://travis-ci.org/XENON1T/pax
 .. image:: https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master
     :target: https://coveralls.io/r/XENON1T/pax?branch=master
 .. image:: http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg 

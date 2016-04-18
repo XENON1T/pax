@@ -114,15 +114,18 @@ class OutputPlugin(ProcessPlugin):
         # We need to do this here, rather than in paxer, otherwise user couldn't specify output_name in config
         # (paxer would override it)
         if 'output_name' not in self.config:
-            # Is there an input plugin? If so, try to use the input plugin's input name + _paxVERSION
-            # We can't just change extensions: some inputs/outputs have no extension (e.g. directories, database names)
+            # Is there an input plugin? If so, try to use the input plugin's input name without extension.
+            # This will give problems when both input and output have no extension (e.g. directories, databases),
+            # but is very convenient otherwise.
+            # Appending e.g. '_procesed' inevitably leads to '_processed_processed_...'
             ip = self.processor.input_plugin
             if ip is not None and 'input_name' in ip.config:
                 self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
-                self.config['output_name'] += '_pax' + pax.__version__
             else:
                 # Deep fallback: timestamp-based name.
                 self.config['output_name'] = 'output_pax%s_%s' % (pax.__version__, strftime('%y%m%d_%H%M%S'))
+        if self.config['output_name'].endswith('/'):
+            raise ValueError("Output names should not end with a slash. See issue #340.")
         ProcessPlugin._pre_startup(self)
 
     def write_event(self, event):
@@ -155,18 +158,10 @@ class PosRecPlugin(TransformPlugin):
         else:
             self.pmts = np.array(self.config['channels_in_detector']['tpc'])
 
-        # Test if we have a XENON100 style configuration using 'pmt_locations' or a XENON1T style with 'pmts'.
-        # We need to resolve this inconsistency!!
-        if self.config['tpc_name'] == "XENON1T":
-            pmt_positions = [self.config['pmts'][i]['position'] for i in range(len(self.config['pmts']))]
-        else:
-            pmt_positions = self.config['pmt_locations']
-
         # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
-        self.pmt_locations = np.zeros((len(self.pmts), 2))
-        for ch in self.pmts:
-            for dim in ('x', 'y'):
-                self.pmt_locations[ch-self.pmts[0]][{'x': 0, 'y': 1}[dim]] = pmt_positions[ch][dim]
+        self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
+                                        self.config['pmts'][ch]['position']['y']]
+                                       for ch in self.pmts])
 
         TransformPlugin._pre_startup(self)
 

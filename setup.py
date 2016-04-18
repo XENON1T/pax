@@ -44,7 +44,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
     name='pax',
-    version='4.8.0',
+    version='4.9.0',
     description='PAX is the raw data processor for the XENON1T experiment, with support for other LXe TPCs.',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell and Jelle Aalbers for the XENON1T collaboration',
@@ -58,6 +58,7 @@ setup(
                 'pax.plugins.peak_processing',
                 'pax.plugins.posrec',
                 'pax.plugins.interaction_processing',
+                'pax.trigger_plugins',
                 ],
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},

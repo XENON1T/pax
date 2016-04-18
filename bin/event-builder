@@ -14,6 +14,7 @@ import argparse
 import logging
 import os
 import time
+import datetime
 import socket
 import shutil
 
@@ -51,13 +52,16 @@ def main():
     while 1:
         if not args.secret_mode:
             run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
-            data_info_entry = {'type': 'raw',
-                               'host': get_hostname(),
-                               'status': 'transferring',
-                               'location': os.path.join('/data/xenon1t_data', run_doc['name']),
-                               'checksum': None}
-            runs.update({'_id': run_doc['_id']},
-                        {'$push': {'data': data_info_entry}})
+
+            if run_doc is not None:
+                data_info_entry = {'type': 'raw',
+                                   'host': get_hostname(),
+                                   'status': 'transferring',
+                                   'location': os.path.join('/data/xenon1t_data', run_doc['name']),
+                                   'creation_time' : datetime.datetime.utcnow(),
+                                   'checksum': None}
+                runs.update({'_id': run_doc['_id']},
+                            {'$push': {'data': data_info_entry}})
         else:
             run_doc = runs.find_one(run_query)
             if run_doc is None:
@@ -122,7 +126,7 @@ def main():
                 p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
                                    config_paths=args.config_path,
                                    config_dict=config_dict)
-                p.run()
+                p.run()     # The run() method includes a call to shutdown()
 
             # If a timeout occurred, set the status of this run to 'error'
             # Add other exceptions as they come during commissioning
@@ -131,15 +135,15 @@ def main():
                 runs.update({'name': run_doc['name'], 'detector' : args.detector},
                             {'$set': {status_name: 'error'}})
 
+            # Copy the log file to the output dir, then clear it for the next run
+            shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
+            open('eventbuilder.log', mode='w').close()
+
             if not args.secret_mode:
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host' : data_info_entry['host']},
                             {'$set': {'data.$' : data_info_entry}})
-
-            # Copy the log file to the output dir, then clear it for the next run
-            shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
-            open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:

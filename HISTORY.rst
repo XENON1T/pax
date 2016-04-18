@@ -4,32 +4,44 @@ History
 -------
 
 ------------------
+4.9.0 (2016-04-18)
+------------------
+
+* XENON1T: gains to 1 in LED mode, amplifiers and positions in pmts config dictionary (#339)
+* XENON100 S2(x,y) map, XENON100 S2 simulation bugfix (#334)
+* Event builder fixes, cax integration
+* Pax version no longer append to output filename (0f26ac0)
+* Multiprocessing and ROOT fix (#337)
+* Waveform simulator afterpulses fix (#341)
+
+
+------------------
 4.8.0 (2016-03-29)
 ------------------
 
- * New event builder version (#336)
+* New event builder version (#336)
 
 ------------------
 4.7.0 (2016-03-21)
 ------------------
 
- * Geant4 input to waveform simulator
- * Tuning classification for XENON1T gas-mode zero-field.
+* Geant4 input to waveform simulator
+* Tuning classification for XENON1T gas-mode zero-field.
 
 ------------------
 4.6.1 (2016-03-07)
 ------------------
 
- * Screwed up release, fixing...
+* Screwed up release, fixing...
 
 ------------------
 4.6.0 (2016-03-07)
 ------------------
 
- * Confidence levels on position reconstruction
- * Saturation correction bug
- * Several small bug fixes
- * Minor event builder changes
+* Confidence levels on position reconstruction
+* Saturation correction bug
+* Several small bug fixes
+* Minor event builder changes
 
 ------------------
 4.5.0 (2016-02-26)
