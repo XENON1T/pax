@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.8.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.7.0',
+        VERSION:     '4.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.8.0 documentation" href="index.html" />
     <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -45,7 +45,7 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <li>Free software: BSD license</li>
 <li>Documentation: <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>.</li>
 </ul>
-<a class="reference external image-reference" href="https://magnum.travis-ci.com/XENON1T/pax"><img alt="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" src="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" /></a>
+<a class="reference external image-reference" href="https://travis-ci.org/XENON1T/pax"><img alt="https://travis-ci.org/XENON1T/pax.svg?branch=master" src="https://travis-ci.org/XENON1T/pax.svg?branch=master" /></a>
 <a class="reference external image-reference" href="https://coveralls.io/r/XENON1T/pax?branch=master"><img alt="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" src="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" /></a>
 <a class="reference external image-reference" href="https://gitter.im/XENON1T/pax"><img src="http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg" /></a>
 <div class="section" id="installation-prerequisites">
@@ -184,15 +184,15 @@ or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html
 <p>If you want to do something nonstandard, you can create your own configuration file
 like <cite>my_file.ini</cite>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
-<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>
-<span class="nb">input</span> <span class="o">=</span> <span class="s">&#39;XED.ReadXED&#39;</span>
-<span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
-           <span class="c">#&#39;Plotting.PlotEventSummary&#39;,</span>
+<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s1">&#39;XENON100&#39;</span>
+<span class="nb">input</span> <span class="o">=</span> <span class="s1">&#39;XED.ReadXED&#39;</span>
+<span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
+           <span class="c1">#&#39;Plotting.PlotEventSummary&#39;,</span>
          <span class="p">]</span>
 
 <span class="p">[</span><span class="n">Plotting</span><span class="p">]</span>
 <span class="n">log_scale_entire_event</span> <span class="o">=</span> <span class="bp">False</span>
-<span class="c">#output_name = &#39;plots&#39;  # Uncomment to write plot to disk</span>
+<span class="c1">#output_name = &#39;plots&#39;  # Uncomment to write plot to disk</span>
 </pre></div>
 </div>
 <p>You can load this file with <cite>paxer</cite> by using the <cite>config_path</cite> option:</p>
@@ -268,7 +268,7 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
       |
       <a href="_sources/readme.txt"

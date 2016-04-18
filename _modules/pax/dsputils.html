@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 4.8.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.7.0',
+        VERSION:     '4.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.8.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -56,20 +56,20 @@
     <span class="n">gaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_hits</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_hits</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">gaps</span>
-    <span class="c"># Keep a running right boundary</span>
+    <span class="c1"># Keep a running right boundary</span>
     <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span>
     <span class="n">last_left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
         <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">last_left</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Hits should be sorted by left boundary!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hits should be sorted by left boundary!&quot;</span><span class="p">)</span>
         <span class="n">last_left</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span>
     <span class="k">return</span> <span class="n">gaps</span>
 
 </div>
 <div class="viewcode-block" id="count_hits_per_channel"><a class="viewcode-back" href="../../pax.html#pax.dsputils.count_hits_per_channel">[docs]</a><span class="k">def</span> <span class="nf">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;channel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">),</span> <span class="n">minlength</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">),</span> <span class="n">minlength</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="saturation_correction"><a class="viewcode-back" href="../../pax.html#pax.dsputils.saturation_correction">[docs]</a><span class="k">def</span> <span class="nf">saturation_correction</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">channels_in_pattern</span><span class="p">,</span> <span class="n">expected_pattern</span><span class="p">,</span> <span class="n">confused_channels</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
@@ -81,20 +81,20 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">confused_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">confused_channels</span><span class="p">,</span> <span class="n">channels_in_pattern</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">CoordinateOutOfRangeException</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Expected area fractions for peak </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> are zero -- &quot;</span>
-                    <span class="s">&quot;cannot compute saturation &amp; zombie correction!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Expected area fractions for peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> are zero -- &quot;</span>
+                    <span class="s2">&quot;cannot compute saturation &amp; zombie correction!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">))</span>
         <span class="k">return</span> <span class="mi">1</span>
-    <span class="c"># PatternFitter should have normalized the pattern</span>
+    <span class="c1"># PatternFitter should have normalized the pattern</span>
     <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">expected_pattern</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
 
     <span class="n">area_seen_in_pattern</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">channels_in_pattern</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">area_in_good_channels</span> <span class="o">=</span> <span class="n">area_seen_in_pattern</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">confused_channels</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">fraction_of_pattern_in_good_channels</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">expected_pattern</span><span class="p">[</span><span class="n">confused_channels</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-    <span class="c"># Area in channels not in channels_in_pattern is left alone</span>
+    <span class="c1"># Area in channels not in channels_in_pattern is left alone</span>
     <span class="n">new_area</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">-</span> <span class="n">area_seen_in_pattern</span>
 
-    <span class="c"># Estimate the area in channels_in_pattern by excluding the confused channels</span>
+    <span class="c1"># Estimate the area in channels_in_pattern by excluding the confused channels</span>
     <span class="n">new_area</span> <span class="o">+=</span> <span class="n">area_in_good_channels</span> <span class="o">/</span> <span class="n">fraction_of_pattern_in_good_channels</span>
 
     <span class="k">return</span> <span class="n">new_area</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
@@ -109,14 +109,14 @@
 <span class="sd">    If neither of these are true, and gain is 0, will return 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">config</span>
-    <span class="n">adc_to_e</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">])</span> <span class="o">*</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span> <span class="o">*</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span>
+    <span class="n">adc_to_e</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;digitizer_bits&#39;</span><span class="p">])</span> <span class="o">*</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span> <span class="o">*</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span>
         <span class="n">units</span><span class="o">.</span><span class="n">electron_charge</span><span class="p">)</span>
-    <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+    <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">use_reference_gain_if_zero</span> <span class="ow">and</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">use_reference_gain</span><span class="p">:</span>
-        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
+        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="n">adc_to_e</span> <span class="o">/</span> <span class="n">pmt_gain</span>
@@ -125,7 +125,7 @@
 <div class="viewcode-block" id="get_detector_by_channel"><a class="viewcode-back" href="../../pax.html#pax.dsputils.get_detector_by_channel">[docs]</a><span class="k">def</span> <span class="nf">get_detector_by_channel</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return a channel -&gt; detector lookup dictionary from a configuration&quot;&quot;&quot;</span>
     <span class="n">detector_by_channel</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">chs</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">chs</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">chs</span><span class="p">:</span>
             <span class="n">detector_by_channel</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
     <span class="k">return</span> <span class="n">detector_by_channel</span>
@@ -149,15 +149,15 @@
         <span class="n">previous_t</span> <span class="o">=</span> <span class="n">t</span>
     <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">clusters</span>
-    <span class="c"># Numpy solution below appears to make processor run slower!</span>
-    <span class="c"># x.sort()</span>
-    <span class="c"># if not isinstance(x, np.ndarray):</span>
-    <span class="c">#     x = np.array(x)</span>
-    <span class="c"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
-    <span class="c"># if return_indices:</span>
-    <span class="c">#     return np.split(np.arange(len(x)), split_indices)</span>
-    <span class="c"># else:</span>
-    <span class="c">#     return np.split(x, split_indices)</span>
+    <span class="c1"># Numpy solution below appears to make processor run slower!</span>
+    <span class="c1"># x.sort()</span>
+    <span class="c1"># if not isinstance(x, np.ndarray):</span>
+    <span class="c1">#     x = np.array(x)</span>
+    <span class="c1"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
+    <span class="c1"># if return_indices:</span>
+    <span class="c1">#     return np.split(np.arange(len(x)), split_indices)</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     return np.split(x, split_indices)</span>
 
 </div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
@@ -179,44 +179,44 @@
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_candidate_interval</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">low_threshold</span><span class="p">:</span>
-            <span class="c"># Start of candidate interval</span>
+            <span class="c1"># Start of candidate interval</span>
             <span class="n">in_candidate_interval</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="n">current_candidate_interval_start</span> <span class="o">=</span> <span class="n">i</span>
 
-        <span class="c"># This must be if, not else: an interval can cross high_threshold in start sample</span>
+        <span class="c1"># This must be if, not else: an interval can cross high_threshold in start sample</span>
         <span class="k">if</span> <span class="n">in_candidate_interval</span><span class="p">:</span>
 
             <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">high_threshold</span><span class="p">:</span>
                 <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="c"># Raise lower threshold to a fraction of the hit height</span>
-                <span class="c"># This helps against tails (due to amplifiers?) for REALLY high hits</span>
+                <span class="c1"># Raise lower threshold to a fraction of the hit height</span>
+                <span class="c1"># This helps against tails (due to amplifiers?) for REALLY high hits</span>
                 <span class="n">low_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">low_threshold</span><span class="p">,</span> <span class="n">dynamic_low_threshold_coeff</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">low_threshold</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="n">last_index_in_w</span><span class="p">:</span>
 
-                <span class="c"># End of candidate interval</span>
+                <span class="c1"># End of candidate interval</span>
                 <span class="n">in_candidate_interval</span> <span class="o">=</span> <span class="bp">False</span>
 
                 <span class="k">if</span> <span class="n">current_interval_passed_test</span><span class="p">:</span>
-                    <span class="c"># We&#39;ve found a new interval!</span>
+                    <span class="c1"># We&#39;ve found a new interval!</span>
 
-                    <span class="c"># The interval ended just before this index</span>
-                    <span class="c"># unless, of course, we ended ONLY BECAUSE this is the last index</span>
+                    <span class="c1"># The interval ended just before this index</span>
+                    <span class="c1"># unless, of course, we ended ONLY BECAUSE this is the last index</span>
                     <span class="n">itv_end</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">low_threshold</span> <span class="k">else</span> <span class="n">i</span>
 
-                    <span class="c"># Add to result buffer</span>
+                    <span class="c1"># Add to result buffer</span>
                     <span class="n">result_buffer</span><span class="p">[</span><span class="n">current_interval</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_candidate_interval_start</span>
                     <span class="n">result_buffer</span><span class="p">[</span><span class="n">current_interval</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">itv_end</span>
 
-                    <span class="c"># Prepare for the next interval</span>
+                    <span class="c1"># Prepare for the next interval</span>
                     <span class="n">current_interval</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">False</span>
 
                     <span class="k">if</span> <span class="n">current_interval</span> <span class="o">==</span> <span class="n">result_buffer_size</span><span class="p">:</span>
                         <span class="k">break</span>
 
-    <span class="c"># Return number of hits found</span>
-    <span class="c"># One day numba may have crashed here: not sure if it is int32 or int64...</span>
+    <span class="c1"># Return number of hits found</span>
+    <span class="c1"># One day numba may have crashed here: not sure if it is int32 or int64...</span>
     <span class="k">return</span> <span class="n">current_interval</span></div>
 </pre></div>
 
@@ -255,7 +255,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

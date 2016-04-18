@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 4.8.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.7.0',
+        VERSION:     '4.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.8.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -57,7 +57,7 @@
 <span class="kn">from</span> <span class="nn">pax.InterpolatingMap</span> <span class="kn">import</span> <span class="n">InterpolatingMap</span>
 <span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">Memoize</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;SimulationCore&#39;</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;SimulationCore&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Simulator"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator">[docs]</a><span class="k">class</span> <span class="nc">Simulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -65,92 +65,92 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_to_init</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_to_init</span>
 
-        <span class="c"># Should we repeat events?</span>
-        <span class="k">if</span> <span class="s">&#39;event_repetitions&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;event_repetitions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Should we repeat events?</span>
+        <span class="k">if</span> <span class="s1">&#39;event_repetitions&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;event_repetitions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="c"># Primary excimer fraction from Nest Version 098</span>
-        <span class="c"># See G4S1Light.cc line 298</span>
-        <span class="n">density</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;liquid_density&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">g</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
-        <span class="n">excfrac</span> <span class="o">=</span> <span class="mf">0.4</span> <span class="o">-</span> <span class="mf">0.11131</span> <span class="o">*</span> <span class="n">density</span> <span class="o">-</span> <span class="mf">0.0026651</span> <span class="o">*</span> <span class="n">density</span> <span class="o">**</span> <span class="mi">2</span>    <span class="c"># primary / secondary excimers</span>
-        <span class="n">excfrac</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">excfrac</span><span class="p">)</span>                                     <span class="c"># primary / all excimers</span>
-        <span class="c"># primary / all excimers that produce a photon:</span>
-        <span class="n">excfrac</span> <span class="o">/=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">excfrac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_fraction&#39;</span><span class="p">])</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_ER_primary_excimer_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">excfrac</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Inferred s1_ER_primary_excimer_fraction </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">excfrac</span><span class="p">)</span>
+        <span class="c1"># Primary excimer fraction from Nest Version 098</span>
+        <span class="c1"># See G4S1Light.cc line 298</span>
+        <span class="n">density</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;liquid_density&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">g</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">excfrac</span> <span class="o">=</span> <span class="mf">0.4</span> <span class="o">-</span> <span class="mf">0.11131</span> <span class="o">*</span> <span class="n">density</span> <span class="o">-</span> <span class="mf">0.0026651</span> <span class="o">*</span> <span class="n">density</span> <span class="o">**</span> <span class="mi">2</span>    <span class="c1"># primary / secondary excimers</span>
+        <span class="n">excfrac</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">excfrac</span><span class="p">)</span>                                     <span class="c1"># primary / all excimers</span>
+        <span class="c1"># primary / all excimers that produce a photon:</span>
+        <span class="n">excfrac</span> <span class="o">/=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">excfrac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_fraction&#39;</span><span class="p">])</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_primary_excimer_fraction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">excfrac</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Inferred s1_ER_primary_excimer_fraction </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">excfrac</span><span class="p">)</span>
 
-        <span class="c"># Recombination time from NEST 2014</span>
-        <span class="c"># 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...</span>
-        <span class="n">efield</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;drift_field&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">V</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">))</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="o">/</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">20</span> <span class="o">+</span> <span class="mf">0.41</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.009</span> <span class="o">*</span> <span class="n">efield</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Inferred s1_ER_recombination_time </span><span class="si">%s</span><span class="s"> ns&#39;</span> <span class="o">%</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_time&#39;</span><span class="p">])</span>
+        <span class="c1"># Recombination time from NEST 2014</span>
+        <span class="c1"># 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...</span>
+        <span class="n">efield</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;drift_field&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">V</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">))</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="o">/</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">20</span> <span class="o">+</span> <span class="mf">0.41</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.009</span> <span class="o">*</span> <span class="n">efield</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Inferred s1_ER_recombination_time </span><span class="si">%s</span><span class="s1"> ns&#39;</span> <span class="o">%</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_time&#39;</span><span class="p">])</span>
 
-        <span class="c"># Calculate particle number density in the gas (ideal gas law)</span>
-        <span class="n">number_density_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">boltzmannConstant</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;temperature&#39;</span><span class="p">])</span>
+        <span class="c1"># Calculate particle number density in the gas (ideal gas law)</span>
+        <span class="n">number_density_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">boltzmannConstant</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">])</span>
 
-        <span class="c"># electric field in the gas</span>
-        <span class="c"># Formula from xenon:xenon100:analysis:jacob:s2gain_v2</span>
-        <span class="n">e_in_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;anode_voltage&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">+</span>
-            <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span>
+        <span class="c1"># electric field in the gas</span>
+        <span class="c1"># Formula from xenon:xenon100:analysis:jacob:s2gain_v2</span>
+        <span class="n">e_in_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;anode_voltage&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">+</span>
+            <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
-        <span class="c"># Reduced electric field in the gas</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_in_gas</span> <span class="o">/</span> <span class="n">number_density_gas</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Inferred a reduced electric field of </span><span class="si">%s</span><span class="s"> Td in the gas&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Td</span><span class="p">))</span>
+        <span class="c1"># Reduced electric field in the gas</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_in_gas</span> <span class="o">/</span> <span class="n">number_density_gas</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Inferred a reduced electric field of </span><span class="si">%s</span><span class="s2"> Td in the gas&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Td</span><span class="p">))</span>
 
-        <span class="c"># Which channels stand to receive any photons?</span>
-        <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
+        <span class="c1"># Which channels stand to receive any photons?</span>
+        <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
             <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span> <span class="k">if</span> <span class="n">ch</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;magically_avoid_dead_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
-            <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span> <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">ch</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;magically_avoid_s1_excluded_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span> <span class="ow">and</span> \
-           <span class="s">&#39;channels_excluded_for_s1&#39;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_dead_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+            <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span> <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">ch</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_s1_excluded_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span> <span class="ow">and</span> \
+           <span class="s1">&#39;channels_excluded_for_s1&#39;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
             <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span>
-                                    <span class="k">if</span> <span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_excluded_for_s1&#39;</span><span class="p">]]</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">channels_for_photons</span>
+                                    <span class="k">if</span> <span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_excluded_for_s1&#39;</span><span class="p">]]</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_for_photons&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">channels_for_photons</span>
 
-        <span class="c"># Determine sensible length of a pmt pulse to simulate</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;samples_before_pulse_center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;pulse_width_cutoff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_rise_time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
+        <span class="c1"># Determine sensible length of a pmt pulse to simulate</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_before_pulse_center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pulse_width_cutoff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_rise_time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
         <span class="p">)</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;pulse_width_cutoff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_fall_time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
+        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pulse_width_cutoff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_fall_time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
         <span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Simulating </span><span class="si">%s</span><span class="s"> samples before and </span><span class="si">%s</span><span class="s"> samples after PMT pulse centers.&#39;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">]))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Simulating </span><span class="si">%s</span><span class="s1"> samples before and </span><span class="si">%s</span><span class="s1"> samples after PMT pulse centers.&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">]))</span>
 
-        <span class="c"># Load real noise data from file, if requested</span>
-        <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;real_noise_file&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;real_noise_file&#39;</span><span class="p">]))[</span><span class="s">&#39;arr_0&#39;</span><span class="p">]</span>
-            <span class="c"># The silly XENON100 PMT offset again: it&#39;s relevant for indexing the array of noise data</span>
-            <span class="c"># (which is one row per channel)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="c1"># Load real noise data from file, if requested</span>
+        <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;real_noise_file&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;real_noise_file&#39;</span><span class="p">]))[</span><span class="s1">&#39;arr_0&#39;</span><span class="p">]</span>
+            <span class="c1"># The silly XENON100 PMT offset again: it&#39;s relevant for indexing the array of noise data</span>
+            <span class="c1"># (which is one row per channel)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
 
-        <span class="c"># Load light yields</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">s1_light_yield_map</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_light_yield_map&#39;</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;s2_light_yield_map&#39;</span><span class="p">]))</span>
+        <span class="c1"># Load light yields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1_light_yield_map</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_light_yield_map&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_light_yield_map&#39;</span><span class="p">]))</span>
 
-        <span class="c"># Init s2 per pmt lce map</span>
-        <span class="n">qes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;quantum_efficiencies&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s2_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;s2_patterns_file&#39;</span><span class="p">]),</span>
-                                             <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s2_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                             <span class="n">adjust_to_qe</span><span class="o">=</span><span class="n">qes</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]],</span>
-                                             <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;relative_gain_error&#39;</span><span class="p">])</span>
+        <span class="c1"># Init s2 per pmt lce map</span>
+        <span class="n">qes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;quantum_efficiencies&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s2_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_patterns_file&#39;</span><span class="p">]),</span>
+                                             <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s2_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                             <span class="n">adjust_to_qe</span><span class="o">=</span><span class="n">qes</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">]],</span>
+                                             <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_gain_error&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="c"># Init s1 pattern maps</span>
-        <span class="c"># NB: do NOT adjust patterns for QE, map is data derived, so no need.</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Initializing s1 patterns...&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s1_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;s1_patterns_file&#39;</span><span class="p">]),</span>
-                                             <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s1_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                             <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;relative_gain_error&#39;</span><span class="p">])</span>
+        <span class="c1"># Init s1 pattern maps</span>
+        <span class="c1"># NB: do NOT adjust patterns for QE, map is data derived, so no need.</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing s1 patterns...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s1_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_patterns_file&#39;</span><span class="p">]),</span>
+                                             <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s1_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                             <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_gain_error&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="bp">None</span>
 
@@ -159,7 +159,7 @@
 <div class="viewcode-block" id="Simulator.clear_signals_queue"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.clear_signals_queue">[docs]</a>    <span class="k">def</span> <span class="nf">clear_signals_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Prepares the waveform simulator for a new event.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="p">{</span><span class="n">ch</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">])}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="p">{</span><span class="n">ch</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">])}</span>
 </div>
 <div class="viewcode-block" id="Simulator.queue_signal"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.queue_signal">[docs]</a>    <span class="k">def</span> <span class="nf">queue_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photon_timings</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a signal due to isotropic light emission to the waveform simulator</span>
@@ -170,19 +170,19 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">):</span>
             <span class="k">return</span>
 
-        <span class="c"># Correct for PMT Transition Time Spread</span>
-        <span class="n">photon_timings</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_transit_time_mean&#39;</span><span class="p">],</span>
-                                           <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_transit_time_spread&#39;</span><span class="p">],</span>
+        <span class="c1"># Correct for PMT Transition Time Spread</span>
+        <span class="n">photon_timings</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_transit_time_mean&#39;</span><span class="p">],</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_transit_time_spread&#39;</span><span class="p">],</span>
                                            <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">))</span>
 
-        <span class="c"># Shuffle all timings in the array, so channel 1 doesn&#39;t always get the first photon</span>
+        <span class="c1"># Shuffle all timings in the array, so channel 1 doesn&#39;t always get the first photon</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
 
-        <span class="c"># Get the photon counts per channel</span>
+        <span class="c1"># Get the photon counts per channel</span>
         <span class="n">hitp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">),</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
 
-        <span class="c"># Split photon times over channels, add to the currently queued photon signals</span>
-        <span class="c"># Note the last array is always zero  # TODO: did you check this</span>
+        <span class="c1"># Split photon times over channels, add to the currently queued photon signals</span>
+        <span class="c1"># Note the last array is always zero  # TODO: did you check this</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">hitp</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -195,89 +195,89 @@
 <span class="sd">        Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix</span>
 <span class="sd">        # TODO: Account for random initial digitizer state wrt interaction? Where?</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Now performing hitpattern to waveform conversion&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Now performing hitpattern to waveform conversion&quot;</span><span class="p">)</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
 
-        <span class="c"># Find out the duration of the event</span>
+        <span class="c1"># Find out the duration of the event</span>
         <span class="n">all_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_times</span><span class="p">):</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No photons to simulate: making a noise-only event&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No photons to simulate: making a noise-only event&quot;</span><span class="p">)</span>
             <span class="n">max_time</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">max_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
-        <span class="n">event</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span>
                                     <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
-                                    <span class="n">stop_time</span><span class="o">=</span><span class="n">start_time</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_time</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_padding&#39;</span><span class="p">]),</span>
-                                    <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">])</span>
-        <span class="c"># Ensure the event length is even (else it cannot be written to XED)</span>
+                                    <span class="n">stop_time</span><span class="o">=</span><span class="n">start_time</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_time</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_padding&#39;</span><span class="p">]),</span>
+                                    <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">])</span>
+        <span class="c1"># Ensure the event length is even (else it cannot be written to XED)</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">event</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
 
-        <span class="c"># Convenience variables</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
-        <span class="n">dv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">])</span>
+        <span class="c1"># Convenience variables</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="n">dv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_bits&#39;</span><span class="p">])</span>
 
-        <span class="c"># Build waveform channel by channel</span>
+        <span class="c1"># Build waveform channel by channel</span>
         <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">photon_detection_times</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c"># If the channel is dead, we don&#39;t do anything.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">channel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># If the channel is dead, we don&#39;t do anything.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">channel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
                 <span class="k">continue</span>
 
             <span class="n">photon_detection_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">)</span>
 
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulating </span><span class="si">%d</span><span class="s"> photons in channel </span><span class="si">%d</span><span class="s"> (gain=</span><span class="si">%s</span><span class="s">, gain_sigma=</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Simulating </span><span class="si">%d</span><span class="s2"> photons in channel </span><span class="si">%d</span><span class="s2"> (gain=</span><span class="si">%s</span><span class="s2">, gain_sigma=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span> <span class="n">channel</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]))</span>
 
-            <span class="c"># Use a Gaussian truncated to positive values for the SPE gain distribution</span>
-            <span class="n">gains</span> <span class="o">=</span> <span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
-                                        <span class="n">my_std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
+            <span class="c1"># Use a Gaussian truncated to positive values for the SPE gain distribution</span>
+            <span class="n">gains</span> <span class="o">=</span> <span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
+                                        <span class="n">my_std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
                                         <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                        <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span>
+                                        <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
                                         <span class="n">n_rvs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">))</span>
 
-            <span class="c"># Add PMT afterpulses</span>
+            <span class="c1"># Add PMT afterpulses</span>
             <span class="n">ap_times</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">ap_gains</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">ap_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_afterpulse_types&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;gain_mean&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
-                <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;gain_rms&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">ap_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_afterpulse_types&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gain_mean&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
+                <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gain_rms&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
 
-                <span class="c"># How many photons will make this kind of afterpulse?</span>
+                <span class="c1"># How many photons will make this kind of afterpulse?</span>
                 <span class="n">n_afterpulses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span>
-                                                   <span class="n">p</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s">&#39;p&#39;</span><span class="p">])</span>
+                                                   <span class="n">p</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">])</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">n_afterpulses</span><span class="p">:</span>
                     <span class="k">continue</span>
 
-                <span class="c"># Find the time and gain of the afterpulses</span>
-                <span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">ap_data</span><span class="p">[</span><span class="s">&#39;time_parameters&#39;</span><span class="p">]</span>
-                <span class="n">dist_kwargs</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_afterpulses</span>
+                <span class="c1"># Find the time and gain of the afterpulses</span>
+                <span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_parameters&#39;</span><span class="p">]</span>
+                <span class="n">dist_kwargs</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_afterpulses</span>
                 <span class="n">ap_times</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">+</span>
-                                <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">ap_data</span><span class="p">[</span><span class="s">&#39;time_distribution&#39;</span><span class="p">])(</span><span class="o">**</span><span class="n">dist_kwargs</span><span class="p">))</span>
-                <span class="n">ap_gains</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s">&#39;gain_mean&#39;</span><span class="p">],</span>
-                                                    <span class="n">my_std</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s">&#39;gain_rms&#39;</span><span class="p">],</span>
+                                <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_distribution&#39;</span><span class="p">])(</span><span class="o">**</span><span class="n">dist_kwargs</span><span class="p">))</span>
+                <span class="n">ap_gains</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;gain_mean&#39;</span><span class="p">],</span>
+                                                    <span class="n">my_std</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;gain_rms&#39;</span><span class="p">],</span>
                                                     <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                    <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span>
+                                                    <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
                                                     <span class="n">n_rvs</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">))</span>
 
             <span class="n">gains</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">gains</span><span class="p">,</span> <span class="n">ap_gains</span><span class="p">))</span>
             <span class="n">photon_detection_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">ap_times</span><span class="p">))</span>
 
-            <span class="c">#  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)</span>
-            <span class="n">pmt_pulse_centers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">photon_detection_times</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_padding&#39;</span><span class="p">])</span>
+            <span class="c1">#  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)</span>
+            <span class="n">pmt_pulse_centers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">photon_detection_times</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_padding&#39;</span><span class="p">])</span>
 
-            <span class="c"># Build the waveform pulse by pulse (bin by bin was slow, hope this is faster)</span>
+            <span class="c1"># Build the waveform pulse by pulse (bin by bin was slow, hope this is faster)</span>
 
-            <span class="c"># Compute offset &amp; center index for each pe-pulse</span>
-            <span class="c"># &#39;index&#39; refers to the (hypothetical) event waveform, as usual</span>
+            <span class="c1"># Compute offset &amp; center index for each pe-pulse</span>
+            <span class="c1"># &#39;index&#39; refers to the (hypothetical) event waveform, as usual</span>
             <span class="n">pmt_pulse_centers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pmt_pulse_centers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
             <span class="n">offsets</span> <span class="o">=</span> <span class="n">pmt_pulse_centers</span> <span class="o">%</span> <span class="n">dt</span>
-            <span class="n">center_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">pmt_pulse_centers</span> <span class="o">-</span> <span class="n">offsets</span><span class="p">)</span> <span class="o">/</span> <span class="n">dt</span>   <span class="c"># Absolute index in waveform of pe-pulse center</span>
+            <span class="n">center_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">pmt_pulse_centers</span> <span class="o">-</span> <span class="n">offsets</span><span class="p">)</span> <span class="o">/</span> <span class="n">dt</span>   <span class="c1"># Absolute index in waveform of pe-pulse center</span>
             <span class="n">center_index</span> <span class="o">=</span> <span class="n">center_index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
-            <span class="c"># Simulate an event-long waveform in this channel</span>
-            <span class="c"># Remember start padding has already been added to times, so just one padding in end_index</span>
+            <span class="c1"># Simulate an event-long waveform in this channel</span>
+            <span class="c1"># Remember start padding has already been added to times, so just one padding in end_index</span>
             <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">end_index</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="n">pulse_length</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
@@ -285,87 +285,87 @@
             <span class="n">current_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pulse_length</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pmt_pulse_centers</span><span class="p">):</span>
-                <span class="c"># Add some current for this photon pulse</span>
-                <span class="c"># Compute the integrated pmt pulse at various samples, then</span>
-                <span class="c"># do their diffs/dt</span>
+                <span class="c1"># Add some current for this photon pulse</span>
+                <span class="c1"># Compute the integrated pmt pulse at various samples, then</span>
+                <span class="c1"># do their diffs/dt</span>
                 <span class="n">generated_pulse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_pulse_current</span><span class="p">(</span><span class="n">gain</span><span class="o">=</span><span class="n">gains</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">offset</span><span class="o">=</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-                <span class="c"># +1 due to np.diff in pmt_pulse_current   #????</span>
+                <span class="c1"># +1 due to np.diff in pmt_pulse_current   #????</span>
                 <span class="n">left_index</span> <span class="o">=</span> <span class="n">center_index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">left_index</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_before_pulse_center&#39;</span><span class="p">])</span>
+                <span class="n">left_index</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;samples_before_pulse_center&#39;</span><span class="p">])</span>
                 <span class="n">righter_index</span> <span class="o">=</span> <span class="n">center_index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">righter_index</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">])</span>
+                <span class="n">righter_index</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">])</span>
 
-                <span class="c"># Debugging stuff</span>
+                <span class="c1"># Abandon the pulse if it goes the left/right boundaries</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">generated_pulse</span><span class="p">)</span> <span class="o">!=</span> <span class="n">righter_index</span> <span class="o">-</span> <span class="n">left_index</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s">&quot;Generated pulse is </span><span class="si">%s</span><span class="s"> samples long, can&#39;t be inserted between </span><span class="si">%s</span><span class="s"> and </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="s2">&quot;Generated pulse is </span><span class="si">%s</span><span class="s2"> samples long, can&#39;t be inserted between </span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
                             <span class="nb">len</span><span class="p">(</span><span class="n">generated_pulse</span><span class="p">),</span> <span class="n">left_index</span><span class="p">,</span> <span class="n">righter_index</span><span class="p">))</span>
-
-                <span class="k">if</span> <span class="n">left_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid left index </span><span class="si">%s</span><span class="s">: can&#39;t be negative!&quot;</span> <span class="o">%</span> <span class="n">left_index</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">righter_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid right index </span><span class="si">%s</span><span class="s">: can&#39;t be longer than length of wave (</span><span class="si">%s</span><span class="s">)!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="k">elif</span> <span class="n">left_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Invalid left index </span><span class="si">%s</span><span class="s2">: can&#39;t be negative&quot;</span> <span class="o">%</span> <span class="n">left_index</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">elif</span> <span class="n">righter_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Invalid right index </span><span class="si">%s</span><span class="s2">: can&#39;t be longer than length of wave (</span><span class="si">%s</span><span class="s2">)!&quot;</span> <span class="o">%</span> <span class="p">(</span>
                         <span class="n">righter_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">)))</span>
+                    <span class="k">continue</span>
 
                 <span class="n">current_wave</span><span class="p">[</span><span class="n">left_index</span><span class="p">:</span> <span class="n">righter_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">generated_pulse</span>
 
-            <span class="c"># Did you order some Gaussian current noise with that?</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gauss_noise_sigma&#39;</span><span class="p">]:</span>
-                <span class="c"># / dt is for charge -&gt; current conversion, as in pmt_pulse_current</span>
-                <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gauss_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
+            <span class="c1"># Did you order some Gaussian current noise with that?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigma&#39;</span><span class="p">]:</span>
+                <span class="c1"># / dt is for charge -&gt; current conversion, as in pmt_pulse_current</span>
+                <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
                 <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_sigma_current</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
 
-            <span class="c"># Convert from PMT current to ADC counts</span>
+            <span class="c1"># Convert from PMT current to ADC counts</span>
             <span class="n">adc_wave</span> <span class="o">=</span> <span class="n">current_wave</span>
-            <span class="n">adc_wave</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span>    <span class="c"># Now in voltage</span>
-            <span class="n">adc_wave</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span>       <span class="c"># Now in voltage after amplifier</span>
-            <span class="n">adc_wave</span> <span class="o">/=</span> <span class="n">dv</span>                                          <span class="c"># Now in float ADC counts above baseline</span>
-            <span class="n">adc_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="n">adc_wave</span><span class="p">)</span>                           <span class="c"># Now in integer ADC counts &quot;&quot; &quot;&quot;</span>
-            <span class="c"># Could round instead of trunc... who cares?</span>
+            <span class="n">adc_wave</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span>    <span class="c1"># Now in voltage</span>
+            <span class="n">adc_wave</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;external_amplification&#39;</span><span class="p">]</span>       <span class="c1"># Now in voltage after amplifier</span>
+            <span class="n">adc_wave</span> <span class="o">/=</span> <span class="n">dv</span>                                          <span class="c1"># Now in float ADC counts above baseline</span>
+            <span class="n">adc_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="n">adc_wave</span><span class="p">)</span>                           <span class="c1"># Now in integer ADC counts &quot;&quot; &quot;&quot;</span>
+            <span class="c1"># Could round instead of trunc... who cares?</span>
 
-            <span class="c"># PMT signals are negative excursions, so flip them.</span>
+            <span class="c1"># PMT signals are negative excursions, so flip them.</span>
             <span class="n">adc_wave</span> <span class="o">=</span> <span class="o">-</span> <span class="n">adc_wave</span>
 
-            <span class="c"># Did you want to superpose onto real noise samples?</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;real_noise_file&#39;</span><span class="p">]:</span>
-                <span class="n">sample_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;real_noise_sample_size&#39;</span><span class="p">]</span>
+            <span class="c1"># Did you want to superpose onto real noise samples?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_file&#39;</span><span class="p">]:</span>
+                <span class="n">sample_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_sample_size&#39;</span><span class="p">]</span>
                 <span class="n">available_noise_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">sample_size</span>
                 <span class="n">needed_noise_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">pulse_length</span> <span class="o">/</span> <span class="n">sample_size</span><span class="p">))</span>
                 <span class="n">chosen_noise_sample_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
                                                                 <span class="n">available_noise_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
                                                                 <span class="n">needed_noise_samples</span><span class="p">)</span>
-                <span class="c"># Extract the chosen noise samples and concatenate them</span>
-                <span class="c"># Have to use a listcomp here, unless you know a way to select multiple slices in numpy?</span>
-                <span class="c">#  -- yeah making an index list with np.arange would work, but honestly??</span>
+                <span class="c1"># Extract the chosen noise samples and concatenate them</span>
+                <span class="c1"># Have to use a listcomp here, unless you know a way to select multiple slices in numpy?</span>
+                <span class="c1">#  -- yeah making an index list with np.arange would work, but honestly??</span>
                 <span class="n">real_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="p">[</span><span class="n">channel</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span><span class="p">][</span><span class="n">nsn</span> <span class="o">*</span> <span class="n">sample_size</span><span class="p">:(</span><span class="n">nsn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">sample_size</span><span class="p">]</span>
                     <span class="k">for</span> <span class="n">nsn</span> <span class="ow">in</span> <span class="n">chosen_noise_sample_numbers</span>
                 <span class="p">])</span>
-                <span class="c"># Adjust the noise amplitude if needed, then add it to the ADC wave</span>
-                <span class="n">noise_amplitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;adjust_noise_amplitude&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># Adjust the noise amplitude if needed, then add it to the ADC wave</span>
+                <span class="n">noise_amplitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;adjust_noise_amplitude&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">noise_amplitude</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c"># Determine a rough baseline for the noise, then adjust towards it</span>
+                    <span class="c1"># Determine a rough baseline for the noise, then adjust towards it</span>
                     <span class="n">baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">real_noise</span><span class="p">[:</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">real_noise</span><span class="p">),</span> <span class="mi">50</span><span class="p">)])</span>
                     <span class="n">real_noise</span> <span class="o">=</span> <span class="n">baseline</span> <span class="o">+</span> <span class="n">noise_amplitude</span> <span class="o">*</span> <span class="p">(</span><span class="n">real_noise</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">)</span>
                 <span class="n">adc_wave</span> <span class="o">+=</span> <span class="n">real_noise</span><span class="p">[:</span><span class="n">pulse_length</span><span class="p">]</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># If you don&#39;t want to superpose onto real noise,</span>
-                <span class="c"># we should add a reference baseline</span>
-                <span class="n">adc_wave</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span>
+                <span class="c1"># If you don&#39;t want to superpose onto real noise,</span>
+                <span class="c1"># we should add a reference baseline</span>
+                <span class="n">adc_wave</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span>
 
-            <span class="c"># Digitizers have finite number of bits per channel, so clip the signal.</span>
-            <span class="n">adc_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">adc_wave</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">]))</span>
+            <span class="c1"># Digitizers have finite number of bits per channel, so clip the signal.</span>
+            <span class="n">adc_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">adc_wave</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_bits&#39;</span><span class="p">]))</span>
 
             <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span>
                 <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
                 <span class="n">left</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
                 <span class="n">raw_data</span><span class="o">=</span><span class="n">adc_wave</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)))</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulated pax event of </span><span class="si">%s</span><span class="s"> samples length and </span><span class="si">%s</span><span class="s"> pulses &quot;</span>
-                  <span class="s">&quot;created.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Simulated pax event of </span><span class="si">%s</span><span class="s2"> samples length and </span><span class="si">%s</span><span class="s2"> pulses &quot;</span>
+                  <span class="s2">&quot;created.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_signals_queue</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">event</span>
 </div>
@@ -378,32 +378,32 @@
 <span class="sd">        As usual, all units in the same system used by pax (if you specify raw values: ns, cm)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_length&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Unphysical depth: </span><span class="si">%s</span><span class="s"> cm below gate. Not generating S2.&quot;</span> <span class="o">%</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tpc_length&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unphysical depth: </span><span class="si">%s</span><span class="s2"> cm below gate. Not generating S2.&quot;</span> <span class="o">%</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating an s2 from </span><span class="si">%s</span><span class="s"> electrons...&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating an s2 from </span><span class="si">%s</span><span class="s2"> electrons...&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
 
-        <span class="c"># Average drift time, taking faster drift velocity after gate into account</span>
-        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> \
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span> \
-            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid_above_gate&#39;</span><span class="p">]</span>
+        <span class="c1"># Average drift time, taking faster drift velocity after gate into account</span>
+        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span> \
+            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid_above_gate&#39;</span><span class="p">]</span>
 
-        <span class="c"># Diffusion model from Sorensen 2011</span>
-        <span class="n">drift_time_stdev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;diffusion_constant_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">drift_time_mean</span><span class="p">)</span>
-        <span class="n">drift_time_stdev</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span>
+        <span class="c1"># Diffusion model from Sorensen 2011</span>
+        <span class="n">drift_time_stdev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;diffusion_constant_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">drift_time_mean</span><span class="p">)</span>
+        <span class="n">drift_time_stdev</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span>
 
-        <span class="c"># Absorb electrons during the drift</span>
-        <span class="n">electron_lifetime_correction</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">drift_time_mean</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_lifetime_liquid&#39;</span><span class="p">]</span>
+        <span class="c1"># Absorb electrons during the drift</span>
+        <span class="n">electron_lifetime_correction</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">drift_time_mean</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;electron_lifetime_liquid&#39;</span><span class="p">]</span>
         <span class="n">electron_lifetime_correction</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">electron_lifetime_correction</span><span class="p">)</span>
-        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_extraction_yield&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">electron_lifetime_correction</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;electron_extraction_yield&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">electron_lifetime_correction</span>
 
         <span class="n">electrons_seen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">electrons_generated</span><span class="p">,</span>
                                             <span class="n">p</span><span class="o">=</span><span class="n">prob</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    </span><span class="si">%s</span><span class="s"> electrons survive the drift.&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;    </span><span class="si">%s</span><span class="s2"> electrons survive the drift.&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
 
-        <span class="c"># Calculate electron arrival times in the ELR region</span>
-        <span class="n">e_arrival_times</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_trapping_time&#39;</span><span class="p">],</span> <span class="n">electrons_seen</span><span class="p">)</span>
+        <span class="c1"># Calculate electron arrival times in the ELR region</span>
+        <span class="n">e_arrival_times</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;electron_trapping_time&#39;</span><span class="p">],</span> <span class="n">electrons_seen</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">drift_time_stdev</span><span class="p">:</span>
             <span class="n">e_arrival_times</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">drift_time_mean</span><span class="p">,</span> <span class="n">drift_time_stdev</span><span class="p">,</span> <span class="n">electrons_seen</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">e_arrival_times</span>
@@ -411,95 +411,95 @@
 <div class="viewcode-block" id="Simulator.s1_photons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s1_photons">[docs]</a>    <span class="k">def</span> <span class="nf">s1_photons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a list of photon detection times at the PMT caused by an S1 emitting n_photons.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># Apply light yield / detection efficiency</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating an s1 from </span><span class="si">%s</span><span class="s"> photons...&quot;</span> <span class="o">%</span> <span class="n">n_photons</span><span class="p">)</span>
-        <span class="n">ly</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_detection_efficiency&#39;</span><span class="p">]</span>
+        <span class="c1"># Apply light yield / detection efficiency</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating an s1 from </span><span class="si">%s</span><span class="s2"> photons...&quot;</span> <span class="o">%</span> <span class="n">n_photons</span><span class="p">)</span>
+        <span class="n">ly</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_detection_efficiency&#39;</span><span class="p">]</span>
         <span class="n">n_photons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">ly</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    </span><span class="si">%s</span><span class="s"> photons are detected.&quot;</span> <span class="o">%</span> <span class="n">n_photons</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;    </span><span class="si">%s</span><span class="s2"> photons are detected.&quot;</span> <span class="o">%</span> <span class="n">n_photons</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n_photons</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
 
-        <span class="k">if</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;er&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;er&#39;</span><span class="p">:</span>
 
-            <span class="c"># How many of these are primary excimers? Others arise through recombination.</span>
-            <span class="n">n_primaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_primary_excimer_fraction&#39;</span><span class="p">])</span>
+            <span class="c1"># How many of these are primary excimers? Others arise through recombination.</span>
+            <span class="n">n_primaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_ER_primary_excimer_fraction&#39;</span><span class="p">])</span>
 
             <span class="n">primary_timings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">singlet_triplet_delays</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_primaries</span><span class="p">),</span>  <span class="c"># No recombination delay for primary excimers</span>
-                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_primary_singlet_fraction&#39;</span><span class="p">]</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_primaries</span><span class="p">),</span>  <span class="c1"># No recombination delay for primary excimers</span>
+                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_ER_primary_singlet_fraction&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="c"># Correct for the recombination time</span>
-            <span class="c"># For the non-exponential distribution: see Kubota 1979, solve eqn 2 for n/n0.</span>
-            <span class="c"># Alternatively, see Nest V098 source code G4S1Light.cc line 948</span>
-            <span class="n">secondary_timings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span>\
+            <span class="c1"># Correct for the recombination time</span>
+            <span class="c1"># For the non-exponential distribution: see Kubota 1979, solve eqn 2 for n/n0.</span>
+            <span class="c1"># Alternatively, see Nest V098 source code G4S1Light.cc line 948</span>
+            <span class="n">secondary_timings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span>\
                 <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_photons</span> <span class="o">-</span> <span class="n">n_primaries</span><span class="p">))</span>
-            <span class="n">secondary_timings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">secondary_timings</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;maximum_recombination_time&#39;</span><span class="p">])</span>
-            <span class="c"># Handle singlet/ triplet decays as before</span>
+            <span class="n">secondary_timings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">secondary_timings</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;maximum_recombination_time&#39;</span><span class="p">])</span>
+            <span class="c1"># Handle singlet/ triplet decays as before</span>
             <span class="n">secondary_timings</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">singlet_triplet_delays</span><span class="p">(</span>
                 <span class="n">secondary_timings</span><span class="p">,</span>
-                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_secondary_singlet_fraction&#39;</span><span class="p">]</span>
+                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_ER_secondary_singlet_fraction&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
             <span class="n">timings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">primary_timings</span><span class="p">,</span> <span class="n">secondary_timings</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;nr&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;nr&#39;</span><span class="p">:</span>
 
-            <span class="c"># Neglible recombination time, same singlet/triplet ratio for primary &amp; secondary excimers</span>
-            <span class="c"># Hence, we don&#39;t care about primary &amp; secondary excimers at all:</span>
+            <span class="c1"># Neglible recombination time, same singlet/triplet ratio for primary &amp; secondary excimers</span>
+            <span class="c1"># Hence, we don&#39;t care about primary &amp; secondary excimers at all:</span>
             <span class="n">timings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">singlet_triplet_delays</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_photons</span><span class="p">),</span>
-                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_NR_singlet_fraction&#39;</span><span class="p">]</span>
+                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;singlet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;triplet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_NR_singlet_fraction&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
-        <span class="k">elif</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;alpha&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">recoil_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span>
 
-            <span class="c"># again neglible recombination time, same singlet/triplet ratio for primary &amp; secondary excimers</span>
-            <span class="c"># Hence, we don&#39;t care about primary &amp; secondary excimers at all:</span>
+            <span class="c1"># again neglible recombination time, same singlet/triplet ratio for primary &amp; secondary excimers</span>
+            <span class="c1"># Hence, we don&#39;t care about primary &amp; secondary excimers at all:</span>
             <span class="n">timings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">singlet_triplet_delays</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_photons</span><span class="p">),</span>
-                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;alpha_singlet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;alpha_triplet_lifetime_liquid&#39;</span><span class="p">],</span>
-                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_alpha_singlet_fraction&#39;</span><span class="p">]</span>
+                <span class="n">t1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;alpha_singlet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">t3</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;alpha_triplet_lifetime_liquid&#39;</span><span class="p">],</span>
+                <span class="n">singlet_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s1_ER_alpha_singlet_fraction&#39;</span><span class="p">]</span>
             <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Recoil type must be ER, NR or alpha, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Recoil type must be ER, NR or alpha, not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">timings</span> <span class="o">+</span> <span class="n">t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timings</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="Simulator.s2_scintillation"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s2_scintillation">[docs]</a>    <span class="k">def</span> <span class="nf">s2_scintillation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electron_arrival_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Given a list of electron arrival times, returns photon production times&quot;&quot;&quot;</span>
-        <span class="c"># How many photons does each electron make?</span>
+        <span class="c1"># How many photons does each electron make?</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
         <span class="n">photons_produced</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s">&#39;s2_secondary_sc_gain_density&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_secondary_sc_gain_density&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">electron_arrival_times</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="n">total_photons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    </span><span class="si">%s</span><span class="s"> scintillation photons will be detected.&quot;</span> <span class="o">%</span> <span class="n">total_photons</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;    </span><span class="si">%s</span><span class="s2"> scintillation photons will be detected.&quot;</span> <span class="o">%</span> <span class="n">total_photons</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">total_photons</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
 
-        <span class="c"># Find the photon production times</span>
-        <span class="c"># Assume luminescence probability ~ electric field</span>
+        <span class="c1"># Find the photon production times</span>
+        <span class="c1"># Assume luminescence probability ~ electric field</span>
         <span class="n">s2_pe_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
             <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_luminescence_times</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t0</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">electron_arrival_times</span><span class="p">)</span>
         <span class="p">])</span>
 
-        <span class="c"># Account for singlet/triplet excimer decay times</span>
+        <span class="c1"># Account for singlet/triplet excimer decay times</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">singlet_triplet_delays</span><span class="p">(</span>
             <span class="n">s2_pe_times</span><span class="p">,</span>
-            <span class="n">t1</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;singlet_lifetime_gas&#39;</span><span class="p">],</span>
-            <span class="n">t3</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;triplet_lifetime_gas&#39;</span><span class="p">],</span>
-            <span class="n">singlet_ratio</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;singlet_fraction_gas&#39;</span><span class="p">]</span>
+            <span class="n">t1</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;singlet_lifetime_gas&#39;</span><span class="p">],</span>
+            <span class="n">t3</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;triplet_lifetime_gas&#39;</span><span class="p">],</span>
+            <span class="n">singlet_ratio</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;singlet_fraction_gas&#39;</span><span class="p">]</span>
         <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Simulator.singlet_triplet_delays"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.singlet_triplet_delays">[docs]</a>    <span class="k">def</span> <span class="nf">singlet_triplet_delays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t3</span><span class="p">,</span> <span class="n">singlet_ratio</span><span class="p">):</span>
@@ -518,84 +518,84 @@
 </div>
 <div class="viewcode-block" id="Simulator.get_luminescence_times"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.get_luminescence_times">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 
-        <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
+        <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
 
-        <span class="c"># Distance between liquid level and uniform -&gt; line field crossover point</span>
-        <span class="n">du</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_field_domination_distance&#39;</span><span class="p">]</span>
+        <span class="c1"># Distance between liquid level and uniform -&gt; line field crossover point</span>
+        <span class="n">du</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;anode_field_domination_distance&#39;</span><span class="p">]</span>
 
-        <span class="c"># Distance between liquid level and anode wire</span>
-        <span class="n">dw</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
+        <span class="c1"># Distance between liquid level and anode wire</span>
+        <span class="n">dw</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
 
-        <span class="c"># How many photons are produced in the uniform part?</span>
+        <span class="c1"># How many photons are produced in the uniform part?</span>
         <span class="n">n_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="n">du</span> <span class="o">*</span>
                                                <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">))))</span>
 
-        <span class="c"># Sample the luminescence times in the uniform part</span>
+        <span class="c1"># Sample the luminescence times in the uniform part</span>
         <span class="n">pos_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">du</span><span class="p">,</span> <span class="n">n_uniform</span><span class="p">)</span>
 
-        <span class="c"># Sample the luminescence positions in the non-uniform part</span>
+        <span class="c1"># Sample the luminescence positions in the non-uniform part</span>
         <span class="n">FTilde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="n">n_uniform</span><span class="p">)</span>
         <span class="n">pos_non_uniform</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">FTilde</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)</span> <span class="o">**</span> <span class="n">FTilde</span>
 
-        <span class="c"># Convert to luminescence times</span>
+        <span class="c1"># Convert to luminescence times</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
             <span class="n">pos_uniform</span><span class="p">,</span>
             <span class="n">pos_non_uniform</span>
-            <span class="c"># To take electron speedup near anode into account, replace line above with:</span>
-            <span class="c"># (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))</span>
-            <span class="c"># NB: does not take electron bending towards anode into account, so probably worse!</span>
+            <span class="c1"># To take electron speedup near anode into account, replace line above with:</span>
+            <span class="c1"># (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))</span>
+            <span class="c1"># NB: does not take electron bending towards anode into account, so probably worse!</span>
         <span class="p">))</span>
-        <span class="n">result</span> <span class="o">*=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">])</span>
+        <span class="n">result</span> <span class="o">*=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">result</span>
 </div>
 <div class="viewcode-block" id="Simulator.pmt_pulse_current"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.pmt_pulse_current">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_pulse_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="c"># Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching</span>
+        <span class="c1"># Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching</span>
         <span class="k">return</span> <span class="n">gain</span> <span class="o">*</span> <span class="n">pmt_pulse_current_raw</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_pulse_time_rounding&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">round</span><span class="p">(</span><span class="n">offset</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_pulse_time_rounding&#39;</span><span class="p">]),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_rise_time&#39;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_fall_time&#39;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_pulse_time_rounding&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">round</span><span class="p">(</span><span class="n">offset</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_pulse_time_rounding&#39;</span><span class="p">]),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_rise_time&#39;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_fall_time&#39;</span><span class="p">],</span>
         <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Simulator.distribute_photons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.distribute_photons">[docs]</a>    <span class="k">def</span> <span class="nf">distribute_photons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)</span>
 <span class="sd">        :return: numpy array of length == sim.config[&#39;n_channels&#39;] with photon count per channel</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">z</span> <span class="o">==</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]:</span>
-            <span class="c"># Use the S2 pattern information</span>
+        <span class="k">if</span> <span class="n">z</span> <span class="o">==</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]:</span>
+            <span class="c1"># Use the S2 pattern information</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">])</span>
 
-            <span class="c"># How many photons to the top array?</span>
-            <span class="n">n_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s2_mean_area_fraction_top&#39;</span><span class="p">])</span>
+            <span class="c1"># How many photons to the top array?</span>
+            <span class="n">n_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;s2_mean_area_fraction_top&#39;</span><span class="p">])</span>
 
-            <span class="c"># Distribute a fraction of the top photons randomly, if the user asked for it</span>
-            <span class="c"># This enables robustness testing of the position reconstruction</span>
-            <span class="n">p_random</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;randomize_fraction_of_s2_top_array_photons&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Distribute a fraction of the top photons randomly, if the user asked for it</span>
+            <span class="c1"># This enables robustness testing of the position reconstruction</span>
+            <span class="n">p_random</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;randomize_fraction_of_s2_top_array_photons&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">p_random</span><span class="p">:</span>
                 <span class="n">n_random</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p_random</span><span class="p">)</span>
                 <span class="n">hitp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons_by_pattern</span><span class="p">(</span><span class="n">n_top</span> <span class="o">-</span> <span class="n">n_random</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
-                <span class="n">hitp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_random</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+                <span class="n">hitp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_random</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">hitp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons_by_pattern</span><span class="p">(</span><span class="n">n_top</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
 
-            <span class="c"># The bottom photons are distributed randomly</span>
-            <span class="n">hitp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span> <span class="o">-</span> <span class="n">n_top</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_bottom&#39;</span><span class="p">])</span>
+            <span class="c1"># The bottom photons are distributed randomly</span>
+            <span class="n">hitp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span> <span class="o">-</span> <span class="n">n_top</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_bottom&#39;</span><span class="p">])</span>
             <span class="k">return</span> <span class="n">hitp</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># Use the S1 pattern information</span>
+            <span class="c1"># Use the S1 pattern information</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">])</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons_by_pattern</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="Simulator.distribute_photons_by_pattern"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.distribute_photons_by_pattern">[docs]</a>    <span class="k">def</span> <span class="nf">distribute_photons_by_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">pattern_fitter</span><span class="p">,</span> <span class="n">coordinate_tuple</span><span class="p">):</span>
-        <span class="c"># TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)</span>
-        <span class="c"># Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked</span>
-        <span class="c"># We don&#39;t catch it here: users shouldn&#39;t ask for simulations of impossible things :-)</span>
+        <span class="c1"># TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)</span>
+        <span class="c1"># Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked</span>
+        <span class="c1"># We don&#39;t catch it here: users shouldn&#39;t ask for simulations of impossible things :-)</span>
         <span class="n">lces</span> <span class="o">=</span> <span class="n">pattern_fitter</span><span class="o">.</span><span class="n">expected_pattern</span><span class="p">(</span><span class="n">coordinate_tuple</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span>
                                                     <span class="n">channels</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lces</span><span class="p">)),</span>
@@ -613,49 +613,49 @@
 <span class="sd">        :return: array of length sim.config[&#39;n_channels&#39;] with photon counts per channel</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">n_photons</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
 
-        <span class="c"># Include only channels that can receive photons</span>
+        <span class="c1"># Include only channels that can receive photons</span>
         <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">])</span>
+            <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_for_photons&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
-            <span class="n">sel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">])</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_for_photons&#39;</span><span class="p">])</span>
             <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">sel</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">relative_lce_per_channel</span> <span class="o">=</span> <span class="n">relative_lce_per_channel</span><span class="p">[</span><span class="n">sel</span><span class="p">]</span>
 
-        <span class="c"># Ensure relative LCEs are valid, and sum to one (among the remaining channels):</span>
+        <span class="c1"># Ensure relative LCEs are valid, and sum to one (among the remaining channels):</span>
         <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">relative_lce_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">relative_lce_per_channel</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">relative_lce_per_channel</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">relative_lce_per_channel</span><span class="p">)</span>
 
-        <span class="c"># Generate a channel index for every photon</span>
+        <span class="c1"># Generate a channel index for every photon</span>
         <span class="n">channel_index_for_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">relative_lce_per_channel</span><span class="p">)</span>
 
-        <span class="c"># Count number of photons in each channel</span>
-        <span class="c"># Note the histogram range must include n_channels, even though n_channels-1 is the maximum value</span>
-        <span class="c"># This is because of how numpy handles values on bin edges</span>
+        <span class="c1"># Count number of photons in each channel</span>
+        <span class="c1"># Note the histogram range must include n_channels, even though n_channels-1 is the maximum value</span>
+        <span class="c1"># This is because of how numpy handles values on bin edges</span>
         <span class="n">hitp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">channel_index_for_p</span><span class="p">,</span>
-                               <span class="n">bins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]))</span>
+                               <span class="n">bins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]))</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s">&quot;</span>
-                               <span class="s">&quot;Hitpattern has wrong length &quot;</span>
-                               <span class="s">&quot;(</span><span class="si">%d</span><span class="s">, should be </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s2">&quot;</span>
+                               <span class="s2">&quot;Hitpattern has wrong length &quot;</span>
+                               <span class="s2">&quot;(</span><span class="si">%d</span><span class="s2">, should be </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_photons</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s">&quot;</span>
-                               <span class="s">&quot;Hitpattern has wrong number of photons &quot;</span>
-                               <span class="s">&quot;(</span><span class="si">%d</span><span class="s">, should be </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="n">n_photons</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s2">&quot;</span>
+                               <span class="s2">&quot;Hitpattern has wrong number of photons &quot;</span>
+                               <span class="s2">&quot;(</span><span class="si">%d</span><span class="s2">, should be </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="n">n_photons</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">hitp</span>
 
 
-<span class="c">##</span>
-<span class="c"># Photon pulse generation</span>
-<span class="c">##</span>
+<span class="c1">##</span>
+<span class="c1"># Photon pulse generation</span>
+<span class="c1">##</span>
 
-<span class="c"># I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument</span>
-<span class="c"># There&#39;s still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below</span>
+<span class="c1"># I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument</span>
+<span class="c1"># There&#39;s still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below</span>
 </div></div>
 <span class="nd">@Memoize</span>
 <span class="k">def</span> <span class="nf">pmt_pulse_current_raw</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">samples_before</span><span class="p">,</span> <span class="n">samples_after</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">tf</span><span class="p">):</span>
@@ -680,16 +680,16 @@
 <span class="sd">    :param tf:  Fall time</span>
 <span class="sd">    :return: Float, charge deposited up to t</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="mf">0.45512</span>  <span class="c"># 1/(ln(10)-ln(10/9))</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">0.45512</span>  <span class="c1"># 1/(ln(10)-ln(10/9))</span>
     <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">q</span> <span class="o">/</span> <span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="n">tf</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tr</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">tr</span><span class="p">)))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">q</span> <span class="o">/</span> <span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="n">tf</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="n">tf</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">tf</span><span class="p">))))</span>
 
 
-<span class="c">##</span>
-<span class="c"># PMT gain sampling</span>
-<span class="c">##</span>
+<span class="c1">##</span>
+<span class="c1"># PMT gain sampling</span>
+<span class="c1">##</span>
 
 <span class="nd">@Memoize</span>
 <span class="k">def</span> <span class="nf">_truncated_gauss</span><span class="p">(</span><span class="n">my_mean</span><span class="p">,</span> <span class="n">my_std</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">):</span>
@@ -741,7 +741,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

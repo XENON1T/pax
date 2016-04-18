@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.BasicProperties &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    <title>pax.plugins.peak_processing.BasicProperties &mdash; Processor for Analyzing XENON1T 4.8.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.7.0',
+        VERSION:     '4.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.8.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -39,7 +39,7 @@
             
   <h1>Source code for pax.plugins.peak_processing.BasicProperties</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="c"># import numba</span>
+<span class="c1"># import numba</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">dsputils</span>
 
@@ -52,27 +52,27 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BasicProperties.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.BasicProperties.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="n">first_top_ch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]))</span>
-        <span class="n">last_top_ch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]))</span>
+        <span class="n">first_top_ch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">]))</span>
+        <span class="n">last_top_ch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">]))</span>
 
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
             <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t compute properties of an empty peak!&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t compute properties of an empty peak!&quot;</span><span class="p">)</span>
 
-            <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
-            <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">])</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">hits_per_channel</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
-            <span class="n">n_saturated_tot</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;n_saturated&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">n_saturated_tot</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;n_saturated&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">n_saturated_tot</span><span class="p">:</span>
                 <span class="n">peak</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">count_hits_per_channel</span><span class="p">(</span>
-                    <span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;n_saturated&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                    <span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;n_saturated&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">peak</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-            <span class="n">peak</span><span class="o">.</span><span class="n">mean_amplitude_to_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;noise_sigma&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">])</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">mean_amplitude_to_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;noise_sigma&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
 
             <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">)</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">n_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits_per_channel</span><span class="p">)</span>
@@ -81,21 +81,21 @@
             <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">)</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">mean_amplitude_to_noise</span> <span class="o">/=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
 
-            <span class="c"># Compute top fraction</span>
+            <span class="c1"># Compute top fraction</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">area_fraction_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">first_top_ch</span><span class="p">:</span><span class="n">last_top_ch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">hits_fraction_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits_per_channel</span><span class="p">[</span><span class="n">first_top_ch</span><span class="p">:</span><span class="n">last_top_ch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
 
-            <span class="c"># Compute timing quantities</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_mean</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_std</span> <span class="o">=</span> <span class="n">weighted_mean_variance</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">])</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_std</span> <span class="o">**=</span> <span class="mf">0.5</span>  <span class="c"># Convert variance to std</span>
+            <span class="c1"># Compute timing quantities</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_mean</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_std</span> <span class="o">=</span> <span class="n">weighted_mean_variance</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_std</span> <span class="o">**=</span> <span class="mf">0.5</span>  <span class="c1"># Convert variance to std</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">first_top_ch</span><span class="p">:</span><span class="n">last_top_ch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Every peak should have at least one contributing channel... what&#39;s going on?&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Every peak should have at least one contributing channel... what&#39;s going on?&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;lone_hit&#39;</span>
-                <span class="n">channel</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;channel&#39;</span><span class="p">]</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;lone_hit&#39;</span>
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">lone_hits_per_channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">peak</span><span class="o">.</span><span class="n">lone_hit_channel</span> <span class="o">=</span> <span class="n">channel</span>
 
@@ -106,9 +106,9 @@
     <span class="sd">&quot;&quot;&quot;Computes properties based on the hits-only sum waveform&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SumWaveformProperties.startup"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;peak_waveform_length&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;peak_waveform_length&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;peak_waveform_length must be an even multiple of the sample size&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;peak_waveform_length must be an even multiple of the sample size&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="SumWaveformProperties.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span>
@@ -117,50 +117,50 @@
             <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">field_length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">field_length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
-            <span class="c"># Get the waveform (in pe/bin) and compute basic sum-waveform derived properties</span>
+            <span class="c1"># Get the waveform (in pe/bin) and compute basic sum-waveform derived properties</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Sum waveform of peak </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> (</span><span class="si">%0.2f</span><span class="s"> pe area) in detector </span><span class="si">%s</span><span class="s"> sums to zero! &quot;</span>
-                                 <span class="s">&quot;Cannot compute sum waveform properties for this peak. If you see this, &quot;</span>
-                                 <span class="s">&quot;there is either a bug in pax, or you are using a negative low_threshold for &quot;</span>
-                                 <span class="s">&quot;the hitfinder (so a peak can have &lt;=0 area) and you have very bad luck.&quot;</span> <span class="o">%</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Sum waveform of peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> (</span><span class="si">%0.2f</span><span class="s2"> pe area) in detector </span><span class="si">%s</span><span class="s2"> sums to zero! &quot;</span>
+                                 <span class="s2">&quot;Cannot compute sum waveform properties for this peak. If you see this, &quot;</span>
+                                 <span class="s2">&quot;there is either a bug in pax, or you are using a negative low_threshold for &quot;</span>
+                                 <span class="s2">&quot;the hitfinder (so a peak can have &lt;=0 area) and you have very bad luck.&quot;</span> <span class="o">%</span>
                                  <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">))</span>
                 <span class="k">continue</span>
 
-            <span class="c"># Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...</span>
-            <span class="c"># We may remove one from the data structure, but it&#39;s a useful sanity check</span>
-            <span class="c"># (particularly since some hits got removed in the noise rejection)</span>
+            <span class="c1"># Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...</span>
+            <span class="c1"># We may remove one from the data structure, but it&#39;s a useful sanity check</span>
+            <span class="c1"># (particularly since some hits got removed in the noise rejection)</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Sum waveform of peak </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> (</span><span class="si">%0.2f</span><span class="s"> pe area) sums to zero... unusual!&quot;</span>
-                                 <span class="s">&quot; Cannot align peak&#39;s sum waveform, storing zeros instead.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Sum waveform of peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> (</span><span class="si">%0.2f</span><span class="s2"> pe area) sums to zero... unusual!&quot;</span>
+                                 <span class="s2">&quot; Cannot align peak&#39;s sum waveform, storing zeros instead.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
                                                                                                 <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">))</span>
-                <span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)),</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">))</span> <span class="o">*</span> <span class="n">dt</span>
 
-            <span class="c"># Index in peak waveform nearest to center of gravity (for sum-waveform alignment)</span>
+            <span class="c1"># Index in peak waveform nearest to center of gravity (for sum-waveform alignment)</span>
             <span class="n">cog_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span>
-            <span class="c"># Index of the peak&#39;s maximum</span>
+            <span class="c1"># Index of the peak&#39;s maximum</span>
             <span class="n">max_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="n">max_idx</span>
-            <span class="c"># Amplitude at the maximum</span>
+            <span class="c1"># Amplitude at the maximum</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
 
-            <span class="c"># Compute fraction of area in central deciles</span>
+            <span class="c1"># Compute fraction of area in central deciles</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">area_midpoint</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span> <span class="o">=</span> <span class="n">compute_area_deciles</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span> <span class="o">*=</span> <span class="n">dt</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">area_midpoint</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">*</span> <span class="n">dt</span>
 
-            <span class="c"># Store the waveform; for tpc also store the top waveform</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Storing sum waveform for peak </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> in </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+            <span class="c1"># Store the waveform; for tpc also store the top waveform</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Storing sum waveform for peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
                                                                              <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)),</span>
                                                                              <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span>
                                                                              <span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">))</span>
             <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="p">,</span> <span class="n">cog_idx</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">==</span> <span class="s">&#39;tpc&#39;</span><span class="p">:</span>
-                <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s">&#39;tpc_top&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">==</span> <span class="s1">&#39;tpc&#39;</span><span class="p">:</span>
+                <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s1">&#39;tpc_top&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
                                          <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform_top</span><span class="p">,</span> <span class="n">cog_idx</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">event</span>
@@ -184,14 +184,14 @@
 <span class="sd">    First element (0) of array is always zero, last element (10) is the length of w in samples.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">fractions_desired</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
-    <span class="n">index_of_area_fraction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fractions_desired</span><span class="p">))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">index_of_area_fraction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fractions_desired</span><span class="p">))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
     <span class="n">integrate_until_fraction</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">fractions_desired</span><span class="p">,</span> <span class="n">index_of_area_fraction</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="p">(</span><span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">:]</span> <span class="o">-</span> <span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
 
 
-<span class="c"># @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),</span>
-<span class="c">#            nopython=True, cache=True)</span>
-<span class="c"># For some reason numba doesn&#39;t clean up its memory properly for this function... leave it in python for now</span></div>
+<span class="c1"># @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),</span>
+<span class="c1">#            nopython=True, cache=True)</span>
+<span class="c1"># For some reason numba doesn&#39;t clean up its memory properly for this function... leave it in python for now</span></div>
 <div class="viewcode-block" id="integrate_until_fraction"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.integrate_until_fraction">[docs]</a><span class="k">def</span> <span class="nf">integrate_until_fraction</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">fractions_desired</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results</span>
 <span class="sd">    Will add last sample needed fractionally.</span>
@@ -203,26 +203,26 @@
     <span class="n">current_fraction_index</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">needed_fraction</span> <span class="o">=</span> <span class="n">fractions_desired</span><span class="p">[</span><span class="n">current_fraction_index</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
-        <span class="c"># How much of the area is in this sample?</span>
+        <span class="c1"># How much of the area is in this sample?</span>
         <span class="n">fraction_this_sample</span> <span class="o">=</span> <span class="n">x</span><span class="o">/</span><span class="n">area_tot</span>
-        <span class="c"># Will this take us over the fraction we seek?</span>
-        <span class="c"># Must be while, not if, since we can pass several fractions_desired in one sample</span>
+        <span class="c1"># Will this take us over the fraction we seek?</span>
+        <span class="c1"># Must be while, not if, since we can pass several fractions_desired in one sample</span>
         <span class="k">while</span> <span class="n">fraction_seen</span> <span class="o">+</span> <span class="n">fraction_this_sample</span> <span class="o">&gt;=</span> <span class="n">needed_fraction</span><span class="p">:</span>
-            <span class="c"># Yes, so we need to add the next sample fractionally</span>
+            <span class="c1"># Yes, so we need to add the next sample fractionally</span>
             <span class="n">area_needed</span> <span class="o">=</span> <span class="n">area_tot</span> <span class="o">*</span> <span class="p">(</span><span class="n">needed_fraction</span> <span class="o">-</span> <span class="n">fraction_seen</span><span class="p">)</span>
             <span class="n">results</span><span class="p">[</span><span class="n">current_fraction_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">area_needed</span><span class="o">/</span><span class="n">x</span>
-            <span class="c"># Advance to the next fraction</span>
+            <span class="c1"># Advance to the next fraction</span>
             <span class="n">current_fraction_index</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">current_fraction_index</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">fractions_desired</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="n">needed_fraction</span> <span class="o">=</span> <span class="n">fractions_desired</span><span class="p">[</span><span class="n">current_fraction_index</span><span class="p">]</span>
-        <span class="c"># Add this sample&#39;s area to the area seen, advance to the next sample</span>
+        <span class="c1"># Add this sample&#39;s area to the area seen, advance to the next sample</span>
         <span class="n">fraction_seen</span> <span class="o">+=</span> <span class="n">fraction_this_sample</span>
     <span class="k">if</span> <span class="n">needed_fraction</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">results</span><span class="p">[</span><span class="n">current_fraction_index</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c"># Sorry, can&#39;t add the last fraction to the error message: numba doesn&#39;t allow it</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Fraction not reached in waveform? What the ...?&quot;</span><span class="p">)</span>
+        <span class="c1"># Sorry, can&#39;t add the last fraction to the error message: numba doesn&#39;t allow it</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Fraction not reached in waveform? What the ...?&quot;</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="put_w_in_center_of_field"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.put_w_in_center_of_field">[docs]</a><span class="k">def</span> <span class="nf">put_w_in_center_of_field</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">center_index</span><span class="p">):</span>
@@ -231,19 +231,19 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">field_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">field_length</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;put_w_in_center_of_field requires an odd field length (so center is clear)&quot;</span><span class="p">)</span>
-    <span class="n">field_center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field_length</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>      <span class="c"># Index of center of field</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;put_w_in_center_of_field requires an odd field length (so center is clear)&quot;</span><span class="p">)</span>
+    <span class="n">field_center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field_length</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>      <span class="c1"># Index of center of field</span>
 
     <span class="n">left_overhang</span> <span class="o">=</span> <span class="n">center_index</span> <span class="o">-</span> <span class="n">field_center</span>
     <span class="k">if</span> <span class="n">left_overhang</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c"># Chop off the left overhang</span>
+        <span class="c1"># Chop off the left overhang</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">left_overhang</span><span class="p">:]</span>
         <span class="n">center_index</span> <span class="o">-=</span> <span class="n">left_overhang</span>
         <span class="k">assert</span> <span class="n">center_index</span> <span class="o">==</span> <span class="n">field_center</span>
 
     <span class="n">right_overhang</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">field_length</span> <span class="o">+</span> <span class="p">(</span><span class="n">field_center</span> <span class="o">-</span> <span class="n">center_index</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">right_overhang</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c"># Chop off any remaining right overhang</span>
+        <span class="c1"># Chop off any remaining right overhang</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">-</span><span class="n">right_overhang</span><span class="p">]</span>
 
     <span class="n">start_idx</span> <span class="o">=</span> <span class="n">field_center</span> <span class="o">-</span> <span class="n">center_index</span>
@@ -257,7 +257,7 @@
 <span class="sd">    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">weighted_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-    <span class="n">weighted_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">values</span><span class="o">-</span><span class="n">weighted_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>  <span class="c"># Fast and numerically precise</span>
+    <span class="n">weighted_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">values</span><span class="o">-</span><span class="n">weighted_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>  <span class="c1"># Fast and numerically precise</span>
     <span class="k">return</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">weighted_variance</span></div>
 </pre></div>
 
@@ -296,7 +296,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

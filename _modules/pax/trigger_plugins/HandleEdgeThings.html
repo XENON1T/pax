@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 4.8.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '4.7.0',
+        VERSION:     '4.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.8.0 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -51,24 +51,24 @@
 
 <div class="viewcode-block" id="HandleEdgeTimes.process"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Injecting </span><span class="si">%d</span><span class="s"> saved times&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Injecting </span><span class="si">%d</span><span class="s2"> saved times&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
             <span class="n">data</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">))</span>
-            <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s">&#39;time&#39;</span><span class="p">)</span>       <span class="c"># Just to be safe, in live-mode batch edge may be ragged</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>       <span class="c1"># Just to be safe, in live-mode batch edge may be ragged</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">last_data</span><span class="p">:</span>
-            <span class="c"># We may not be able to look at all the added times yet, since the next data batch of data</span>
-            <span class="c"># could change their interpretation. Find the last index that is safe too look at.</span>
-            <span class="n">last_i</span> <span class="o">=</span> <span class="n">find_last_break</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">],</span>
+            <span class="c1"># We may not be able to look at all the added times yet, since the next data batch of data</span>
+            <span class="c1"># could change their interpretation. Find the last index that is safe too look at.</span>
+            <span class="n">last_i</span> <span class="o">=</span> <span class="n">find_last_break</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span>
                                      <span class="n">last_time</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">last_time_searched</span><span class="p">,</span>
-                                     <span class="n">break_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;signal_separation&#39;</span><span class="p">])</span>
+                                     <span class="n">break_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;signal_separation&#39;</span><span class="p">])</span>
 
-            <span class="c"># Keep the times we can work with, save the rest in self.times for the next time we are called.</span>
+            <span class="c1"># Keep the times we can work with, save the rest in self.times for the next time we are called.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="n">last_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
             <span class="n">data</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[:</span><span class="n">last_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Saving </span><span class="si">%d</span><span class="s"> times for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving </span><span class="si">%d</span><span class="s2"> times for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
 
 </div></div>
 <div class="viewcode-block" id="HandleEdgeSignals"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals">[docs]</a><span class="k">class</span> <span class="nc">HandleEdgeSignals</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
@@ -77,28 +77,28 @@
 
 <div class="viewcode-block" id="HandleEdgeSignals.process"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Injecting </span><span class="si">%d</span><span class="s"> saved signals&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Injecting </span><span class="si">%d</span><span class="s2"> saved signals&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
             <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">))</span>
-            <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s">&#39;left_time&#39;</span><span class="p">)</span>        <span class="c"># Just to be safe, in live-mode batch edge may be ragged</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;left_time&#39;</span><span class="p">)</span>        <span class="c1"># Just to be safe, in live-mode batch edge may be ragged</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">last_data</span><span class="p">:</span>
-            <span class="c"># We may not be able to look at all the added signals yet, since the next data batch of data</span>
-            <span class="c"># could change their interpretation.</span>
-            <span class="n">lookback_time</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">last_time_searched</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_separation&#39;</span><span class="p">]</span>
+            <span class="c1"># We may not be able to look at all the added signals yet, since the next data batch of data</span>
+            <span class="c1"># could change their interpretation.</span>
+            <span class="n">lookback_time</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">last_time_searched</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_separation&#39;</span><span class="p">]</span>
 
-            <span class="c"># Can some triggers be grouped with potential triggers in the next batch of data?</span>
-            <span class="n">trigger_times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="s">&#39;trigger&#39;</span><span class="p">]][</span><span class="s">&#39;left_time&#39;</span><span class="p">]</span>
+            <span class="c1"># Can some triggers be grouped with potential triggers in the next batch of data?</span>
+            <span class="n">trigger_times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="s1">&#39;trigger&#39;</span><span class="p">]][</span><span class="s1">&#39;left_time&#39;</span><span class="p">]</span>
             <span class="n">last_trigger_i</span> <span class="o">=</span> <span class="n">find_last_break</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="n">trigger_times</span><span class="p">,</span>
                                              <span class="n">last_time</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">last_time_searched</span><span class="p">,</span>
-                                             <span class="n">break_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_separation&#39;</span><span class="p">])</span>
+                                             <span class="n">break_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_separation&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">last_trigger_i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigger_times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">lookback_time</span> <span class="o">=</span> <span class="n">trigger_times</span><span class="p">[</span><span class="n">last_trigger_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;left_extension&#39;</span><span class="p">]</span>
+                <span class="n">lookback_time</span> <span class="o">=</span> <span class="n">trigger_times</span><span class="p">[</span><span class="n">last_trigger_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;left_extension&#39;</span><span class="p">]</span>
 
-            <span class="c"># What is the last signal we can work with?</span>
-            <span class="c"># TODO: Can be sped up by loop in numba. But probably doesn&#39;t matter much, should only run a few iterations.</span>
+            <span class="c1"># What is the last signal we can work with?</span>
+            <span class="c1"># TODO: Can be sped up by loop in numba. But probably doesn&#39;t matter much, should only run a few iterations.</span>
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="s">&#39;left_time&#39;</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="s1">&#39;left_time&#39;</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">lookback_time</span><span class="p">:</span>
                     <span class="k">break</span>
             <span class="n">last_ok_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">i</span>
@@ -106,7 +106,7 @@
             <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[:</span><span class="n">last_ok_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Saving </span><span class="si">%d</span><span class="s"> signals for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving </span><span class="si">%d</span><span class="s2"> signals for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
 
 </div></div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -117,7 +117,7 @@
 <span class="sd">    Returns -1 if no break exists anywhere in times.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">imax</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-    <span class="c"># Start from the end of the list, iterate backwards</span>
+    <span class="c1"># Start from the end of the list, iterate backwards</span>
     <span class="k">for</span> <span class="n">_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)):</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">imax</span> <span class="o">-</span> <span class="n">_i</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -163,7 +163,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 
