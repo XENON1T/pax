@@ -4,6 +4,7 @@ import glob
 import zlib
 import os
 import shutil
+from operator import itemgetter
 
 from bson import json_util
 
@@ -54,6 +55,10 @@ class InputFromFolder(plugin.InputPlugin):
                                      "or has crashed while building!")
                     continue
                 self.init_file(fn)
+
+        # Sort the files by first event number, so events are read in order
+        # Files are read in lexically, but in some cases that may not reflect the event order (see issue #345)
+        self.raw_data_files = sorted(self.raw_data_files, key=itemgetter('first_event'))
 
         # Select the first file
         self.select_file(0)
@@ -260,7 +265,7 @@ class WriteToFolder(plugin.OutputPlugin):
         # Rename the temporary file to reflect the events we've written to it
         os.rename(self.tempfile,
                   os.path.join(self.output_dir,
-                               '%s-%d-%06d-%06d-%06d.%s' % (self.config['tpc_name'],
+                               '%s-%d-%09d-%09d-%09d.%s' % (self.config['tpc_name'],
                                                             self.config['run_number'],
                                                             self.first_event_in_current_file,
                                                             self.last_event_written,
