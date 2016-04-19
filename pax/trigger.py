@@ -4,6 +4,7 @@ import logging
 import os
 from glob import glob
 from copy import deepcopy
+from collections import defaultdict
 import zipfile
 import zlib
 import bson
@@ -40,7 +41,7 @@ class TriggerPlugin(object):
         self.pmt_data = self.trigger.pmt_data
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
-        self.log.info("Logging started for %s" % self.name)
+        self.log.debug("Logging started for %s" % self.name)
         self.end_of_run_info = {'config': {k: v for k, v in self.config.items() if k not in self.trigger.config}}
         self.startup()
 
@@ -69,8 +70,10 @@ class Trigger(object):
         self.config = pax_config['Trigger']
         self.pmt_data = pax_config['DEFAULT']['pmts']
         self.trigger_monitor_collection = trigger_monitor_collection
+        if trigger_monitor_collection is None:
+            self.log.info("No trigger monitor collection provided: won't write trigger monitor data to MongoDB")
         self.monitor_cache = []         # Cache of (data_type, doc), with doc document to insert into db / write to zip.
-        self.data_type_counter = {}     # Counts how often a document of each data type has been inserted. Need for zip.
+        self.data_type_counter = defaultdict(float)    # Counts how often a document of each data type has been inserted
 
         # Build a (module, channel) ->  lookup matrix
         # I whish numba had some kind of dictionary / hashtable support...
@@ -93,8 +96,12 @@ class Trigger(object):
         # (the data is additionaly stored in a MongoDB, if trigger_monitor_collection was passed)
         trigger_monitor_file_path = self.config.get('trigger_monitor_file_path', None)
         if trigger_monitor_file_path is not None:
+            base_dir = os.path.dirname(trigger_monitor_file_path)
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir)
             self.trigger_monitor_file = zipfile.ZipFile(trigger_monitor_file_path, mode='w')
         else:
+            self.log.info("Not trigger monitor file path provided: won't write trigger monitor data to Zipfile")
             self.trigger_monitor_file = None
 
         self.end_of_run_info = dict(times_read=0,
@@ -168,11 +175,13 @@ class Trigger(object):
         # only at the end of each batch
         if len(self.monitor_cache):
             if self.trigger_monitor_collection is not None:
-                self.trigger_monitor_collection.insert_many([data for _, data in self.monitor_cache])
+                self.log.debug("Inserting %d trigger monitor documents into MongoDB" % len(self.monitor_cache))
+                result = self.trigger_monitor_collection.insert_many([d for _, d in self.monitor_cache])
+                self.log.debug("Inserted docs ids: %s" % result.inserted_ids)
             if self.trigger_monitor_file is not None:
-                for data_type, data in self.monitor_cache:
-                    self.trigger_monitor_file.writestr("%s=%s" % (data_type, self.data_type_counter[data_type]),
-                                                       zlib.compress(bson.BSON.encode(data)))
+                for data_type, d in self.monitor_cache:
+                    self.trigger_monitor_file.writestr("%s=%012d" % (data_type, self.data_type_counter[data_type]),
+                                                       zlib.compress(bson.BSON.encode(d)))
                     self.data_type_counter[data_type] += 1
             self.monitor_cache = []
 
@@ -198,16 +207,19 @@ class Trigger(object):
 
         return self.end_of_run_info
 
-    def save_monitor_data(self, data_type, data):
+    def save_monitor_data(self, data_type, data, metadata=None):
         """Store trigger monitor data document in cache. It will be written to disk/db at the end of the batch.
           data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).
           data: either
             a dictionary with things bson.BSON.encode() will not crash on, or
             a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
+          metadata: more data. Just convenience so you can pass numpy array as data.
         """
         if isinstance(data, np.ndarray):
             data = {'data': bson.Binary(data.tostring())}
         data['data_type'] = data_type
+        if metadata is not None:
+            data.update(metadata)
         self.monitor_cache.append((data_type, data))
 
 

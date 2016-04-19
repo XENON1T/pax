@@ -90,7 +90,6 @@ class FindSignals(TriggerPlugin):
         data.signals = signals
 
     def save_dark_monitor_data(self, last_time=False):
-
         # Save the PMT dark rate
         self.log.debug("Saving pulse rate: %d pulses (of which %d lone pulses)" % (
             self.all_pulses_tally.sum(), self.lone_pulses_tally.sum()))

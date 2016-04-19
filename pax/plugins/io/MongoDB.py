@@ -92,7 +92,7 @@ class MongoDBReader:
 
         This is useful for example checking if a run has ended.
         """
-        self.log.debug("Updating run doc")
+        self.log.debug("Retrieving run doc")
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
         self.data_taking_ended = 'end' in self.run_doc
 
@@ -129,9 +129,16 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         self.log.info("Starting event builder")
 
         # Initialize the trigger
-        trig_mon_db = self.processor.mongo_manager.get_database('trigger_monitor')
+        # For now, make a collection in trigger_monitor on the same eb as the untriggered collection
+        if not self.secret_mode:
+            self.uri_for_monitor = self.input_info['location'].replace('untriggered', 'trigger_monitor')
+            trig_mon_db = self.processor.mongo_manager.get_database('trigger_monitor', uri=self.uri_for_monitor)
+            trig_mon_coll = trig_mon_db.get_collection(self.run_doc['name'])
+        else:
+            trig_mon_coll = None
+            self.uri_for_monitor = 'nowhere, because secret mode was used'
         self.trigger = trigger.Trigger(pax_config=self.processor.config,
-                                       trigger_monitor_collection=trig_mon_db.get_collection(self.run_doc['name']))
+                                       trigger_monitor_collection=trig_mon_coll)
 
     def get_last_pulse_time(self):
         """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
@@ -255,7 +262,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             # Check if we've passed the user-specified stop (if so configured)
             if last_time_searched > self.config.get('stop_after_sec', float('inf')) * units.s:
                 self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
-                                 "This is the last batch of data" % (self.last_time_searched,
+                                 "This is the last batch of data" % (last_time_searched,
                                                                      self.config['stop_after_sec']))
                 more_data_coming = False
 
@@ -266,7 +273,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                          modules=modules,
                                          areas=areas,
                                          last_data=not more_data_coming):
-                self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
                 yield EventProxy(event_number=next_event_number, data=data)
                 next_event_number += 1
 
@@ -280,6 +286,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'
+        end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
 
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
