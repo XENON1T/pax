@@ -4,10 +4,12 @@ import logging
 import os
 from glob import glob
 from copy import deepcopy
+import zipfile
+import zlib
+import bson
 
 import numba
 import numpy as np
-import h5py
 
 import pax          # For version number
 from pax.utils import PAX_DIR
@@ -19,7 +21,18 @@ times_dtype = np.dtype([('time', np.int64),
                         ])
 
 
+class TriggerData(object):
+    """Carries all data from one "batch" between trigger modules"""
+    times = np.array([], dtype=times_dtype)
+    signals = np.array([], dtype=TriggerSignal.get_dtype())
+    event_ranges = np.zeros((0, 2), dtype=np.int64)
+    signals_by_event = []
+    last_data = False
+    last_time_searched = 0
+
+
 class TriggerPlugin(object):
+    """Base class for trigger plugins"""
 
     def __init__(self, trigger, config):
         self.trigger = trigger
@@ -38,25 +51,26 @@ class TriggerPlugin(object):
         self.log.debug("%s does not define a shutdown." % self.name)
 
 
-class TriggerData(object):
-    times = np.array([], dtype=times_dtype)
-    signals = np.array([], dtype=TriggerSignal.get_dtype())
-    event_ranges = np.zeros((0, 2), dtype=np.int64)
-    signals_by_event = []
-    last_data = False
-    last_time_searched = 0
-
-
 class Trigger(object):
     """XENON1T trigger main class
-    This is responsible for running data by each of the trigger modules.
+    This is responsible for
+        * constructing a TriggerData object from a batch of pulse start times / areas / etc.
+        * running this by each of the trigger modules
+        * collecting the end-of-run info from all plugins into one dictionary
+        * managing the trigger data stream (insert docs to MongoDB, dump to file in the end)
     """
 
-    def __init__(self, pax_config):
+    def __init__(self, pax_config, trigger_monitor_collection=None):
+        """
+            trigger_monitor_collection: None or a mongodb collection to write trigger monitor info to
+        """
         self.log = logging.getLogger('Trigger')
         self.pax_config = pax_config
         self.config = pax_config['Trigger']
         self.pmt_data = pax_config['DEFAULT']['pmts']
+        self.trigger_monitor_collection = trigger_monitor_collection
+        self.monitor_cache = []         # Cache of (data_type, doc), with doc document to insert into db / write to zip.
+        self.data_type_counter = {}     # Counts how often a document of each data type has been inserted. Need for zip.
 
         # Build a (module, channel) ->  lookup matrix
         # I whish numba had some kind of dictionary / hashtable support...
@@ -75,11 +89,13 @@ class Trigger(object):
             channel = q['digitizer']['channel']
             self.pmt_lookup[module][channel] = q['pmt_position']
 
-        # Create file & datasets for extra trigger data
-        dir = os.path.dirname(self.config['trigger_data_filename'])
-        if dir and not os.path.exists(dir):
-            os.makedirs(dir)
-        self.dark_monitor_data_file = h5py.File(self.config['trigger_data_filename'], mode='w')
+        # Create a zipfile to store the trigger monitor data, if config says so
+        # (the data is additionaly stored in a MongoDB, if trigger_monitor_collection was passed)
+        trigger_monitor_file_path = self.config.get('trigger_monitor_file_path', None)
+        if trigger_monitor_file_path is not None:
+            self.trigger_monitor_file = zipfile.ZipFile(trigger_monitor_file_path, mode='w')
+        else:
+            self.trigger_monitor_file = None
 
         self.end_of_run_info = dict(times_read=0,
                                     signals_found=0,
@@ -130,14 +146,12 @@ class Trigger(object):
             # Convert the channel/module specs into pmt numbers.
             get_pmt_numbers(channels, modules, pmts_buffer=data.times['pmt'], pmt_lookup=self.pmt_lookup)
         else:
-            # If PMT numbers not specified, pretend everything is from a 'ghost' pmt at # = n_channels
+            # If PMT numbers are not specified, pretend everything is from a 'ghost' pmt at # = n_channels
             data.times['pmt'] = len(self.pmt_data)
         if areas is not None:
             data.times['area'] = areas
 
         # Hand over to each of the trigger plugins in turn.
-        # Notice we won't even try to sort the event ranges from different triggers by time: some triggers (like the
-        # main trigger) can hold events back until next time we give them data, so this would be a thorny problem.
         for plugin in self.plugins:
             self.log.debug("Passing data to plugin %s" % plugin.name)
             plugin.process(data)
@@ -149,6 +163,20 @@ class Trigger(object):
         self.end_of_run_info['signals_found'] += len(data.signals)
         self.end_of_run_info['events_built'] += len(data.event_ranges)
 
+        # Store any documents in the monitor cache to disk / database
+        # We don't want to do break the trigger logic every time some plugin calls save_monitor_data, so this happens
+        # only at the end of each batch
+        if len(self.monitor_cache):
+            if self.trigger_monitor_collection is not None:
+                self.trigger_monitor_collection.insert_many([data for _, data in self.monitor_cache])
+            if self.trigger_monitor_file is not None:
+                for data_type, data in self.monitor_cache:
+                    self.trigger_monitor_file.writestr("%s=%s" % (data_type, self.data_type_counter[data_type]),
+                                                       zlib.compress(bson.BSON.encode(data)))
+                    self.data_type_counter[data_type] += 1
+            self.monitor_cache = []
+
+        # Yield the events to the processor
         for event_i, (start, stop) in enumerate(data.event_ranges):
             yield (start, stop), data.signals_by_event[event_i]
 
@@ -160,8 +188,8 @@ class Trigger(object):
 
         # Close the trigger data file.
         # Note this must be done after shutting down the plugins, they may add something on shutdown as well.
-        if hasattr(self, 'f'):
-            self.f.close()
+        if self.trigger_monitor_file is not None:
+            self.trigger_monitor_file.close()
 
         # Add end-of-run info for the runs database
         self.end_of_run_info.update(dict(end_trigger_processing_timestamp=time.time()))
@@ -169,6 +197,18 @@ class Trigger(object):
             self.end_of_run_info[p.name] = p.end_of_run_info
 
         return self.end_of_run_info
+
+    def save_monitor_data(self, data_type, data):
+        """Store trigger monitor data document in cache. It will be written to disk/db at the end of the batch.
+          data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).
+          data: either
+            a dictionary with things bson.BSON.encode() will not crash on, or
+            a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
+        """
+        if isinstance(data, np.ndarray):
+            data = {'data': bson.Binary(data.tostring())}
+        data['data_type'] = data_type
+        self.monitor_cache.append((data_type, data))
 
 
 @numba.jit(nopython=True)
@@ -179,17 +219,3 @@ def get_pmt_numbers(channels, modules, pmts_buffer, pmt_lookup):
     """
     for i in range(len(channels)):
         pmts_buffer[i] = pmt_lookup[modules[i], channels[i]]
-
-
-def h5py_append(dataset, records):
-    """Append records to h5py dataset, resizing axis=0 as needed
-    This probably goes completely against the philosophy of hdf5, and is super convenient
-    """
-    if len(dataset.shape) != len(records.shape):
-        # Hack for appending a single record
-        want_shape = list(dataset.shape)
-        want_shape[0] = -1
-        records = records.reshape(tuple(want_shape))
-    orig_size = dataset.shape[0]
-    dataset.resize(orig_size + records.shape[0], axis=0)
-    dataset[orig_size:] = records

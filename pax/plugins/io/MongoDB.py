@@ -121,14 +121,17 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Load a few more config settings
         self.detector = self.config['detector']
-        self.search_window = self.config['search_window']
+        self.batch_window = self.config['batch_window']
 
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
         self.log.info("Starting event builder")
 
-        self.trigger = trigger.Trigger(pax_config=self.processor.config)
+        # Initialize the trigger
+        trig_mon_db = self.processor.mongo_manager.get_database('trigger_monitor')
+        self.trigger = trigger.Trigger(pax_config=self.processor.config,
+                                       trigger_monitor_collection=trig_mon_db.get_collection(self.run_doc['name']))
 
     def get_last_pulse_time(self):
         """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
@@ -167,8 +170,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(last_pulse_time)))
 
-            # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
-            last_time_to_search = last_pulse_time + self.search_window
+            # Add 1 batch window margin (in case the pulse is long, or another pulse started sooner but ends later)
+            last_time_to_search = last_pulse_time + self.batch_window
 
         while more_data_coming:
 
@@ -180,21 +183,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_pulse_time = self.get_last_pulse_time()
                 if self.data_taking_ended:
                     # Data taking just ended, we can define the time we should stop searching.
-                    last_time_to_search = last_pulse_time + self.search_window
+                    last_time_to_search = last_pulse_time + self.batch_window
                 else:
-                    # Make sure we only query data that is at least one search window away from the last pulse time,
+                    # Make sure we only query data that is at least one batch window away from the last pulse time,
                     # to avoid querying near the ragged edge (where readers are inserting asynchronously).
-                    # Also make sure we only query once a full search window of such safe data is available (to avoid
-                    # mini-queries). So if search_window = 60 sec, we'll wait for 2 mins of data before our first query.
-                    if last_pulse_time - 2 * self.search_window < last_time_searched:
+                    # Also make sure we only query once a full batch window of such safe data is available (to avoid
+                    # mini-queries). So if batch_window = 60 sec, we'll wait for 2 mins of data before our first query.
+                    if last_pulse_time - 2 * self.batch_window < last_time_searched:
                         self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
                         time.sleep(5)
 
-            # Query for pulse start & stop times within a large search window
+            # Query for pulse start & stop times within a large batch window
             self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
 
             query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
-                                      '$lt': self._to_mt(last_time_searched + self.search_window)}}
+                                      '$lt': self._to_mt(last_time_searched + self.batch_window)}}
 
             if self.use_monary:
                 if self.config['can_get_area']:
@@ -239,14 +242,22 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             else:
                 self.log.info("No pulse data found.")
 
-            # Record advancement of the search window
-            # We've ensured above that a full search window is always queried, even in live mode.
-            last_time_searched += self.search_window
+            # Record advancement of the batch window
+            # We've ensured above that a full batch window is always queried, even in live mode.
+            last_time_searched += self.batch_window
 
+            # Check if more data is coming
             more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
             if not more_data_coming:
                 self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
                     pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
+
+            # Check if we've passed the user-specified stop (if so configured)
+            if last_time_searched > self.config.get('stop_after_sec', float('inf')) * units.s:
+                self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
+                                 "This is the last batch of data" % (self.last_time_searched,
+                                                                     self.config['stop_after_sec']))
+                more_data_coming = False
 
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,

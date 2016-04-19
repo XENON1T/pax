@@ -1,19 +1,9 @@
 import numba
 import numpy as np
-from pax.trigger import TriggerPlugin, h5py_append
-from pax.datastructure import TriggerSignal
+from pax.trigger import TriggerPlugin
 
 
 class SaveSignals(TriggerPlugin):
-
-    def startup(self):
-        if self.config['save_signals_outside_events']:
-            f = self.trigger.dark_monitor_data_file
-            self.outside_signals_dataset = f.create_dataset('signals_outside_events',
-                                                            shape=(0,),
-                                                            maxshape=(None,),
-                                                            dtype=TriggerSignal.get_dtype(),
-                                                            compression="gzip")
 
     def process(self, data):
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
@@ -35,7 +25,7 @@ class SaveSignals(TriggerPlugin):
             outsigs = outsigs[outsigs['n_pulses'] >= self.config['outside_signals_save_threshold']]
             if len(outsigs):
                 self.log.debug("Storing %d signals outside events" % len(outsigs))
-                h5py_append(self.outside_signals_dataset, outsigs)
+                self.trigger.save_monitor_data('signals_outside_events', outsigs)
 
 
 @numba.jit(nopython=True)
