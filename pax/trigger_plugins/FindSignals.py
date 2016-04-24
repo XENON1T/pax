@@ -155,7 +155,9 @@ def _signal_finder(times, signal_separation,
         pmt = _time.pmt
         area = _time.area * gain_conversion_factors[pmt]
 
-        if t >= next_save_time:
+        # Save the dark rate. Notice it's WHILE t >= next_save_time, which ensures we save a lot of zeroes when there is
+        # a large gap in the data. Let's hope nobody tries to pass t = float('inf')...
+        while t >= next_save_time:
             yield SAVE_DARK_MONITOR_DATA
             next_save_time += dark_rate_save_interval
 

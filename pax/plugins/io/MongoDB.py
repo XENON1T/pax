@@ -274,7 +274,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     self.log.critical("Untriggered collection is %0.2f GB large, but you limited it to %0.2f GB. "
                                       "ALL DATA from this collection will now be DELETED!!!" % (coll_size_gb,
                                                                                                 max_size_gb))
+                    # From the Mongo docs: "To remove all documents from a collection, it may be more efficient to
+                    # drop the entire collection, including the indexes, and then recreate the collection
+                    # and rebuild the indexes"
                     self.input_database.drop_collection(self.run_doc['name'])
+                    self.input_database.create_index(self.sort_key, background=True)
+
+                    # Jump last_time_searched to just before next pulse which is inserted
+                    # Without this we waste precious moments wading through dead time
+                    while True:
+                        last_pulse_time = self.get_last_pulse_time()
+                        if last_pulse_time != 0:
+                            break
+                        self.log.info("Sleeping one second, waiting for DAQ to insert a new pulse after the deletion")
+                        time.sleep(1)
+                    self.last_time_searched = last_pulse_time - self.batch_window
 
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,
