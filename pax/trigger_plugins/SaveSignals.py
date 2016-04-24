@@ -20,12 +20,22 @@ class SaveSignals(TriggerPlugin):
                 signals_by_event.append(data.signals[sig_idx[event_i][0]:sig_idx[event_i][1] + 1])
             data.signals_by_event = signals_by_event
 
-        if self.config['save_signals_outside_events']:
-            outsigs = data.signals[True ^ is_in_event]
-            outsigs = outsigs[outsigs['n_pulses'] >= self.config['outside_signals_save_threshold']]
-            if len(outsigs):
-                self.log.debug("Storing %d signals outside events" % len(outsigs))
-                self.trigger.save_monitor_data('signals_outside_events', outsigs)
+        save_mode = self.config.get('save_signals')
+        if save_mode:
+            sigs = data.signals
+            if self.config.get('only_save_signals_outside_events'):
+                sigs = sigs[True ^ is_in_event]
+            if save_mode == 'full':
+                sigs = sigs[sigs['n_pulses'] >= self.config['signals_save_threshold']]
+                if len(sigs):
+                    self.log.debug("Storing %d signals in trigger data" % len(sigs))
+                    self.trigger.save_monitor_data('trigger_signals', sigs)
+            elif save_mode == '2d_histogram':
+                hist, _, _ = np.histogram2d(np.log10(sigs['n_pulses']),
+                                            np.log10(sigs['time_rms'] + 1),
+                                            bins=(np.linspace(0, 10, 100),
+                                                  np.linspace(0, 10, 100)))
+                self.trigger.save_monitor_data('trigger_signals_histogram', hist)
 
 
 @numba.jit(nopython=True)

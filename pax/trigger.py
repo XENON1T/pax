@@ -159,11 +159,14 @@ class Trigger(object):
             data.times['area'] = areas
 
         # Hand over to each of the trigger plugins in turn.
+        # The batch_info_doc can be filled with batch-specific information by the plugins
+        self.batch_info_doc = dict(last_time_searched=last_time_searched)
         for plugin in self.plugins:
             self.log.debug("Passing data to plugin %s" % plugin.name)
             plugin.process(data)
         self.log.info("Trigger found %d event ranges, %d signals in %d pulse times." % (
             len(data.event_ranges), len(data.signals), len(data.times)))
+        self.save_monitor_data('batch_info', self.batch_info_doc)
 
         # Update the end of run info
         self.end_of_run_info['times_read'] += len(data.times)

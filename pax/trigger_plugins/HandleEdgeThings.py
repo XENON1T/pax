@@ -27,8 +27,8 @@ class HandleEdgeTimes(TriggerPlugin):
             self.saved_times = data.times[last_i + 1:]
             data.times = data.times[:last_i + 1]
 
-            if len(self.saved_times):
-                self.log.debug("Saving %d times for later" % len(self.saved_times))
+        self.log.debug("Saved %d times for later" % len(self.saved_times))
+        self.trigger.batch_info_doc['times_saved_for_next_batch'] = len(self.saved_times)
 
 
 class HandleEdgeSignals(TriggerPlugin):
@@ -65,8 +65,8 @@ class HandleEdgeSignals(TriggerPlugin):
             self.saved_signals = data.signals[last_ok_index + 1:]
             data.signals = data.signals[:last_ok_index + 1]
 
-            if len(self.saved_signals):
-                self.log.debug("Saving %d signals for later" % len(self.saved_signals))
+        self.log.debug("Saved %d signals for next batch" % len(self.saved_signals))
+        self.trigger.batch_info_doc['signals_saved_for_next_batch'] = len(self.saved_signals)
 
 
 @numba.jit(nopython=True)
