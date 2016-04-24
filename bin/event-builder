@@ -33,7 +33,7 @@ def main():
     """Start running the event builder
     """
     args = get_command_line_arguments()
-    log = setup_logging(loglevel=args.log)
+    log = setup_logging(loglevel=args.log.upper())
 
     if args.stop_after_sec < float('inf') and not args.secret_mode:
         print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing"
