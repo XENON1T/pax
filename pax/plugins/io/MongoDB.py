@@ -72,9 +72,9 @@ class MongoDBReader:
                                                  monary=True)
 
         self.log.debug("Grabbing collection %s" % self.input_info['collection'])
-        self.input_collection = mm.get_database(
-            database_name=self.input_info['database'],
-            uri=self.input_info['location']).get_collection(self.input_info['collection'])
+        self.input_database = mm.get_database(database_name=self.input_info['database'],
+                                              uri=self.input_info['location'])
+        self.input_collection = self.input_database.get_collection(self.input_info['collection'])
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
         self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
@@ -146,7 +146,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         """
         cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
         cu = list(cu)
-        if cu == []:
+        if not len(cu):
             return 0
 
         value = cu[0]
@@ -265,6 +265,16 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                  "This is the last batch of data" % (last_time_searched,
                                                                      self.config['stop_after_sec']))
                 more_data_coming = False
+
+            # Check if the collection has grown beyond the burn threshold
+            max_size_gb = self.config.get('burn_data_if_collection_exceeds_gb', float('inf'))
+            if max_size_gb != float('inf'):
+                coll_size_gb = self.input_database.command("collstats", self.run_doc['name'])['size'] / 1e9
+                if coll_size_gb > max_size_gb:
+                    self.log.critical("Untriggered collection is %0.2f GB large, but you limited it to %0.2f GB. "
+                                      "ALL DATA from this collection will now be DELETED!!!" % (coll_size_gb,
+                                                                                                max_size_gb))
+                    self.input_database.drop_collection(self.run_doc['name'])
 
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,

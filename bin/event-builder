@@ -87,7 +87,8 @@ def main():
         else:
             # Override MongoDB settings
             mongo_settings_override = {}
-            for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode'):
+            for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode',
+                            'burn_data_if_collection_exceeds_gb'):
                 argval = getattr(args, argname)
                 if argval is not None:
                     mongo_settings_override[argname] = argval
@@ -201,11 +202,16 @@ def get_command_line_arguments():
                         help="Logging level to use, e.g. DEBUG")
     parser.add_argument('--batch_window', type=float,
                         help='Length of time range (in sec, float) to get pulse data for in each iteration.')
+
     parser.add_argument('--secret_mode', action='store_true',
                         help="Never write anything to the runs db. Use only for testing!")
     parser.add_argument('--stop_after_sec', type=float, default=float('inf'),
                         help="Stop the trigger after this many seconds of data have been read. "
                              "Won't stop in the middle of a batch. Use only for testing!")
+    parser.add_argument('--burn_data_if_collection_exceeds_gb', type=float, default=float('inf'),
+                        help="If the collection exceeds this storage space, REMOVES ALL DATA in the collection! "
+                             "Use only when triggering live, but trigger is not able to keep up, yet you still want "
+                             "some data.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
     connection_group.add_argument('--host', default='gw', type=str,
