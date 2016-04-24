@@ -278,7 +278,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     # drop the entire collection, including the indexes, and then recreate the collection
                     # and rebuild the indexes"
                     self.input_database.drop_collection(self.run_doc['name'])
-                    self.input_database.create_index(self.sort_key, background=True)
+                    self.input_collection = self.input_database.get_collection(self.run_doc['name'])
+                    self.input_collection.create_index(self.sort_key, background=True)
 
                     # Jump last_time_searched to just before next pulse which is inserted
                     # Without this we waste precious moments wading through dead time
