@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+4.9.1 (2016-04-25)
+------------------
+
+* Neural net uses correct QEs
+* Small changes for event builder
+* Split S2 afterpulse models so independent for XENON100 and XENON1T
+
+------------------
 4.9.0 (2016-04-18)
 ------------------
 
