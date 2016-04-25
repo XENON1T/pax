@@ -133,8 +133,10 @@ class PatternFitter(object):
 
         gofs = self._compute_gof_base(index_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
 
+        # The below code is for diagnostic plots only
         if plot:
             plt.figure()
+            plt.set_cmap('viridis')
             # Make the linspaces of coordinates along each dimension
             # Remember the grid indices are
             q = []
@@ -151,9 +153,17 @@ class PatternFitter(object):
                 else:
                     plt.ylim((dimstart, dimstop))
 
-            q.append(gofs.T / np.nanmin(gofs))
-            plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
-            plt.colorbar(label='Goodness of fit / minimum')
+            if statistic == 'likelihood_poisson':
+                # because ln(a/b) = ln(a) - ln(b), also different ranges
+                q.append(gofs.T - np.nanmin(gofs))
+                plt.pcolormesh(*q, vmin=1, vmax=100, alpha=0.9)
+                plt.colorbar(label=r'$L - L_0$')
+            else:
+                q.append(gofs.T / np.nanmin(gofs))
+                plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
+                plt.colorbar(label='Goodness-of-fit / minimum')
+            plt.xlabel('x [cm]')
+            plt.ylabel('y [cm]')
 
         return gofs, lowest_indices
 
@@ -200,8 +210,14 @@ class PatternFitter(object):
             result = ne.evaluate("(ao + where(ao > 1, 1, ao) - {ae})**2 /"
                                  "({ae} + square_syst_errors + 1)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'chi2':
-            result = ne.evaluate("(ao + {ae})**2 /"
-                                 "({ae} + square_syst_errors".format(ae='fractions_expected * total_observed'))
+            result = ne.evaluate("(ao - {ae})**2 /"
+                                 "({ae} + square_syst_errors)".format(ae='fractions_expected * total_observed'))
+        elif statistic == 'likelihood_poisson':
+            # Simple Poisson likelihood
+            # Clip areas to range [0.0001, +inf), because of log(0)
+            areas_expected_clip = np.clip(fractions_expected * total_observed, 0.0001, float('inf'))
+            # Actually compute -2ln(L) so the same interval computation can be used later
+            result = ne.evaluate("-2*(ao * log({ae}) - {ae})".format(ae='areas_expected_clip'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
@@ -252,27 +268,38 @@ class PatternFitter(object):
                 half_length = int(len(cl_trace)//2)
                 cl_segment = np.array(cl_trace[:half_length][0])
 
-                cl_distances = {'0': [], '1': []}
-                for point in cl_segment:
-                    for dim in range(n_dim):
-                        point[dim] = self._index_to_coordinate(lowest_indices[dim] + point[dim], dim)
-                        cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
+                # Extract the x values and y values seperately, also convert to the TPC coordinate system
+                x_values = np.array([self._index_to_coordinate(lowest_indices[0] + x, 0) for x in cl_segment[:,0]])
+                y_values = np.array([self._index_to_coordinate(lowest_indices[1] + y, 1) for y in cl_segment[:,1]])
 
-                # Calculate the error tuple for this CL
-                ct.dx = np.mean(cl_distances['0'])
-                ct.dy = np.mean(cl_distances['1'])
+                # Calculate the confidence tuple for this CL
+                ct.x0 = np.nanmin(x_values)
+                ct.y0 = np.nanmin(y_values)
+                ct.dx = abs(np.nanmax(x_values) - np.nanmin(x_values))
+                ct.dy = abs(np.nanmax(y_values) - np.nanmin(y_values))
+
+                # Does the contour touch the edge of the TPC
+                if np.isnan(x_values).any() or np.isnan(y_values).any():
+                    ct.at_edge = True
+
                 confidence_tuples.append(ct)
 
                 # The contour points, only for plotting
-                cl_segments.append(cl_segment)
+                if plot:
+                    contour_points = np.array([x_values, y_values]).T
+                    # Take out point if x or y is nan
+                    contour_points = [p for p in contour_points if not np.isnan(p).any()]
+                    cl_segments.append(contour_points)
 
-        if plot:
+        if plot and n_dim == 2:
             plt.scatter(*[[r] for r in result], marker='*', s=20, color='orange', label='Grid minimum')
             for i, contour in enumerate(cl_segments):
+                if len(contour) == 0:
+                    continue
                 color = lambda x: 'w' if x % 2 == 0 else 'r'
                 p = plt.Polygon(contour, fill=False, color=color(i), label=str(cls[i]))
                 plt.gca().add_artist(p)
-            # plt.savefig("plot_%.2f_%.2f.png" % (result[0], result[1]), dpi=300)
+            # plt.savefig("plot_%.2f_%.2f.pdf" % (result[0], result[1]), dpi=150)
 
         return result, gofs[min_index], confidence_tuples
 
