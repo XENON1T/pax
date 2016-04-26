@@ -1,6 +1,6 @@
 import numpy as np
 import numba
-from pax.trigger import TriggerPlugin, h5py_append
+from pax.trigger import TriggerPlugin
 from pax.datastructure import TriggerSignal
 from pax.dsputils import adc_to_pe
 
@@ -33,30 +33,6 @@ class FindSignals(TriggerPlugin):
         self.gain_conversion_factors = np.array([adc_to_pe(self.trigger.pax_config['DEFAULT'], ch)
                                                  for ch in range(n_channels - 1)] +
                                                 [1])
-
-        # Create the dark monitoring datasets
-        f = self.trigger.dark_monitor_data_file
-        self.lone_pulses_dataset = f.create_dataset('lone_pulses',
-                                                    shape=(0, n_channels),
-                                                    maxshape=(None, n_channels),
-                                                    dtype=np.int,
-                                                    compression="gzip")
-        self.lone_pulses_dataset.attrs['save_interval'] = self.config['dark_rate_save_interval']
-
-        self.all_pulses_dataset = f.create_dataset('all_pulses',
-                                                   shape=(0, n_channels),
-                                                   maxshape=(None, n_channels),
-                                                   dtype=np.int,
-                                                   compression="gzip")
-        self.all_pulses_dataset.attrs['save_interval'] = self.config['dark_rate_save_interval']
-
-        self.coincidence_rate_dataset = f.create_dataset('coincidence_tally',
-                                                         shape=(0, n_channels, n_channels),
-                                                         maxshape=(None, n_channels, n_channels),
-                                                         dtype=np.int,
-                                                         compression="gzip")
-        self.coincidence_rate_dataset.attrs['save_interval'] = (self.config['dark_rate_save_interval'] *
-                                                                self.config['dark_monitor_full_save_every'])
 
         # We must keep track of the next time to save the dark rate between batches, since a batch usually does not
         # end exactly at a save time.
@@ -114,13 +90,12 @@ class FindSignals(TriggerPlugin):
         data.signals = signals
 
     def save_dark_monitor_data(self, last_time=False):
-
         # Save the PMT dark rate
         self.log.debug("Saving pulse rate: %d pulses (of which %d lone pulses)" % (
             self.all_pulses_tally.sum(), self.lone_pulses_tally.sum()))
-        h5py_append(self.all_pulses_dataset, self.all_pulses_tally)
+        self.trigger.save_monitor_data('count_of_all_pulses', self.all_pulses_tally)
         self.all_pulses_tally *= 0
-        h5py_append(self.lone_pulses_dataset, self.lone_pulses_tally)
+        self.trigger.save_monitor_data('count_of_lone_pulses', self.lone_pulses_tally)
         self.lone_pulses_tally *= 0
 
         self.dark_monitor_saves += 1
@@ -128,7 +103,7 @@ class FindSignals(TriggerPlugin):
         if last_time or self.dark_monitor_saves == self.config['dark_monitor_full_save_every']:
             # Save the full coincidence rate
             self.log.debug("Saving coincidence tally matrix, total %d" % self.coincidence_tally.sum())
-            h5py_append(self.coincidence_rate_dataset, self.coincidence_tally)
+            self.trigger.save_monitor_data('count_of_2pmt_coincidences', self.coincidence_tally)
             self.dark_monitor_saves = 0
             self.coincidence_tally *= 0
 
@@ -180,7 +155,9 @@ def _signal_finder(times, signal_separation,
         pmt = _time.pmt
         area = _time.area * gain_conversion_factors[pmt]
 
-        if t >= next_save_time:
+        # Save the dark rate. Notice it's WHILE t >= next_save_time, which ensures we save a lot of zeroes when there is
+        # a large gap in the data. Let's hope nobody tries to pass t = float('inf')...
+        while t >= next_save_time:
             yield SAVE_DARK_MONITOR_DATA
             next_save_time += dark_rate_save_interval
 

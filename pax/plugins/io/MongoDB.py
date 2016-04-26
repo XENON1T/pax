@@ -72,9 +72,9 @@ class MongoDBReader:
                                                  monary=True)
 
         self.log.debug("Grabbing collection %s" % self.input_info['collection'])
-        self.input_collection = mm.get_database(
-            database_name=self.input_info['database'],
-            uri=self.input_info['location']).get_collection(self.input_info['collection'])
+        self.input_database = mm.get_database(database_name=self.input_info['database'],
+                                              uri=self.input_info['location'])
+        self.input_collection = self.input_database.get_collection(self.input_info['collection'])
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
         self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
@@ -92,7 +92,7 @@ class MongoDBReader:
 
         This is useful for example checking if a run has ended.
         """
-        self.log.debug("Updating run doc")
+        self.log.debug("Retrieving run doc")
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
         self.data_taking_ended = 'end' in self.run_doc
 
@@ -121,14 +121,24 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Load a few more config settings
         self.detector = self.config['detector']
-        self.search_window = self.config['search_window']
+        self.batch_window = self.config['batch_window']
 
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
         self.log.info("Starting event builder")
 
-        self.trigger = trigger.Trigger(pax_config=self.processor.config)
+        # Initialize the trigger
+        # For now, make a collection in trigger_monitor on the same eb as the untriggered collection
+        if not self.secret_mode:
+            self.uri_for_monitor = self.input_info['location'].replace('untriggered', 'trigger_monitor')
+            trig_mon_db = self.processor.mongo_manager.get_database('trigger_monitor', uri=self.uri_for_monitor)
+            trig_mon_coll = trig_mon_db.get_collection(self.run_doc['name'])
+        else:
+            trig_mon_coll = None
+            self.uri_for_monitor = 'nowhere, because secret mode was used'
+        self.trigger = trigger.Trigger(pax_config=self.processor.config,
+                                       trigger_monitor_collection=trig_mon_coll)
 
     def get_last_pulse_time(self):
         """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
@@ -136,7 +146,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         """
         cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
         cu = list(cu)
-        if cu == []:
+        if not len(cu):
             return 0
 
         value = cu[0]
@@ -167,10 +177,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(last_pulse_time)))
 
-            # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
-            last_time_to_search = last_pulse_time + self.search_window
+            # Add 1 batch window margin (in case the pulse is long, or another pulse started sooner but ends later)
+            last_time_to_search = last_pulse_time + self.batch_window
 
         while more_data_coming:
+
+            # What is the next time to search?
+            next_time_to_search = last_time_searched
+            if next_time_to_search != 0:
+                next_time_to_search += self.batch_window * self.config['skip_ahead']
 
             if not self.data_taking_ended:
                 # Update the run document, so we know if the run ended.
@@ -180,43 +195,52 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_pulse_time = self.get_last_pulse_time()
                 if self.data_taking_ended:
                     # Data taking just ended, we can define the time we should stop searching.
-                    last_time_to_search = last_pulse_time + self.search_window
+                    last_time_to_search = last_pulse_time + self.batch_window
+                    self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_pulse_time))
                 else:
-                    # Make sure we only query data that is at least one search window away from the last pulse time,
+                    # Make sure we only query data that is at least one batch window away from the last pulse time,
                     # to avoid querying near the ragged edge (where readers are inserting asynchronously).
-                    # Also make sure we only query once a full search window of such safe data is available (to avoid
-                    # mini-queries). So if search_window = 60 sec, we'll wait for 2 mins of data before our first query.
-                    if last_pulse_time - 2 * self.search_window < last_time_searched:
+                    # Also make sure we only query once a full batch window of such safe data is available (to avoid
+                    # mini-queries). So if batch_window = 60 sec, we'll wait for 2 mins of data before our first query.
+                    if last_pulse_time - 2 * self.batch_window < next_time_to_search:
                         self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
                         time.sleep(5)
 
-            # Query for pulse start & stop times within a large search window
-            self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
+            # Query for pulse start & stop times within a large batch window
+            self.log.info("Searching for pulses after %s", pax_to_human_time(next_time_to_search))
+            query = {self.start_key: {'$gt': self._to_mt(next_time_to_search),
+                                      '$lt': self._to_mt(next_time_to_search + self.batch_window)}}
 
-            query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
-                                      '$lt': self._to_mt(last_time_searched + self.search_window)}}
+            # Record advancement of the batch window
+            # We've ensured above that a full batch window is always queried, even in live mode.
+            last_time_searched = next_time_to_search + self.batch_window
 
             if self.use_monary:
-                if self.config['can_get_area']:
-                    times, modules, channels, areas = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel', 'integral'],
-                        types=['int64', 'int32', 'int32', 'float64'],
-                        **self.mongo_find_options
-                    )
+                get_area = self.config['can_get_area']
+                results = self.do_monary_query(
+                    query=query,
+                    fields=[self.start_key, 'module', 'channel'] + (['integral'] if get_area else []),
+                    types=['int64', 'int32', 'int32'] + (['float64'] if get_area else []),
+                )
+                self.log.debug("Query results have arrived")
+                if get_area:
+                    times, modules, channels, areas = results
                 else:
-                    times, modules, channels = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel'],
-                        types=['int64', 'int32', 'int32'],
-                        **self.mongo_find_options
-                    )
+                    times, modules, channels = results
                     areas = np.zeros(len(times), dtype=np.float64)
+
+                # Sort ourselves, to spare mongo the trouble
+                sort_order = np.argsort(times)
+                times = times[sort_order]
+                modules = modules[sort_order]
+                channels = channels[sort_order]
+
+                # Convert times to pax times
                 times = times * self.sample_duration
 
             else:
                 time_docs = list(self.input_collection.find(query,
-                                                            projection=[self.start_key],
+                                                            projection={self.start_key: 1, '_id': 0},
                                                             **self.mongo_find_options))
                 # Convert response from list of dictionaries to numpy arrays
                 # Pulse times must be converted to pax time units (ns)
@@ -224,13 +248,13 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 channels = np.zeros(len(time_docs), dtype=np.int32)
                 modules = np.zeros(len(time_docs), dtype=np.int32)
                 areas = np.zeros(len(time_docs), dtype=np.int32)
-                can_get_area = self.config['can_get_area']
+                # can_get_area = self.config['can_get_area']
                 for i, doc in enumerate(time_docs):
                     times[i] = self._from_mt(doc[self.start_key])
-                    channels[i] = doc['channel']
-                    modules[i] = doc['module']
-                    if can_get_area:
-                        areas[i] = doc['area']
+                    # channels[i] = doc['channel']
+                    # modules[i] = doc['module']
+                    # if can_get_area:
+                    #     areas[i] = doc['area']
 
             if len(times):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
@@ -239,14 +263,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             else:
                 self.log.info("No pulse data found.")
 
-            # Record advancement of the search window
-            # We've ensured above that a full search window is always queried, even in live mode.
-            last_time_searched += self.search_window
-
+            # Check if more data is coming
             more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
             if not more_data_coming:
                 self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
                     pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
+
+            # Check if we've passed the user-specified stop (if so configured)
+            if last_time_searched > self.config.get('stop_after_sec', float('inf')) * units.s:
+                self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
+                                 "This is the last batch of data" % (last_time_searched,
+                                                                     self.config['stop_after_sec']))
+                more_data_coming = False
 
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,
@@ -255,12 +283,34 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                          modules=modules,
                                          areas=areas,
                                          last_data=not more_data_coming):
-                self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
                 yield EventProxy(event_number=next_event_number, data=data)
                 next_event_number += 1
 
             # Trigger stopped giving event ranges; if more data is coming,
             # we'll stay in loop and get more data for the trigger.
+
+            # Check if the collection has grown beyond the burn threshold
+            max_size_gb = self.config.get('burn_data_if_collection_exceeds_gb', float('inf'))
+            if max_size_gb != float('inf'):
+                try:
+                    coll_size_gb = self.input_database.command("collstats", self.run_doc['name'])['size'] / 1e9
+                except Exception as e:
+                    self.log.info("Could not get collection size: %s" % e)
+                    coll_size_gb = 0
+                if coll_size_gb > max_size_gb:
+                    self.log.critical("Untriggered collection is %0.2f GB large, but you limited it to %0.2f GB. "
+                                      "ALL DATA from this collection will now be DELETED!!!" % (coll_size_gb,
+                                                                                                max_size_gb))
+
+                    # Jump last_time_searched to before end of current data
+                    # Without this we waste precious moments wading through dead time
+                    last_time_searched = self.get_last_pulse_time()
+
+                    # Deleting the data with .remove({}) is way to slow currently, so we have just drop the collection
+                    # if we call createIndex again, it will hang... maybe find some way to cancel the earlier index?
+                    self.input_database.drop_collection(self.run_doc['name'])
+                    self.input_collection = self.input_database.get_collection(self.run_doc['name'])
+                    self.log.info("Deletion complete.")
 
         # All went well - print out status information
         # Get the end of run info from the trigger, and add the 'trigger.' prefix
@@ -269,6 +319,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'
+        end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
 
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},

@@ -209,6 +209,7 @@ class PlotBase(plugin.OutputPlugin):
             ax = plt.gca()
 
         self.log.debug("Drawing %d trigger signals" % len(event.trigger_signals))
+        self.log.debug(str(event.trigger_signals['left_time'] / units.s))
 
         for s in event.trigger_signals:
             x = s['left_time'] / units.us

@@ -50,6 +50,8 @@ class InputFromFolder(plugin.InputPlugin):
                 raise ValueError("InputFromFolder: No %s files found in input directory %s!" % (self.file_extension,
                                                                                                 input_name))
             for fn in file_names:
+                if 'trigger_monitor_data.' in fn:
+                    continue
                 if 'temp.' in fn:
                     self.log.warning("Temporary raw data file found in directory: this data is still being built "
                                      "or has crashed while building!")
