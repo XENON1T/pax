@@ -900,6 +900,10 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
             peak.n_contributing_channels = np.sum(does_channel_contribute)
+            # We need to fill in peak.n_saturated_per_channel to make the plotting work
+            # I'm not actually going to check for saturation here, the values in this field will always be 0
+            peak.n_saturated_per_channel = np.zeros(len(peak.area_per_channel),
+                                                    dtype=peak.n_saturated_per_channel.dtype)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(

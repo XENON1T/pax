@@ -26,8 +26,16 @@ class ConfidenceTuple(StrictModel):
     Stores the information of a confidence level of a reconstructed position
     """
     level = float('nan')
+    x0 = float('nan')
+    y0 = float('nan')
     dx = float('nan')
     dy = float('nan')
+
+    at_edge = False
+
+    @property
+    def failed(self):
+        return np.isnan(self.x0) or np.isnan(self.y0) or np.isnan(self.dx) or np.isnan(self.dy)
 
 
 class ReconstructedPosition(StrictModel):
