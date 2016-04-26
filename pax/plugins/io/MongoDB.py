@@ -182,6 +182,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         while more_data_coming:
 
+            # What is the next time to search?
+            next_time_to_search = last_time_searched + self.batch_window * self.config['skip_ahead']
+
             if not self.data_taking_ended:
                 # Update the run document, so we know if the run ended.
                 # This must happen before querying for more data, to avoid a race condition where the run ends
@@ -191,37 +194,45 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 if self.data_taking_ended:
                     # Data taking just ended, we can define the time we should stop searching.
                     last_time_to_search = last_pulse_time + self.batch_window
+                    self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_pulse_time))
                 else:
                     # Make sure we only query data that is at least one batch window away from the last pulse time,
                     # to avoid querying near the ragged edge (where readers are inserting asynchronously).
                     # Also make sure we only query once a full batch window of such safe data is available (to avoid
                     # mini-queries). So if batch_window = 60 sec, we'll wait for 2 mins of data before our first query.
-                    if last_pulse_time - 2 * self.batch_window < last_time_searched:
+                    if last_pulse_time - 2 * self.batch_window < next_time_to_search:
                         self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
                         time.sleep(5)
 
             # Query for pulse start & stop times within a large batch window
-            self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
+            self.log.info("Searching for pulses after %s", pax_to_human_time(next_time_to_search))
+            query = {self.start_key: {'$gt': self._to_mt(next_time_to_search),
+                                      '$lt': self._to_mt(next_time_to_search + self.batch_window)}}
 
-            query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
-                                      '$lt': self._to_mt(last_time_searched + self.batch_window)}}
+            # Record advancement of the batch window
+            # We've ensured above that a full batch window is always queried, even in live mode.
+            last_time_searched += next_time_to_search + self.batch_window
 
             if self.use_monary:
-                if self.config['can_get_area']:
-                    times, modules, channels, areas = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel', 'integral'],
-                        types=['int64', 'int32', 'int32', 'float64'],
-                        **self.mongo_find_options
-                    )
+                get_area = self.config['can_get_area']
+                results = self.do_monary_query(
+                    query=query,
+                    fields=[self.start_key, 'module', 'channel', 'integral'] + (['area'] if get_area else []),
+                    types=['int64', 'int32', 'int32'] + (['float64'] if get_area else []),
+                )
+                if get_area:
+                    times, modules, channels, areas = results
                 else:
-                    times, modules, channels = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel'],
-                        types=['int64', 'int32', 'int32'],
-                        **self.mongo_find_options
-                    )
+                    times, modules, channels = results
                     areas = np.zeros(len(times), dtype=np.float64)
+
+                # Sort ourselves, to spare mongo the trouble
+                sort_order = np.argsort(times)
+                times = times[sort_order]
+                modules = modules[sort_order]
+                channels = channels[sort_order]
+
+                # Convert times to pax times
                 times = times * self.sample_duration
 
             else:
@@ -249,10 +260,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             else:
                 self.log.info("No pulse data found.")
 
-            # Record advancement of the batch window
-            # We've ensured above that a full batch window is always queried, even in live mode.
-            last_time_searched += self.batch_window
-
             # Check if more data is coming
             more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
             if not more_data_coming:
@@ -266,31 +273,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                                      self.config['stop_after_sec']))
                 more_data_coming = False
 
-            # Check if the collection has grown beyond the burn threshold
-            max_size_gb = self.config.get('burn_data_if_collection_exceeds_gb', float('inf'))
-            if max_size_gb != float('inf'):
-                coll_size_gb = self.input_database.command("collstats", self.run_doc['name'])['size'] / 1e9
-                if coll_size_gb > max_size_gb:
-                    self.log.critical("Untriggered collection is %0.2f GB large, but you limited it to %0.2f GB. "
-                                      "ALL DATA from this collection will now be DELETED!!!" % (coll_size_gb,
-                                                                                                max_size_gb))
-                    # From the Mongo docs: "To remove all documents from a collection, it may be more efficient to
-                    # drop the entire collection, including the indexes, and then recreate the collection
-                    # and rebuild the indexes"
-                    self.input_database.drop_collection(self.run_doc['name'])
-                    self.input_collection = self.input_database.get_collection(self.run_doc['name'])
-                    self.input_collection.create_index(self.sort_key, background=True)
-
-                    # Jump last_time_searched to just before next pulse which is inserted
-                    # Without this we waste precious moments wading through dead time
-                    while True:
-                        last_pulse_time = self.get_last_pulse_time()
-                        if last_pulse_time != 0:
-                            break
-                        self.log.info("Sleeping one second, waiting for DAQ to insert a new pulse after the deletion")
-                        time.sleep(1)
-                    self.last_time_searched = last_pulse_time - self.batch_window
-
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,
                                          start_times=times,
@@ -303,6 +285,29 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             # Trigger stopped giving event ranges; if more data is coming,
             # we'll stay in loop and get more data for the trigger.
+
+            # Check if the collection has grown beyond the burn threshold
+            max_size_gb = self.config.get('burn_data_if_collection_exceeds_gb', float('inf'))
+            if max_size_gb != float('inf'):
+                try:
+                    coll_size_gb = self.input_database.command("collstats", self.run_doc['name'])['size'] / 1e9
+                except Exception as e:
+                    self.log.info("Could not get collection size: %s" % e)
+                    coll_size_gb = 0
+                if coll_size_gb > max_size_gb:
+                    self.log.critical("Untriggered collection is %0.2f GB large, but you limited it to %0.2f GB. "
+                                      "ALL DATA from this collection will now be DELETED!!!" % (coll_size_gb,
+                                                                                                max_size_gb))
+
+                    # Jump last_time_searched to before end of current data
+                    # Without this we waste precious moments wading through dead time
+                    last_time_searched = self.get_last_pulse_time()
+
+                    # Deleting the data with .remove({}) is way to slow currently, so we have just drop the collection
+                    # if we call createIndex again, it will hang... maybe find some way to cancel the earlier index?
+                    self.input_database.drop_collection(self.run_doc['name'])
+                    self.input_collection = self.input_database.get_collection(self.run_doc['name'])
+                    self.log.info("Deletion complete.")
 
         # All went well - print out status information
         # Get the end of run info from the trigger, and add the 'trigger.' prefix
