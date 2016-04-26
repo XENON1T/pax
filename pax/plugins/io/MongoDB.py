@@ -217,7 +217,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 get_area = self.config['can_get_area']
                 results = self.do_monary_query(
                     query=query,
-                    fields=[self.start_key, 'module', 'channel', 'integral'] + (['area'] if get_area else []),
+                    fields=[self.start_key, 'module', 'channel'] + (['integral'] if get_area else []),
                     types=['int64', 'int32', 'int32'] + (['float64'] if get_area else []),
                 )
                 if get_area:
