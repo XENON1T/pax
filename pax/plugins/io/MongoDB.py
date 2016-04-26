@@ -222,6 +222,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     fields=[self.start_key, 'module', 'channel'] + (['integral'] if get_area else []),
                     types=['int64', 'int32', 'int32'] + (['float64'] if get_area else []),
                 )
+                self.log.debug("Query results have arrived")
                 if get_area:
                     times, modules, channels, areas = results
                 else:
@@ -239,7 +240,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             else:
                 time_docs = list(self.input_collection.find(query,
-                                                            projection=[self.start_key],
+                                                            projection={self.start_key: 1, '_id': 0},
                                                             **self.mongo_find_options))
                 # Convert response from list of dictionaries to numpy arrays
                 # Pulse times must be converted to pax time units (ns)
@@ -247,13 +248,13 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 channels = np.zeros(len(time_docs), dtype=np.int32)
                 modules = np.zeros(len(time_docs), dtype=np.int32)
                 areas = np.zeros(len(time_docs), dtype=np.int32)
-                can_get_area = self.config['can_get_area']
+                # can_get_area = self.config['can_get_area']
                 for i, doc in enumerate(time_docs):
                     times[i] = self._from_mt(doc[self.start_key])
-                    channels[i] = doc['channel']
-                    modules[i] = doc['module']
-                    if can_get_area:
-                        areas[i] = doc['area']
+                    # channels[i] = doc['channel']
+                    # modules[i] = doc['module']
+                    # if can_get_area:
+                    #     areas[i] = doc['area']
 
             if len(times):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
