@@ -211,7 +211,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             # Record advancement of the batch window
             # We've ensured above that a full batch window is always queried, even in live mode.
-            last_time_searched += next_time_to_search + self.batch_window
+            last_time_searched = next_time_to_search + self.batch_window
 
             if self.use_monary:
                 get_area = self.config['can_get_area']
