@@ -185,7 +185,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             # What is the next time to search?
             next_time_to_search = last_time_searched
             if next_time_to_search != 0:
-                next_time_to_search = self.batch_window * self.config['skip_ahead']
+                next_time_to_search += self.batch_window * self.config['skip_ahead']
 
             if not self.data_taking_ended:
                 # Update the run document, so we know if the run ended.
