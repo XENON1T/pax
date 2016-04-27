@@ -210,7 +210,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                        uri=self.input_info['location'],
                                                        monary=True)
                     pymongo_client = self.cm.get_client(database_name=self.input_info['database'],
-                                                        uri=self.input_info['location'],)
+                                                        uri=self.input_info['location'],
+                                                        connect=False)
                     start = next_time_to_search + batch_i * self.batch_window
                     stop = start + self.batch_window
                     self.log.info("Submitting query for batch %d, time range [%s, %s)" % (
@@ -393,7 +394,7 @@ class ClientMaker:
         self.config = config
         self.log = logging.getLogger('Mongo client maker')
 
-    def get_client(self, database_name=None, uri=None, monary=False):
+    def get_client(self, database_name=None, uri=None, monary=False, **kwargs):
         """Get a Mongoclient. Returns Mongo database object.
         If you provide a mongodb connection string uri, we will insert user & password into it,
         otherwise one will be built from the configuration settings.
@@ -425,11 +426,11 @@ class ClientMaker:
         if monary:
             # Monary clients are not cached
             self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
-            return Monary(uri)
+            return Monary(uri, **kwargs)
 
         else:
             self.log.debug("Connecting to Mongo using uri %s" % uri)
-            client = pymongo.MongoClient(uri)
+            client = pymongo.MongoClient(uri, **kwargs)
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
             self.log.debug("Succesfully pinged client")
             return client
