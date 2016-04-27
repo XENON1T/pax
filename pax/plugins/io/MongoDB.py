@@ -104,7 +104,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Load a few more config settings
         self.detector = self.config['detector']
         self.batch_window = self.config['batch_window']
-        self.max_query_workers = self.config.get('max_query_workers')
+        self.max_query_workers = self.config.get('max_query_workers', 30)
         self.last_pulse_time = 0  # time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
         # It would have been nicer to know the last stop time, but pulses are sorted by start time...
 
@@ -208,7 +208,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                         batch_i, pax_to_human_time(start), pax_to_human_time(stop)))
                     future = executor.submit(get_pulses,
                                              monary_client=monary_client,
-                                             run_name=self.run_doc['run_name'],
+                                             run_name=self.run_doc['name'],
                                              start_mongo_time=self._to_mt(start),
                                              stop_mongo_time=self._to_mt(stop),
                                              get_area=self.config['can_get_area'])
@@ -236,11 +236,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     times = times * self.sample_duration
 
                     if len(times):
-                        self.log.info("Batch %d: acquired pulses in range [%s, %s]",
+                        self.log.info("Batch %d: acquired pulses in range [%s, %s]" % (
+                                      i,
                                       pax_to_human_time(times[0]),
-                                      pax_to_human_time(times[-1]))
+                                      pax_to_human_time(times[-1])))
                     else:
-                        self.log.info("Batch %d: No pulse data found.")
+                        self.log.info("Batch %d: No pulse data found." % i)
 
                     # Send the new data to the trigger, which will build events from it
                     for data in self.trigger.run(last_time_searched=next_time_to_search + (i + 1) * self.batch_window,
@@ -354,12 +355,12 @@ def pax_to_human_time(num):
 
 
 def get_pulses(monary_client, run_name, start_mongo_time, stop_mongo_time, get_area=False):
-    results = monary_client.query(database='untriggered',
-                                  collection=run_name,
-                                  query={'time': {'$get': start_mongo_time,
-                                                  '$lt': stop_mongo_time}},
-                                  fields=['time', 'module', 'channel'] + (['integral'] if get_area else []),
-                                  types=['int64', 'int32', 'int32'] + (['area'] if get_area else []),
+    results = monary_client.query('untriggered',
+                                  run_name,
+                                  {'time': {'$gte': start_mongo_time,
+                                            '$lt': stop_mongo_time}},
+                                  ['time', 'module', 'channel'] + (['integral'] if get_area else []),
+                                  ['int64', 'int32', 'int32'] + (['area'] if get_area else []),
                                   select_fields=True)
     monary_client.close()
 
