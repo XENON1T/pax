@@ -7,8 +7,11 @@ must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
 import time
+import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 
+from monary import Monary
 import numpy as np
 import snappy
 import pymongo
@@ -38,8 +41,9 @@ class MongoDBReader:
         self.ignored_channels = []
 
         # Connect to the runs db
-        mm = self.processor.mongo_manager
-        self.runs = mm.get_database('run').get_collection('runs_new')
+        self.cm = ClientMaker()
+        self.run_client = self.cm.get_client('run')
+        self.runs = self.run_client['run'].get_collection('runs_new')
         self.refresh_run_doc()
 
         # Connect to the input database
@@ -61,9 +65,11 @@ class MongoDBReader:
             self.input_info['database'] = 'untriggered'
 
         self.log.debug("Grabbing collection %s" % self.input_info['collection'])
-        self.input_database = mm.get_database(database_name=self.input_info['database'],
-                                              uri=self.input_info['location'])
-        self.input_collection = self.input_database.get_collection(self.input_info['collection'])
+        self.input_client = self.cm.get_client(database_name=self.input_info['database'],
+                                               uri=self.input_info['location'])
+        self.input_collection = self.input_client[self.input_info['database']].get_collection(
+            self.input_info['collection'])
+
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
         self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
@@ -117,7 +123,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # For now, make a collection in trigger_monitor on the same eb as the untriggered collection
         if not self.secret_mode:
             self.uri_for_monitor = self.input_info['location'].replace('untriggered', 'trigger_monitor')
-            trig_mon_db = self.processor.mongo_manager.get_database('trigger_monitor', uri=self.uri_for_monitor)
+            trig_mon_db = self.cm.get_client('trigger_monitor',
+                                             uri=self.uri_for_monitor)['trigger_monitor']
             trig_mon_coll = trig_mon_db.get_collection(self.run_doc['name'])
         else:
             trig_mon_coll = None
@@ -199,15 +206,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # Start the queries in separate processes
                 futures = []
                 for batch_i in range(batches_to_search):
-                    monary_client = self.processor.mongo_manager.get_database(database_name=self.input_info['database'],
-                                                                              uri=self.input_info['location'],
-                                                                              monary=True)
+                    monary_client = self.cm.get_client(database_name=self.input_info['database'],
+                                                       uri=self.input_info['location'],
+                                                       monary=True)
+                    pymongo_client = self.cm.get_client(database_name=self.input_info['database'],
+                                                        uri=self.input_info['location'],)
                     start = next_time_to_search + batch_i * self.batch_window
                     stop = start + self.batch_window
                     self.log.info("Submitting query for batch %d, time range [%s, %s)" % (
                         batch_i, pax_to_human_time(start), pax_to_human_time(stop)))
                     future = executor.submit(get_pulses,
                                              monary_client=monary_client,
+                                             pymongo_client=pymongo_client,
                                              run_name=self.run_doc['name'],
                                              start_mongo_time=self._to_mt(start),
                                              stop_mongo_time=self._to_mt(stop),
@@ -325,28 +335,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         return event
 
 
-class MongoDBWriteTriggered(plugin.OutputPlugin):
-    """Write raw or processed events to MongoDB
-
-    These events are already triggered.  We first convert event class to a dict,
-    then pymongo converts that to BSON.  We have to convert the numpy arrays to
-    bytes because otherwise we get type errors since pymongo doesn't know about
-    numpy.
-    """
-
-    def startup(self):
-        mm = self.processor.mongo_manager
-        # TODO: grab output_name from somewhere???
-        self.output_collection = mm.get_database('output').get_collection(self.config['output_name'])
-
-    def write_event(self, event_class):
-        # Convert event class to pymongo-able dictionary, then insert into the database
-        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
-        self.output_collection.write(event_dict)
-
-
 def pax_to_human_time(num):
-    """num is in 1s of ns"""
+    """Converts a pax time to a human-readable representation"""
     for x in ['ns', 'us', 'ms', 's', 'ks', 'Ms', 'G', 'T']:
         if num < 1000.0:
             return "%3.3f %s" % (num, x)
@@ -354,15 +344,29 @@ def pax_to_human_time(num):
     return "%3.1f %s" % (num, 's')
 
 
-def get_pulses(monary_client, run_name, start_mongo_time, stop_mongo_time, get_area=False):
+def get_pulses(monary_client, pymongo_client, run_name,
+               start_mongo_time, stop_mongo_time,
+               get_area=False, delete_data=False):
+    """Query pulses between start_mongo_time and stop_mongo_time (in mongo time units)
+    Uses, then closes the monary_client to do the query.
+    Uses, then closes the pymongo_client to remove the data after the query if delete_data=True
+
+    Returns four numpy arrays: times, modules, channels, areas.
+    Areas consists of zeros unless get_area = True, in which we also fetch 'integral' from MongoDB.
+    """
+    query = {'time': {'$gte': start_mongo_time,
+                      '$lt': stop_mongo_time}}
     results = monary_client.query('untriggered',
                                   run_name,
-                                  {'time': {'$gte': start_mongo_time,
-                                            '$lt': stop_mongo_time}},
+                                  query,
                                   ['time', 'module', 'channel'] + (['integral'] if get_area else []),
                                   ['int64', 'int32', 'int32'] + (['area'] if get_area else []),
                                   select_fields=True)
     monary_client.close()
+
+    if delete_data:
+        pymongo_client.get_collection(run_name).delete_many(query)
+    pymongo_client.close()
 
     if get_area:
         times, modules, channels, areas = results
@@ -376,3 +380,55 @@ def get_pulses(monary_client, run_name, start_mongo_time, stop_mongo_time, get_a
     modules = modules[sort_order]
     channels = channels[sort_order]
     return times, modules, channels, areas
+
+
+class ClientMaker:
+    """Helper class to create MongoDB clients
+
+    On __init__, you can specify options that will be used to format mongodb uri's,
+    in particular user, password, host and port.
+    """
+    def __init__(self, config):
+        self.config = config
+        self.log = logging.getLogger('Mongo client maker')
+
+    def get_client(self, database_name=None, uri=None, monary=False):
+        """Get a Mongoclient. Returns Mongo database object.
+        If you provide a mongodb connection string uri, we will insert user & password into it,
+        otherwise one will be built from the configuration settings.
+        If database_name=None, will connect to the default database of the uri. database=something
+        overrides event the uri's specification of a database.
+        """
+        # Pattern of URI's we expect from database (without user & pass)
+        uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
+
+        # Format of URI we should eventually send to mongo
+        full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
+
+        if uri is None:
+            # Construct the entire URI from default settings
+            uri = full_uri_format.format(database=database_name, **self.config)
+        else:
+            m = re.match(uri_pattern, uri)
+            if m:
+                # URI was provided, but without user & pass.
+                host, port, _database_name = m.groups()
+                if database_name is None:
+                    database_name = _database_name
+                uri = full_uri_format.format(database=database_name, host=host, port=port,
+                                             user=self.config['user'], password=self.config['password'])
+            else:
+                # Some other URI was provided. Maybe works...
+                self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
+
+        if monary:
+            # Monary clients are not cached
+            self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
+            return Monary(uri)
+
+        else:
+            self.log.debug("Connecting to Mongo using uri %s" % uri)
+            client = pymongo.MongoClient(uri)
+            client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
+            self.log.debug("Succesfully pinged client")
+            return client

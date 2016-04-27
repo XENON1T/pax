@@ -22,7 +22,7 @@ from six.moves import input
 import pymongo
 
 from pax import core, units
-from pax.MongoManager import MongoManager
+from pax.plugins.io.MongoDB import ClientMaker
 
 
 def get_hostname():
@@ -43,7 +43,7 @@ def main():
             print("\nFine, Exiting event builder...\n")
             exit()
 
-    mongo_manager = MongoManager(config={k: eval('args.%s' % k, dict(args=args))
+    mongo_manager = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                          for k in ('user', 'password', 'host', 'port')})
     runs = mongo_manager.get_database('run').get_collection('runs_new')
 
@@ -89,7 +89,7 @@ def main():
             # Override MongoDB settings
             mongo_settings_override = {}
             for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode',
-                            'burn_data_if_collection_exceeds_gb', 'skip_ahead'):
+                            'delete_data', 'skip_ahead'):
                 argval = getattr(args, argname)
                 if argval is not None:
                     mongo_settings_override[argname] = argval
@@ -206,16 +206,15 @@ def get_command_line_arguments():
 
     parser.add_argument('--secret_mode', action='store_true',
                         help="Never write anything to the runs db. Use only for testing!")
+    parser.add_argument('--delete_data', action='store_true',
+                        help="Delete data from the untriggered collection while triggering on it. "
+                             "Essential for running the trigger live for a substantial time.")
     parser.add_argument('--stop_after_sec', type=float, default=float('inf'),
                         help="Stop the trigger after this many seconds of data have been read. "
                              "Won't stop in the middle of a batch. Use only for testing!")
     parser.add_argument('--skip_ahead', type=int, default=0,
                         help="After triggering a batch of data, skip ahead this number of batches without triggering."
-                             "Use only if you are desperate for performance increase!")
-    parser.add_argument('--burn_data_if_collection_exceeds_gb', type=float, default=float('inf'),
-                        help="If the collection exceeds this storage space, REMOVES ALL DATA in the collection! "
-                             "Use only when triggering live, but trigger is not able to keep up, yet you still want "
-                             "some data.")
+                             "Use only for dealing quickly with runs that have overflown to disk.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
     connection_group.add_argument('--host', default='gw', type=str,

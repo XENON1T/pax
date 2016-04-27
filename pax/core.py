@@ -143,17 +143,6 @@ class Processor:
                 self.log.warning('You did not specify any configuration for the waveform simulator!\n' +
                                  'If you attempt to load the waveform simulator, pax will crash!')
 
-        # Start the MongoDB manager
-        if 'mongo_manager' in pc:
-            # Nice, somebody already set up a mongo manager for us!
-            self.mongo_manager = pc['mongo_manager']
-        elif 'MongoDB' in self.config:
-            from pax.MongoManager import MongoManager
-            self.mongo_manager = MongoManager(self.config['MongoDB'])
-        elif not just_testing:
-            self.log.warning("You didn't specify any configuration for MongoDB!\n"
-                             "if you attempt to use any of the MongoDB plugins, pax will crash!")
-
         # Get the list of plugins from the configuration
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
         plugin_names = {}
@@ -624,5 +613,3 @@ class Processor:
             self.log.debug("Shutting down %s..." % ap.name)
             ap.shutdown()
             ap.has_shut_down = True
-        if hasattr(self, 'mongo_manager'):
-            self.mongo_manager.shutdown()
