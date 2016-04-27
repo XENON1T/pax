@@ -43,9 +43,9 @@ def main():
             print("\nFine, Exiting event builder...\n")
             exit()
 
-    mongo_manager = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
-                                         for k in ('user', 'password', 'host', 'port')})
-    runs = mongo_manager.get_database('run').get_collection('runs_new')
+    clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
+                                      for k in ('user', 'password', 'host', 'port')})
+    runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
 
     # Build the query used to search for runs
     status_name = 'trigger.status'

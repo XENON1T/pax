@@ -41,7 +41,7 @@ class MongoDBReader:
         self.ignored_channels = []
 
         # Connect to the runs db
-        self.cm = ClientMaker()
+        self.cm = ClientMaker(self.processor.config['MongoDB'])
         self.run_client = self.cm.get_client('run')
         self.runs = self.run_client['run'].get_collection('runs_new')
         self.refresh_run_doc()
@@ -110,7 +110,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Load a few more config settings
         self.detector = self.config['detector']
         self.batch_window = self.config['batch_window']
-        self.max_query_workers = self.config.get('max_query_workers', 30)
+        self.max_query_workers = self.config.get('max_query_workers', 10)
         self.last_pulse_time = 0  # time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
         # It would have been nicer to know the last stop time, but pulses are sorted by start time...
 
@@ -221,7 +221,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                              run_name=self.run_doc['name'],
                                              start_mongo_time=self._to_mt(start),
                                              stop_mongo_time=self._to_mt(stop),
-                                             get_area=self.config['can_get_area'])
+                                             get_area=self.config['can_get_area'],
+                                             delete_data=self.config['delete_data'])
                     futures.append(future)
 
                 # Record advancement of the batch window
