@@ -7,7 +7,11 @@ must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
 import time
+import logging
+import re
+from concurrent.futures import ThreadPoolExecutor
 
+from monary import Monary
 import numpy as np
 import snappy
 import pymongo
@@ -17,7 +21,6 @@ from pax import plugin, trigger, units
 
 
 class MongoDBReader:
-    use_monary = False
 
     def startup(self):
         self.sample_duration = self.config['sample_duration']
@@ -38,16 +41,10 @@ class MongoDBReader:
         self.ignored_channels = []
 
         # Connect to the runs db
-        mm = self.processor.mongo_manager
-        self.runs = mm.get_database('run').get_collection('runs_new')
+        self.cm = ClientMaker(self.processor.config['MongoDB'])
+        self.run_client = self.cm.get_client('run')
+        self.runs = self.run_client['run'].get_collection('runs_new')
         self.refresh_run_doc()
-
-        # Can we use monary?
-        # Only relevant for readuntriggered... code stink
-        if self.use_monary:
-            if not mm.monary_enabled:
-                self.log.error("Use of monary was requested, but monary did not import. Reverting to pymongo.")
-                self.use_monary = False
 
         # Connect to the input database
         # Input database connection settings are specified in the run doc
@@ -66,25 +63,16 @@ class MongoDBReader:
             self.log.warning("According to the runs db, the data resides in the 'admin' database... "
                              "Guessing 'untriggered' instead.")
             self.input_info['database'] = 'untriggered'
-        if self.use_monary:
-            self.monary_client = mm.get_database(database_name=self.input_info['database'],
-                                                 uri=self.input_info['location'],
-                                                 monary=True)
 
         self.log.debug("Grabbing collection %s" % self.input_info['collection'])
-        self.input_collection = mm.get_database(
-            database_name=self.input_info['database'],
-            uri=self.input_info['location']).get_collection(self.input_info['collection'])
+        self.input_client = self.cm.get_client(database_name=self.input_info['database'],
+                                               uri=self.input_info['location'])
+        self.input_collection = self.input_client[self.input_info['database']].get_collection(
+            self.input_info['collection'])
+
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
         self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
-
-    def do_monary_query(self, query, fields, types, **kwargs):
-        if not self.use_monary:
-            raise RuntimeError("use_monary is false, monary query isn't going to happen")
-        database = self.input_info['database']
-        collection = self.input_info['collection']
-        return self.monary_client.query(database, collection, query, fields, types, **kwargs)
 
     def refresh_run_doc(self):
         """Update the internal run doc within this class
@@ -92,7 +80,7 @@ class MongoDBReader:
 
         This is useful for example checking if a run has ended.
         """
-        self.log.debug("Updating run doc")
+        self.log.debug("Retrieving run doc")
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
         self.data_taking_ended = 'end' in self.run_doc
 
@@ -121,146 +109,161 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Load a few more config settings
         self.detector = self.config['detector']
-        self.search_window = self.config['search_window']
+        self.batch_window = self.config['batch_window']
+        self.max_query_workers = self.config.get('max_query_workers', 10)
+        self.last_pulse_time = 0  # time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
+        # It would have been nicer to know the last stop time, but pulses are sorted by start time...
 
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
         self.log.info("Starting event builder")
 
-        self.trigger = trigger.Trigger(pax_config=self.processor.config)
-
-    def get_last_pulse_time(self):
-        """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
-        It would have been nicer to know the last stop time, but pulses are sorted by start time.
-        """
-        cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
-        cu = list(cu)
-        if cu == []:
-            return 0
-
-        value = cu[0]
-        if self.stop_key in value:
-            value = value[self.stop_key]
+        # Initialize the trigger
+        # For now, make a collection in trigger_monitor on the same eb as the untriggered collection
+        if not self.secret_mode:
+            self.uri_for_monitor = self.input_info['location'].replace('untriggered', 'trigger_monitor')
+            trig_mon_db = self.cm.get_client('trigger_monitor',
+                                             uri=self.uri_for_monitor)['trigger_monitor']
+            trig_mon_coll = trig_mon_db.get_collection(self.run_doc['name'])
         else:
-            value = value[self.start_key]
+            trig_mon_coll = None
+            self.uri_for_monitor = 'nowhere, because secret mode was used'
+        self.trigger = trigger.Trigger(pax_config=self.processor.config,
+                                       trigger_monitor_collection=trig_mon_coll)
 
-        return self._from_mt(value)
-
-    def get_events(self):
+    def refresh_run_info(self):
+        """Refreshes the run doc and last pulse time information.
+        """
         self.refresh_run_doc()
 
-        last_time_searched = 0  # ns
-        last_time_to_search = None
-        next_event_number = 0
-
-        more_data_coming = True
+        # Get the last pulse time
+        cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
+        cu = list(cu)
+        if not len(cu):
+            # No pulses in collection yet?
+            last_pulse_time = 0
+        else:
+            last_pulse_time = cu[0][self.start_key]
+        self.last_pulse_time = self._from_mt(last_pulse_time)
 
         if self.data_taking_ended:
-            last_pulse_time = self.get_last_pulse_time()
-            self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_pulse_time))
+            self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(self.last_pulse_time))
             # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
             end_of_run_t = (self.run_doc['end'].timestamp() -
                             self.run_doc['start'].timestamp()) * units.s
-            if end_of_run_t > last_pulse_time + 60 * units.s:
+            if end_of_run_t > self.last_pulse_time + 60 * units.s:
                 self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
-                                                         pax_to_human_time(last_pulse_time)))
+                                                         pax_to_human_time(self.last_pulse_time)))
 
-            # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
-            last_time_to_search = last_pulse_time + self.search_window
+    def get_events(self):
+        self.refresh_run_info()
+        last_time_searched = 0  # ns
+        next_event_number = 0
+        more_data_coming = True
+
+        # Do we know when to stop searching?
+        if self.data_taking_ended:
+            # Add 1 batch window margin (in case the pulse is long, or another pulse started sooner but ends later)
+            end_of_search_for_this_run = self.last_pulse_time + self.batch_window
+        else:
+            end_of_search_for_this_run = float('inf')
 
         while more_data_coming:
-
+            # Refresh the run info, to find out if data taking has ended
             if not self.data_taking_ended:
-                # Update the run document, so we know if the run ended.
-                # This must happen before querying for more data, to avoid a race condition where the run ends
-                # while the query is in process.
-                self.refresh_run_doc()
-                last_pulse_time = self.get_last_pulse_time()
-                if self.data_taking_ended:
-                    # Data taking just ended, we can define the time we should stop searching.
-                    last_time_to_search = last_pulse_time + self.search_window
-                else:
-                    # Make sure we only query data that is at least one search window away from the last pulse time,
-                    # to avoid querying near the ragged edge (where readers are inserting asynchronously).
-                    # Also make sure we only query once a full search window of such safe data is available (to avoid
-                    # mini-queries). So if search_window = 60 sec, we'll wait for 2 mins of data before our first query.
-                    if last_pulse_time - 2 * self.search_window < last_time_searched:
-                        self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
-                        time.sleep(5)
+                self.refresh_run_info()
 
-            # Query for pulse start & stop times within a large search window
-            self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
-
-            query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
-                                      '$lt': self._to_mt(last_time_searched + self.search_window)}}
-
-            if self.use_monary:
-                if self.config['can_get_area']:
-                    times, modules, channels, areas = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel', 'integral'],
-                        types=['int64', 'int32', 'int32', 'float64'],
-                        **self.mongo_find_options
-                    )
-                else:
-                    times, modules, channels = self.do_monary_query(
-                        query=query,
-                        fields=[self.start_key, 'module', 'channel'],
-                        types=['int64', 'int32', 'int32'],
-                        **self.mongo_find_options
-                    )
-                    areas = np.zeros(len(times), dtype=np.float64)
-                times = times * self.sample_duration
-
+            # What is the last time we need to search?
+            if self.data_taking_ended:
+                end_of_search_for_this_run = self.last_pulse_time + self.batch_window
             else:
-                time_docs = list(self.input_collection.find(query,
-                                                            projection=[self.start_key],
-                                                            **self.mongo_find_options))
-                # Convert response from list of dictionaries to numpy arrays
-                # Pulse times must be converted to pax time units (ns)
-                times = np.zeros(len(time_docs), dtype=np.int64)
-                channels = np.zeros(len(time_docs), dtype=np.int32)
-                modules = np.zeros(len(time_docs), dtype=np.int32)
-                areas = np.zeros(len(time_docs), dtype=np.int32)
-                can_get_area = self.config['can_get_area']
-                for i, doc in enumerate(time_docs):
-                    times[i] = self._from_mt(doc[self.start_key])
-                    channels[i] = doc['channel']
-                    modules[i] = doc['module']
-                    if can_get_area:
-                        areas[i] = doc['area']
+                end_of_search_for_this_run = float('inf')
 
-            if len(times):
-                self.log.info("Acquired pulse time data in range [%s, %s]",
-                              pax_to_human_time(times[0]),
-                              pax_to_human_time(times[-1]))
+            # What is the earliest time we still need to search?
+            next_time_to_search = last_time_searched
+            if next_time_to_search != 0:
+                next_time_to_search += self.batch_window * self.config['skip_ahead']
+
+            # How many batch windows can we search now?
+            if self.data_taking_ended:
+                batches_to_search = int((end_of_search_for_this_run - next_time_to_search) / self.batch_window) + 1
             else:
-                self.log.info("No pulse data found.")
+                # Make sure we only query data that is at least one batch window away from the last pulse time,
+                # to avoid querying near the ragged edge (where readers are inserting asynchronously).
+                # Also make sure we only query once a full batch window of such safe data is available (to avoid
+                # mini-queries). So if batch_window = 60 sec, we'll wait for 2 mins of data before our first query.
+                batches_to_search = int((self.last_pulse_time - next_time_to_search) / self.batch_window) - 1
+                if batches_to_search < 1:
+                    self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
+                    time.sleep(5)
+                    continue
+            batches_to_search = min(batches_to_search, self.max_query_workers)
 
-            # Record advancement of the search window
-            # We've ensured above that a full search window is always queried, even in live mode.
-            last_time_searched += self.search_window
+            with ThreadPoolExecutor(max_workers=batches_to_search) as executor:
 
-            more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
-            if not more_data_coming:
-                self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
-                    pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
+                # Start the queries in separate processes
+                futures = []
+                for batch_i in range(batches_to_search):
+                    monary_client = self.cm.get_client(database_name=self.input_info['database'],
+                                                       uri=self.input_info['location'],
+                                                       monary=True)
+                    pymongo_client = self.cm.get_client(database_name=self.input_info['database'],
+                                                        uri=self.input_info['location'],
+                                                        connect=False)
+                    start = next_time_to_search + batch_i * self.batch_window
+                    stop = start + self.batch_window
+                    self.log.info("Submitting query for batch %d, time range [%s, %s)" % (
+                        batch_i, pax_to_human_time(start), pax_to_human_time(stop)))
+                    future = executor.submit(get_pulses,
+                                             monary_client=monary_client,
+                                             pymongo_client=pymongo_client,
+                                             run_name=self.run_doc['name'],
+                                             start_mongo_time=self._to_mt(start),
+                                             stop_mongo_time=self._to_mt(stop),
+                                             get_area=self.config['can_get_area'],
+                                             delete_data=self.config['delete_data'])
+                    futures.append(future)
 
-            # Send the new data to the trigger
-            for data in self.trigger.run(last_time_searched=last_time_searched,
-                                         start_times=times,
-                                         channels=channels,
-                                         modules=modules,
-                                         areas=areas,
-                                         last_data=not more_data_coming):
-                self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
-                yield EventProxy(event_number=next_event_number, data=data)
-                next_event_number += 1
+                # Record advancement of the batch window
+                last_time_searched = next_time_to_search + batches_to_search * self.batch_window
 
-            # Trigger stopped giving event ranges; if more data is coming,
-            # we'll stay in loop and get more data for the trigger.
+                # Check if more data is coming
+                more_data_coming = (not self.data_taking_ended) or (last_time_searched < end_of_search_for_this_run)
+                if not more_data_coming:
+                    self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
+                        pax_to_human_time(last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
+
+                # Check if we've passed the user-specified stop (if so configured)
+                if last_time_searched > self.config.get('stop_after_sec', float('inf')) * units.s:
+                    self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
+                                     "This is the last batch of data" % (last_time_searched,
+                                                                         self.config['stop_after_sec']))
+                    more_data_coming = False
+
+                # Retrieve results from the queries, then build events (which must happen serially).
+                for i, future in enumerate(futures):
+                    times, modules, channels, areas = future.result()
+                    times = times * self.sample_duration
+
+                    if len(times):
+                        self.log.info("Batch %d: acquired pulses in range [%s, %s]" % (
+                                      i,
+                                      pax_to_human_time(times[0]),
+                                      pax_to_human_time(times[-1])))
+                    else:
+                        self.log.info("Batch %d: No pulse data found." % i)
+
+                    # Send the new data to the trigger, which will build events from it
+                    for data in self.trigger.run(last_time_searched=next_time_to_search + (i + 1) * self.batch_window,
+                                                 start_times=times,
+                                                 channels=channels,
+                                                 modules=modules,
+                                                 areas=areas,
+                                                 last_data=(not more_data_coming and i == len(futures) - 1)):
+                        yield EventProxy(event_number=next_event_number, data=data)
+                        next_event_number += 1
 
         # All went well - print out status information
         # Get the end of run info from the trigger, and add the 'trigger.' prefix
@@ -269,6 +272,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'
+        end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
 
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
@@ -333,30 +337,100 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         return event
 
 
-class MongoDBWriteTriggered(plugin.OutputPlugin):
-    """Write raw or processed events to MongoDB
-
-    These events are already triggered.  We first convert event class to a dict,
-    then pymongo converts that to BSON.  We have to convert the numpy arrays to
-    bytes because otherwise we get type errors since pymongo doesn't know about
-    numpy.
-    """
-
-    def startup(self):
-        mm = self.processor.mongo_manager
-        # TODO: grab output_name from somewhere???
-        self.output_collection = mm.get_database('output').get_collection(self.config['output_name'])
-
-    def write_event(self, event_class):
-        # Convert event class to pymongo-able dictionary, then insert into the database
-        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
-        self.output_collection.write(event_dict)
-
-
 def pax_to_human_time(num):
-    """num is in 1s of ns"""
+    """Converts a pax time to a human-readable representation"""
     for x in ['ns', 'us', 'ms', 's', 'ks', 'Ms', 'G', 'T']:
         if num < 1000.0:
             return "%3.3f %s" % (num, x)
         num /= 1000.0
     return "%3.1f %s" % (num, 's')
+
+
+def get_pulses(monary_client, pymongo_client, run_name,
+               start_mongo_time, stop_mongo_time,
+               get_area=False, delete_data=False):
+    """Query pulses between start_mongo_time and stop_mongo_time (in mongo time units)
+    Uses, then closes the monary_client to do the query.
+    Uses, then closes the pymongo_client to remove the data after the query if delete_data=True
+
+    Returns four numpy arrays: times, modules, channels, areas.
+    Areas consists of zeros unless get_area = True, in which we also fetch 'integral' from MongoDB.
+    """
+    query = {'time': {'$gte': start_mongo_time,
+                      '$lt': stop_mongo_time}}
+    results = monary_client.query('untriggered',
+                                  run_name,
+                                  query,
+                                  ['time', 'module', 'channel'] + (['integral'] if get_area else []),
+                                  ['int64', 'int32', 'int32'] + (['area'] if get_area else []),
+                                  select_fields=True)
+    monary_client.close()
+
+    if delete_data:
+        pymongo_client.get_collection(run_name).delete_many(query)
+    pymongo_client.close()
+
+    if get_area:
+        times, modules, channels, areas = results
+    else:
+        times, modules, channels = results
+        areas = np.zeros(len(times), dtype=np.float64)
+
+    # Sort ourselves, to spare Mongo the trouble
+    sort_order = np.argsort(times)
+    times = times[sort_order]
+    modules = modules[sort_order]
+    channels = channels[sort_order]
+    return times, modules, channels, areas
+
+
+class ClientMaker:
+    """Helper class to create MongoDB clients
+
+    On __init__, you can specify options that will be used to format mongodb uri's,
+    in particular user, password, host and port.
+    """
+    def __init__(self, config):
+        self.config = config
+        self.log = logging.getLogger('Mongo client maker')
+
+    def get_client(self, database_name=None, uri=None, monary=False, **kwargs):
+        """Get a Mongoclient. Returns Mongo database object.
+        If you provide a mongodb connection string uri, we will insert user & password into it,
+        otherwise one will be built from the configuration settings.
+        If database_name=None, will connect to the default database of the uri. database=something
+        overrides event the uri's specification of a database.
+        """
+        # Pattern of URI's we expect from database (without user & pass)
+        uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
+
+        # Format of URI we should eventually send to mongo
+        full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
+
+        if uri is None:
+            # Construct the entire URI from default settings
+            uri = full_uri_format.format(database=database_name, **self.config)
+        else:
+            m = re.match(uri_pattern, uri)
+            if m:
+                # URI was provided, but without user & pass.
+                host, port, _database_name = m.groups()
+                if database_name is None:
+                    database_name = _database_name
+                uri = full_uri_format.format(database=database_name, host=host, port=port,
+                                             user=self.config['user'], password=self.config['password'])
+            else:
+                # Some other URI was provided. Maybe works...
+                self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
+
+        if monary:
+            # Monary clients are not cached
+            self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
+            return Monary(uri, **kwargs)
+
+        else:
+            self.log.debug("Connecting to Mongo using uri %s" % uri)
+            client = pymongo.MongoClient(uri, **kwargs)
+            client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
+            self.log.debug("Succesfully pinged client")
+            return client

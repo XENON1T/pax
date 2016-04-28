@@ -6,6 +6,7 @@ import numpy as np
 from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
 from pax.trigger_plugins.FindSignals import signal_finder
+from pax.trigger_plugins.SaveSignals import group_signals
 import tempfile
 
 
@@ -74,19 +75,36 @@ class TestSaveSignals(unittest.TestCase):
 
     def test_save_signals(self):
         """Tests the logic which figures out which signals belong with which event ranges."""
-        example_signals = np.zeros(10, dtype=TriggerSignal.get_dtype())
-        example_signals['left_time'] = np.arange(10)
 
-        from pax.trigger_plugins.SaveSignals import group_signals
-        sigind_buffer = np.zeros((100, 2), dtype=np.int)
-        is_in_event = np.zeros(len(example_signals), dtype=np.bool)
-        group_signals(signals=example_signals,
-                      event_ranges=np.array([[2, 4], [8, 50]], dtype=np.int),
-                      signal_indices_buffer=sigind_buffer,
-                      is_in_event=is_in_event)
+        def do_test(sig_times, event_ranges):
+            example_signals = np.zeros(len(sig_times), dtype=TriggerSignal.get_dtype())
+            example_signals['left_time'] = sig_times
 
+            sigind_buffer = np.zeros((100, 2), dtype=np.int)
+            is_in_event = np.zeros(len(example_signals), dtype=np.bool)
+            group_signals(signals=example_signals,
+                          event_ranges=np.array(event_ranges, dtype=np.int),
+                          signal_indices_buffer=sigind_buffer,
+                          is_in_event=is_in_event)
+
+            return sigind_buffer, is_in_event
+
+        sigind_buffer, is_in_event = do_test(sig_times=np.arange(10), event_ranges=[[2, 4], [8, 50]])
         self.assertEqual(sigind_buffer.tolist()[:3], [[2, 4], [8, 9], [0, 0]])
         self.assertEqual(is_in_event.tolist(), [False, False, True, True, True, False, False, False, True, True])
+
+        # Test adjacent events
+        sigind_buffer, is_in_event = do_test(sig_times=np.arange(10), event_ranges=[[0, 3], [4, 5]])
+        self.assertEqual(sigind_buffer.tolist()[:3], [[0, 3], [4, 5], [0, 0]])
+        self.assertEqual(is_in_event.tolist(), [True, True, True, True, True, True, False, False, False, False])
+
+        # Test single event
+        sigind_buffer, is_in_event = do_test(sig_times=np.arange(10), event_ranges=[[-5, 2]])
+        self.assertEqual(sigind_buffer.tolist()[:3], [[0, 2], [0, 0], [0, 0]])
+        self.assertEqual(is_in_event.tolist(), [True, True, True, False, False, False, False, False, False, False])
+
+        # Test error on event without signals
+        self.assertRaises(ValueError, do_test, sig_times=[0, 1, 10, 11], event_ranges=[[2, 3]])
 
 
 class TestGroupTriggers(unittest.TestCase):

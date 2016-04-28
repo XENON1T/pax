@@ -1,19 +1,9 @@
 import numba
 import numpy as np
-from pax.trigger import TriggerPlugin, h5py_append
-from pax.datastructure import TriggerSignal
+from pax.trigger import TriggerPlugin
 
 
 class SaveSignals(TriggerPlugin):
-
-    def startup(self):
-        if self.config['save_signals_outside_events']:
-            f = self.trigger.dark_monitor_data_file
-            self.outside_signals_dataset = f.create_dataset('signals_outside_events',
-                                                            shape=(0,),
-                                                            maxshape=(None,),
-                                                            dtype=TriggerSignal.get_dtype(),
-                                                            compression="gzip")
 
     def process(self, data):
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
@@ -30,12 +20,22 @@ class SaveSignals(TriggerPlugin):
                 signals_by_event.append(data.signals[sig_idx[event_i][0]:sig_idx[event_i][1] + 1])
             data.signals_by_event = signals_by_event
 
-        if self.config['save_signals_outside_events']:
-            outsigs = data.signals[True ^ is_in_event]
-            outsigs = outsigs[outsigs['n_pulses'] >= self.config['outside_signals_save_threshold']]
-            if len(outsigs):
-                self.log.debug("Storing %d signals outside events" % len(outsigs))
-                h5py_append(self.outside_signals_dataset, outsigs)
+        save_mode = self.config.get('save_signals')
+        if save_mode:
+            sigs = data.signals
+            if self.config.get('only_save_signals_outside_events'):
+                sigs = sigs[True ^ is_in_event]
+            if save_mode == 'full':
+                sigs = sigs[sigs['n_pulses'] >= self.config['signals_save_threshold']]
+                if len(sigs):
+                    self.log.debug("Storing %d signals in trigger data" % len(sigs))
+                    self.trigger.save_monitor_data('trigger_signals', sigs)
+            elif save_mode == '2d_histogram':
+                hist, _, _ = np.histogram2d(np.log10(sigs['n_pulses']),
+                                            np.log10(sigs['time_rms'] + 1),
+                                            bins=(np.linspace(0, 10, 100),
+                                                  np.linspace(0, 10, 100)))
+                self.trigger.save_monitor_data('trigger_signals_histogram', hist)
 
 
 @numba.jit(nopython=True)
@@ -51,6 +51,8 @@ def group_signals(signals, event_ranges, signal_indices_buffer, is_in_event):
     for signal_i, signal in enumerate(signals):
         if not in_event:
             if signal['left_time'] >= event_ranges[current_event, 0]:
+                if signal['left_time'] > event_ranges[current_event, 1]:
+                    raise ValueError("Error during signal grouping: event without signals??")
                 # Signal is the first in the current event
                 in_event = True
                 signals_start = signal_i

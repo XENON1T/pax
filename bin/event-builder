@@ -18,10 +18,11 @@ import datetime
 import socket
 import shutil
 
+from six.moves import input
 import pymongo
 
 from pax import core, units
-from pax.MongoManager import MongoManager
+from pax.plugins.io.MongoDB import ClientMaker
 
 
 def get_hostname():
@@ -32,11 +33,19 @@ def main():
     """Start running the event builder
     """
     args = get_command_line_arguments()
-    log = setup_logging(loglevel=args.log)
+    log = setup_logging(loglevel=args.log.upper())
 
-    mongo_manager = MongoManager(config={k: eval('args.%s' % k, dict(args=args))
-                                         for k in ('user', 'password', 'host', 'port')})
-    runs = mongo_manager.get_database('run').get_collection('runs_new')
+    if args.stop_after_sec < float('inf') and not args.secret_mode:
+        print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing"
+              "something out. However, you have not enabled secret mode and will be writing to official runs db.\n"
+              "Are you sure???" % args.stop_after_sec)
+        if input().lower() not in ('y', 'yes'):
+            print("\nFine, Exiting event builder...\n")
+            exit()
+
+    clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
+                                      for k in ('user', 'password', 'host', 'port')})
+    runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
 
     # Build the query used to search for runs
     status_name = 'trigger.status'
@@ -46,7 +55,7 @@ def main():
         run_query = {'number': args.run}
     else:
         run_query = {status_name: 'waiting_to_be_processed',
-                     'data.type' : 'untriggered'}
+                     'data.type': 'untriggered'}
     run_query['detector'] = args.detector
     log.info("Starting run search with query %s" % run_query)
 
@@ -79,12 +88,14 @@ def main():
         else:
             # Override MongoDB settings
             mongo_settings_override = {}
-            for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode'):
+            for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode',
+                            'delete_data', 'skip_ahead'):
                 argval = getattr(args, argname)
                 if argval is not None:
                     mongo_settings_override[argname] = argval
-            if args.search_window is not None:
-                mongo_settings_override['search_window'] = args.search_window * units.s
+            if args.batch_window is not None:
+                mongo_settings_override['batch_window'] = args.batch_window * units.s
+            mongo_settings_override['stop_after_sec'] = args.stop_after_sec
 
             # Override trigger settings
             #   First priority: command line args
@@ -102,9 +113,8 @@ def main():
                     if factor is not None:
                         argval = int(factor * argval)
                     trigger_settings_override[argname] = argval
-
-            trigger_settings_override['trigger_data_filename'] = os.path.join(data_info_entry['location'],
-                                                                              'trigger_data.hdf5')
+            trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
+                                                                                  'trigger_monitor_data.zip')
 
             log.info("Building events for %s", run_doc['name'])
             config_dict = {'DEFAULT': {'run_doc_id': run_doc['_id']},
@@ -191,10 +201,20 @@ def get_command_line_arguments():
                         help="Detector to build events for")
     parser.add_argument('--log', default='INFO',
                         help="Logging level to use, e.g. DEBUG")
-    parser.add_argument('--search_window', type=float,
+    parser.add_argument('--batch_window', type=float,
                         help='Length of time range (in sec, float) to get pulse data for in each iteration.')
+
     parser.add_argument('--secret_mode', action='store_true',
                         help="Never write anything to the runs db. Use only for testing!")
+    parser.add_argument('--delete_data', action='store_true',
+                        help="Delete data from the untriggered collection while triggering on it. "
+                             "Essential for running the trigger live for a substantial time.")
+    parser.add_argument('--stop_after_sec', type=float, default=float('inf'),
+                        help="Stop the trigger after this many seconds of data have been read. "
+                             "Won't stop in the middle of a batch. Use only for testing!")
+    parser.add_argument('--skip_ahead', type=int, default=0,
+                        help="After triggering a batch of data, skip ahead this number of batches without triggering."
+                             "Use only for dealing quickly with runs that have overflown to disk.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
     connection_group.add_argument('--host', default='gw', type=str,
