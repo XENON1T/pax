@@ -9,7 +9,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 import time
 import logging
 import re
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 
 from monary import Monary
 import numpy as np
@@ -201,24 +201,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     continue
             batches_to_search = min(batches_to_search, self.max_query_workers)
 
-            with ThreadPoolExecutor(max_workers=batches_to_search) as executor:
+            with ProcessPoolExecutor(max_workers=batches_to_search) as executor:
 
                 # Start the queries in separate processes
                 futures = []
                 for batch_i in range(batches_to_search):
-                    monary_client = self.cm.get_client(database_name=self.input_info['database'],
-                                                       uri=self.input_info['location'],
-                                                       monary=True)
-                    pymongo_client = self.cm.get_client(database_name=self.input_info['database'],
-                                                        uri=self.input_info['location'],
-                                                        connect=False)
                     start = next_time_to_search + batch_i * self.batch_window
                     stop = start + self.batch_window
                     self.log.info("Submitting query for batch %d, time range [%s, %s)" % (
                         batch_i, pax_to_human_time(start), pax_to_human_time(stop)))
                     future = executor.submit(get_pulses,
-                                             monary_client=monary_client,
-                                             pymongo_client=pymongo_client,
+                                             client_maker_config=self.cm.config,
+                                             input_info=self.input_info,
                                              run_name=self.run_doc['name'],
                                              start_mongo_time=self._to_mt(start),
                                              stop_mongo_time=self._to_mt(stop),
@@ -346,7 +340,7 @@ def pax_to_human_time(num):
     return "%3.1f %s" % (num, 's')
 
 
-def get_pulses(monary_client, pymongo_client, run_name,
+def get_pulses(client_maker_config, input_info, run_name,
                start_mongo_time, stop_mongo_time,
                get_area=False, delete_data=False):
     """Query pulses between start_mongo_time and stop_mongo_time (in mongo time units)
@@ -359,8 +353,12 @@ def get_pulses(monary_client, pymongo_client, run_name,
     query = {'time': {'$gte': start_mongo_time,
                       '$lt': stop_mongo_time}}
 
-    # Use monary's block query, since it does not require counting first.
-    # Let's use a pretty large limit to avoid going to mongo all the time.
+    client_maker = ClientMaker(client_maker_config)
+
+    monary_client = client_maker.get_client(database_name=input_info['database'],
+                                            uri=input_info['location'],
+                                            monary=True)
+
     results = list(monary_client.block_query(
          'untriggered',
          run_name,
@@ -388,15 +386,16 @@ def get_pulses(monary_client, pymongo_client, run_name,
         sort_order = np.argsort(times)
         times = times[sort_order]
 
+    if delete_data:
+        pymongo_client = client_maker.get_client(database_name=input_info['database'],
+                                                 uri=input_info['location'])
+        pymongo_client.get_collection(run_name).delete_many(query)
+        pymongo_client.close()
+
     modules = np.zeros(len(times), dtype=np.int32)
     channels = np.zeros(len(times), dtype=np.int32)
     areas = np.zeros(len(times), dtype=np.float64)
 
-    # Sort ourselves, to spare Mongo the trouble
-    sort_order = np.argsort(times)
-    times = times[sort_order]
-    modules = modules[sort_order]
-    channels = channels[sort_order]
     return times, modules, channels, areas
 
 
