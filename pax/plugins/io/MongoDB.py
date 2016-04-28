@@ -358,23 +358,39 @@ def get_pulses(monary_client, pymongo_client, run_name,
     """
     query = {'time': {'$gte': start_mongo_time,
                       '$lt': stop_mongo_time}}
-    results = monary_client.query('untriggered',
-                                  run_name,
-                                  query,
-                                  ['time', 'module', 'channel'] + (['integral'] if get_area else []),
-                                  ['int64', 'int32', 'int32'] + (['area'] if get_area else []),
-                                  select_fields=True)
-    monary_client.close()
 
-    if delete_data:
-        pymongo_client.get_collection(run_name).delete_many(query)
-    pymongo_client.close()
+    # Use monary's block query, since it does not require counting first.
+    # Let's use a pretty large limit to avoid going to mongo all the time.
+    results = list(monary_client.block_query(
+         'untriggered',
+         run_name,
+         query,
+         ['time'],    # , 'module', 'channel'] + (['integral'] if get_area else []),
+         ['int64'],    # , 'int32', 'int32'] + (['area'] if get_area else []),
+         block_size=int(1e7),
+         select_fields=True))
 
-    if get_area:
-        times, modules, channels, areas = results
+    if not len(results) or not len(results[0]):
+        times = np.zeros(0, dtype=np.int64)
     else:
-        times, modules, channels = results
-        areas = np.zeros(len(times), dtype=np.float64)
+        # Concatenate results from multiple blocks, in case multiple blocks were needed
+        results = [np.concatenate([results[i][j] for i in range(len(results))]) for j in range(len(results[0]))]
+        monary_client.close()
+
+        # if get_area:
+        #     times, modules, channels, areas = results
+        # else:
+        #     times, modules, channels = results
+        # Temp hack for speed, until we can update the index
+        times, = results
+
+        # Sort ourselves, to spare Mongo the trouble
+        sort_order = np.argsort(times)
+        times = times[sort_order]
+
+    modules = np.zeros(len(times), dtype=np.int32)
+    channels = np.zeros(len(times), dtype=np.int32)
+    areas = np.zeros(len(times), dtype=np.float64)
 
     # Sort ourselves, to spare Mongo the trouble
     sort_order = np.argsort(times)
