@@ -60,7 +60,7 @@ class TestPosRecTopPatternFit(unittest.TestCase):
         self.assertAlmostEqual(rp.x, x_truth, delta=0.3)
         self.assertAlmostEqual(rp.y, y_truth, delta=0.3)
         cts = rp.confidence_tuples
-        self.assertEqual(len(cts), 3)
+        self.assertEqual(len(cts), 2)
 
 if __name__ == '__main__':
     unittest.main()
