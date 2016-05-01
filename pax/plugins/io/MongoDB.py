@@ -31,14 +31,6 @@ class MongoDBReader:
         self.stop_key = self.config['stop_key']
         self.sort_key = ([(self.start_key, 1), (self.stop_key, 1)])
         self.mongo_find_options = {'sort': self.sort_key}
-        # Used to have 'cursor_type': pymongo.cursor.CursorType.EXHAUST here as well
-
-        # Load the digitizer channel -> PMT index mapping
-        self.detector = self.config['detector']
-        self.pmts = self.config['pmts']
-        self.pmt_mappings = {(x['digitizer']['module'],
-                              x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
-        self.ignored_channels = []
 
         # Connect to the runs db
         self.cm = ClientMaker(self.processor.config['MongoDB'])
@@ -48,8 +40,8 @@ class MongoDBReader:
 
         # Connect to the input database
         # Input database connection settings are specified in the run doc
-        # TODO: can username, host, password, settings different from standard db access info?
-        # Then we have to pass extra args to MongoManager
+        # TODO: can username, host, password, settings differer from run db access info? Let's hope not...
+        # If this case does occur, we have to pass extra args to the ClientMaker
         self.input_info = None
         for doc in self.run_doc['data']:
             if doc['type'] == 'untriggered':
@@ -69,10 +61,6 @@ class MongoDBReader:
                                                uri=self.input_info['location'])
         self.input_collection = self.input_client[self.input_info['database']].get_collection(
             self.input_info['collection'])
-
-        self.log.debug("Creating index in input collection")
-        self.input_collection.create_index(self.sort_key, background=True)
-        self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
 
     def refresh_run_doc(self):
         """Update the internal run doc within this class
@@ -110,7 +98,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Load a few more config settings
         self.detector = self.config['detector']
         self.batch_window = self.config['batch_window']
-        self.max_query_workers = self.config.get('max_query_workers', 10)
+        self.max_query_workers = self.config['max_query_workers']
         self.last_pulse_time = 0  # time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
         # It would have been nicer to know the last stop time, but pulses are sorted by start time...
 
@@ -190,20 +178,20 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             if self.data_taking_ended:
                 batches_to_search = int((end_of_search_for_this_run - next_time_to_search) / self.batch_window) + 1
             else:
-                # Make sure we only query data that is at least one batch window away from the last pulse time,
-                # to avoid querying near the ragged edge (where readers are inserting asynchronously).
+                # Make sure we only query data that is edge_safety_margin away from the last pulse time.
+                # This is because the readers are inserting the pulse data slightly asynchronously.
                 # Also make sure we only query once a full batch window of such safe data is available (to avoid
-                # mini-queries). So if batch_window = 60 sec, we'll wait for 2 mins of data before our first query.
-                batches_to_search = int((self.last_pulse_time - next_time_to_search) / self.batch_window) - 1
+                # mini-queries).
+                duration_of_searchable = self.last_pulse_time - self.config['edge_safety_margin'] - next_time_to_search
+                batches_to_search = int(duration_of_searchable / self.batch_window)
                 if batches_to_search < 1:
                     self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
                     time.sleep(5)
                     continue
             batches_to_search = min(batches_to_search, self.max_query_workers)
 
+            # Start new queries in separate processes
             with ProcessPoolExecutor(max_workers=batches_to_search) as executor:
-
-                # Start the queries in separate processes
                 futures = []
                 for batch_i in range(batches_to_search):
                     start = next_time_to_search + batch_i * self.batch_window
@@ -267,6 +255,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'
         end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
+        end_of_run_info['trigger.mongo_reader_config'] = {k: v for k, v in self.config
+                                                          if k != 'password' and
+                                                          k not in self.processor.config['DEFAULT']}
 
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
@@ -283,7 +274,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
 
     def startup(self):
         MongoDBReader.startup(self)
+        self.ignored_channels = []
         self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
+
+        # Load the digitizer channel -> PMT index mapping
+        self.detector = self.config['detector']
+        self.pmts = self.config['pmts']
+        self.pmt_mappings = {(x['digitizer']['module'],
+                              x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
     def transform_event(self, event_proxy):
         (t0, t1), trigger_signals = event_proxy.data  # ns
@@ -358,43 +356,47 @@ def get_pulses(client_maker_config, input_info, run_name,
     monary_client = client_maker.get_client(database_name=input_info['database'],
                                             uri=input_info['location'],
                                             monary=True)
-
-    results = list(monary_client.block_query(
-         'untriggered',
-         run_name,
-         query,
-         ['time'],    # , 'module', 'channel'] + (['integral'] if get_area else []),
-         ['int64'],    # , 'int32', 'int32'] + (['area'] if get_area else []),
-         block_size=int(1e7),
-         select_fields=True))
-
-    if not len(results) or not len(results[0]):
-        times = np.zeros(0, dtype=np.int64)
-    else:
-        # Concatenate results from multiple blocks, in case multiple blocks were needed
-        results = [np.concatenate([results[i][j] for i in range(len(results))]) for j in range(len(results[0]))]
-        monary_client.close()
-
-        # if get_area:
-        #     times, modules, channels, areas = results
-        # else:
-        #     times, modules, channels = results
-        # Temp hack for speed, until we can update the index
-        times, = results
-
-        # Sort ourselves, to spare Mongo the trouble
-        sort_order = np.argsort(times)
-        times = times[sort_order]
+    fields = ['time', 'module', 'channel'] + (['integral'] if get_area else [])
+    types = ['int64', 'int32', 'int32'] + (['area'] if get_area else [])
+    results = list(monary_client.block_query('untriggered', run_name, query, fields, types,
+                                             block_size=int(1e7),
+                                             select_fields=True))
+    monary_client.close()
 
     if delete_data:
         pymongo_client = client_maker.get_client(database_name=input_info['database'],
                                                  uri=input_info['location'])
-        pymongo_client.get_collection(run_name).delete_many(query)
+        pymongo_client['untriggered'].get_collection(run_name).delete_many(query)
         pymongo_client.close()
 
-    modules = np.zeros(len(times), dtype=np.int32)
-    channels = np.zeros(len(times), dtype=np.int32)
-    areas = np.zeros(len(times), dtype=np.float64)
+    if not len(results) or not len(results[0]):
+        times = np.zeros(0, dtype=np.int64)
+        modules = np.zeros(0, dtype=np.int32)
+        channels = np.zeros(0, dtype=np.int32)
+        areas = np.zeros(0, dtype=np.float64)
+
+    else:
+        # Concatenate results from multiple blocks, in case multiple blocks were needed
+        results = [np.concatenate([results[i][j]
+                                   for i in range(len(results))])
+                   for j in range(len(results[0]))]
+
+        if get_area:
+            times, modules, channels, areas = results
+        else:
+            times, modules, channels = results
+            areas = np.zeros(len(times), dtype=np.float64)
+
+        # Sort ourselves, to spare Mongo the trouble
+        sort_order = np.argsort(times)
+        times = times[sort_order]
+        modules = modules[sort_order]
+        channels = channels[sort_order]
+        areas = areas[sort_order]
+
+        # modules = np.zeros(len(times), dtype=np.int32)
+        # channels = np.zeros(len(times), dtype=np.int32)
+        # areas = np.zeros(len(times), dtype=np.float64)
 
     return times, modules, channels, areas
 

@@ -35,14 +35,18 @@ def main():
     args = get_command_line_arguments()
     log = setup_logging(loglevel=args.log.upper())
 
+    # Check for strange arugment combinations
     if args.stop_after_sec < float('inf') and not args.secret_mode:
-        print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing"
-              "something out. However, you have not enabled secret mode and will be writing to official runs db.\n"
-              "Are you sure???" % args.stop_after_sec)
+        print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing "
+              "something out. However, you have NOT enabled secret mode and will be writing to official runs db!\n"
+              "Are you sure??" % args.stop_after_sec)
         if input().lower() not in ('y', 'yes'):
             print("\nFine, Exiting event builder...\n")
             exit()
+    if args.secret_mode and not (args.run or args.run_name):
+        raise RuntimeError("Secret mode doesn't support wait-for-runs-mode (too lazy right now)")
 
+    # Connect to MongoDB
     clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                       for k in ('user', 'password', 'host', 'port')})
     runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
@@ -79,82 +83,89 @@ def main():
             data_info_entry = dict(location=os.path.join('.', run_doc['name']))
             
         if run_doc is None:
-            if args.impatient:
-                log.info("Too impatient to wait for data, exiting...")
+            if args.wait <= 0:
+                log.info("No runs to process: exiting.")
                 break
-            else:
-                log.info("No runs to process yet... waiting %d seconds", args.wait)
-                time.sleep(args.wait)
-        else:
-            # Override MongoDB settings
-            mongo_settings_override = {}
-            for argname in ('detector', 'user', 'password', 'host', 'port', 'secret_mode',
-                            'delete_data', 'skip_ahead'):
-                argval = getattr(args, argname)
-                if argval is not None:
-                    mongo_settings_override[argname] = argval
-            if args.batch_window is not None:
-                mongo_settings_override['batch_window'] = args.batch_window * units.s
-            mongo_settings_override['stop_after_sec'] = args.stop_after_sec
+            log.info("No runs to process yet... waiting %d seconds", args.wait)
+            time.sleep(args.wait)
+            continue
 
-            # Override trigger settings
-            #   First priority: command line args
-            #   Second priority: rundb settings (from run_doc['trigger']['config'])
-            #   Third priority: defaults from pax configuration (pax will take care of this)
-            trigger_settings_override = {}
-            if not args.ignore_rundb_trigger_settings:
-                trigger_settings_override.update(run_doc['trigger'].get('config', {}))
-            for argname, factor in (('left_extension', units.us),
-                                    ('right_extension', units.us),
-                                    ('signal_separation', units.us),
-                                    ('event_separation', units.us)):
-                argval = getattr(args, argname)
-                if argval is not None:
-                    if factor is not None:
-                        argval = int(factor * argval)
-                    trigger_settings_override[argname] = argval
-            trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
-                                                                                  'trigger_monitor_data.zip')
+        # Build configuration for pax. Settings priority:
+        #   First priority: command line args
+        #   Second priority: rundb settings (from run_doc['trigger']), from previous runs
+        #   Third priority: defaults from pax configuration (pax will take care of loading these)
+        # Unit conversion factors are applied to the command line args, but NOT to the rundb values!
+        # (to do that, we'd have to un-convert them when we later store the settings we actually used)
 
-            log.info("Building events for %s", run_doc['name'])
-            config_dict = {'DEFAULT': {'run_doc_id': run_doc['_id']},
-                           'pax': {'output_name': data_info_entry['location'],
-                                   'n_cpus': args.cpus},
-                           'BSON': {'fields_to_ignore': [],
-                                    'overwrite_output': True},
-                           'MongoDB': mongo_settings_override,
-                           'Trigger': trigger_settings_override}
+        # Load run doc settings + basic settings
+        # run_doc should not try to override something from 'pax', 'DEFAULT', etc.
+        config_dict = run_doc['trigger'].get('config_of_runmode', {})
+        config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id']},
+                            'pax': {'output_name': data_info_entry['location'],
+                                    'n_cpus': args.cpus},
+                            'BSON': {'fields_to_ignore': [],
+                                     'overwrite_output': True}})
 
-            if args.force_multiplicity_trigger is not None:
-                level = args.force_multiplicity_trigger
-                config_dict.setdefault('Trigger.DecideTriggers', {})
-                config_dict['Trigger.DecideTriggers']['trigger_probability'] = {
-                    '0': {str(level): 1},
-                    '1': {str(level): 1},
-                    '2': {str(level): 1}}
+        # Apply command-line override settings for MongoDB
+        mongo_settings_override = {}
+        for argname in ('detector', 'secret_mode',
+                        'host', 'port', 'user', 'password',
+                        'batch_window', 'delete_data', 'edge_safety_margin', 'skip_ahead', 'stop_after_sec'):
+            argval = getattr(args, argname)
+            if argval is None:
+                continue
+            if argname == 'edge_safety_margin':
+                 argval *= units.s
+            mongo_settings_override[argname] = argval
+        config_dict['MongoDB'] = config_dict.get('MongoDB', {}).update(mongo_settings_override)
 
-            try:
-                p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
-                                   config_paths=args.config_path,
-                                   config_dict=config_dict)
-                p.run()     # The run() method includes a call to shutdown()
+        # Apply command-line override settings for trigger
+        trigger_settings_override = {}
+        for argname, factor in (('left_extension', units.us),
+                                ('right_extension', units.us),
+                                ('signal_separation', units.us),
+                                ('event_separation', units.us)):
+            argval = getattr(args, argname)
+            if argval is not None:
+                if factor is not None:
+                    argval = int(factor * argval)
+                trigger_settings_override[argname] = argval
+        trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
+                                                                              'trigger_monitor_data.zip')
+        config_dict['Trigger'] = config_dict.get('Trigger', {}).update(trigger_settings_override)
 
-            # If a timeout occurred, set the status of this run to 'error'
-            # Add other exceptions as they come during commissioning
-            except pymongo.errors.ServerSelectionTimeoutError as e:
-                log.exception(e)
-                runs.update({'name': run_doc['name'], 'detector' : args.detector},
-                            {'$set': {status_name: 'error'}})
+        # Apply command-line override settings for trigger probability
+        if args.force_multiplicity_trigger is not None:
+            level = args.force_multiplicity_trigger
+            config_dict.setdefault('Trigger.DecideTriggers', {})
+            config_dict['Trigger.DecideTriggers']['trigger_probability'] = {
+                '0': {str(level): 1},
+                '1': {str(level): 1},
+                '2': {str(level): 1}}
 
-            # Copy the log file to the output dir, then clear it for the next run
-            shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
-            open('eventbuilder.log', mode='w').close()
+        log.info("Building events for %s", run_doc['name'])
+        try:
+            p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                               config_paths=args.config_path,
+                               config_dict=config_dict)
+            p.run()     # The run() method includes a call to shutdown()
 
-            if not args.secret_mode:
-                data_info_entry['status'] = 'verifying'
-                runs.update({'_id': run_doc['_id'],
-                             'data.host' : data_info_entry['host']},
-                            {'$set': {'data.$' : data_info_entry}})
+        # If a timeout occurred, set the status of this run to 'error'
+        # Add other exceptions as they come during commissioning
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            log.exception(e)
+            runs.update({'name': run_doc['name'], 'detector' : args.detector},
+                        {'$set': {status_name: 'error'}})
+
+        # Copy the log file to the output dir, then clear it for the next run
+        shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
+        open('eventbuilder.log', mode='w').close()
+
+        if not args.secret_mode:
+            data_info_entry['status'] = 'verifying'
+            runs.update({'_id': run_doc['_id'],
+                         'data.host': data_info_entry['host']},
+                        {'$set': {'data.$': data_info_entry}})
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
@@ -196,25 +207,16 @@ def get_command_line_arguments():
                         help="Path(s) of the configuration file(s) to use.")
 
     parser.add_argument('--cpus', default=1, nargs='?',
-                        help="Number of CPUs to use. Default is 1; can be 'all'.")
+                        help="Number of CPUs to use for event building. Default is 1; can be 'all'.")
     parser.add_argument('--detector', default='tpc', type=str,
                         help="Detector to build events for")
     parser.add_argument('--log', default='INFO',
                         help="Logging level to use, e.g. DEBUG")
-    parser.add_argument('--batch_window', type=float,
-                        help='Length of time range (in sec, float) to get pulse data for in each iteration.')
-
     parser.add_argument('--secret_mode', action='store_true',
                         help="Never write anything to the runs db. Use only for testing!")
-    parser.add_argument('--delete_data', action='store_true',
-                        help="Delete data from the untriggered collection while triggering on it. "
-                             "Essential for running the trigger live for a substantial time.")
-    parser.add_argument('--stop_after_sec', type=float, default=float('inf'),
-                        help="Stop the trigger after this many seconds of data have been read. "
-                             "Won't stop in the middle of a batch. Use only for testing!")
-    parser.add_argument('--skip_ahead', type=int, default=0,
-                        help="After triggering a batch of data, skip ahead this number of batches without triggering."
-                             "Use only for dealing quickly with runs that have overflown to disk.")
+    parser.add_argument('--wait', default=1, type=int,
+                        help="Wait time before searching for new runs again if none were found (sec). "
+                             "If 0, instead shuts down if no new runs are found.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
     connection_group.add_argument('--host', default='gw', type=str,
@@ -246,20 +248,30 @@ def get_command_line_arguments():
     trigger_group.add_argument('--event_separation', type=float,
                                help='If there are no triggers for this length of time (us),'
                                     'a new event can start.')
-    trigger_group.add_argument('--ignore_rundb_trigger_settings', action='store_true',
-                               help='Instead of loading trigger settings from the run db, use the default settings from'
-                                    'the pax configuration. Command-line options override both in any case.')
-
     trigger_group.add_argument('--left_extension', type=float,
                                help="Minimum range before each trigger to save (us). Is abs()ed before it is used.")
     trigger_group.add_argument('--right_extension', type=float,
                                help='Minimum time after trigger to save (us).')
 
-    parser.add_argument('--impatient', action='store_true',
-                        help="Shut down if there are no more runs to process. "
-                             "Default behaviour is instead to wait for more data")
-    parser.add_argument('--wait', default=1, type=int,
-                        help="Wait time before searching for new runs again if none were found (sec)")
+    mongoreader_group = parser.add_argument_group(title='Trigger driving / Mongo reading settings')
+    mongoreader_group.add_argument('--batch_window', type=float,
+                                   help='Length of time range (in sec, float) to get pulse data in each query.')
+    mongoreader_group.add_argument('--delete_data', action='store_true',
+                                   help="Delete data from the untriggered collection while triggering on it. "
+                                        "Essential for running the trigger live for an extended time!")
+    mongoreader_group.add_argument('--edge_safety_margin', type=int,
+                                   help="When triggering live, stay at least this many seconds "
+                                        "away from the insertion edge.")
+    mongoreader_group.add_argument('--max_query_workers', type=int,
+                                   help="Maximum number of parallel pulse time range queries "
+                                        "to fire off in the trigger.")
+    mongoreader_group.add_argument('--skip_ahead', type=int, default=0,
+                                   help="After triggering a batch of data, skip ahead this number of batches "
+                                        "without triggering. "
+                                        "Use only for dealing quickly with runs that have overflown to disk!")
+    mongoreader_group.add_argument('--stop_after_sec', type=float, default=float('inf'),
+                                   help="Stop the trigger after this many seconds of data have been read. "
+                                        "Won't stop in the middle of a batch. Use only for testing!")
 
     args = parser.parse_args()
     return args

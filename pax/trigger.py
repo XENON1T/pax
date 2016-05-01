@@ -42,7 +42,6 @@ class TriggerPlugin(object):
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
         self.log.debug("Logging started for %s" % self.name)
-        self.end_of_run_info = {'config': {k: v for k, v in self.config.items() if k not in self.trigger.config}}
         self.startup()
 
     def startup(self):
@@ -135,8 +134,22 @@ class Trigger(object):
         for tp_name in self.config['trigger_plugins']:
             if tp_name not in tm_classes:
                 raise ValueError("Don't know a trigger plugin called %s!" % tp_name)
+
+            # Trigger plugins inherit settings from [Trigger], but overriding is explicitly disallowed
+            # This is because trigger settings go into the run doc, and we want to always find a particular setting
+            # (e.g. the prescale, whether some dangerous option like skip_ahead was used, etc) in the same position.
             conf = deepcopy(self.config)
-            conf.update(pax_config.get('Trigger.%s' % tp_name, {}))
+            plugin_conf = pax_config.get('Trigger.%s' % tp_name, {})
+            for k, v in plugin_conf.items():
+                if k in conf:
+                    raise ValueError("Config override attempted for option %s, not allowed in trigger" % k)
+                else:
+                    conf[k] = v
+
+            # Store the plugin-specific settings in the run doc
+            self.end_of_run_info['config'][tp_name] = plugin_conf
+
+            # Initialize the plugin with the config
             self.plugins.append(tm_classes[tp_name](trigger=self, config=conf))
 
     def run(self, last_time_searched, start_times=tuple(), channels=None, modules=None, areas=None, last_data=False):
