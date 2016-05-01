@@ -218,11 +218,13 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                         pax_to_human_time(last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
 
                 # Check if we've passed the user-specified stop (if so configured)
-                if last_time_searched > self.config.get('stop_after_sec', float('inf')) * units.s:
-                    self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
-                                     "This is the last batch of data" % (last_time_searched,
-                                                                         self.config['stop_after_sec']))
-                    more_data_coming = False
+                stop_after_sec = self.config.get('stop_after_sec', None)
+                if stop_after_sec and 0 < stop_after_sec < float('inf'):
+                    if last_time_searched > stop_after_sec * units.s:
+                        self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
+                                         "This is the last batch of data" % (last_time_searched,
+                                                                             self.config['stop_after_sec']))
+                        more_data_coming = False
 
                 # Retrieve results from the queries, then build events (which must happen serially).
                 for i, future in enumerate(futures):

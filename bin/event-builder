@@ -217,7 +217,7 @@ def get_command_line_arguments():
                         help="Logging level to use, e.g. DEBUG")
     parser.add_argument('--secret_mode', action='store_true',
                         help="Never write anything to the runs db. Use only for testing!")
-    parser.add_argument('--wait', default=1, type=int,
+    parser.add_argument('--wait', default=10, type=int,
                         help="Wait time before searching for new runs again if none were found (sec). "
                              "If 0, instead shuts down if no new runs are found.")
 
@@ -272,7 +272,7 @@ def get_command_line_arguments():
                                    help="After triggering a batch of data, skip ahead this number of batches "
                                         "without triggering. "
                                         "Use only for dealing quickly with runs that have overflown to disk!")
-    mongoreader_group.add_argument('--stop_after_sec', type=float, default=float('inf'),
+    mongoreader_group.add_argument('--stop_after_sec', type=float,
                                    help="Stop the trigger after this many seconds of data have been read. "
                                         "Won't stop in the middle of a batch. Use only for testing!")
 
