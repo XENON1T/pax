@@ -42,6 +42,7 @@ class TriggerPlugin(object):
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
         self.log.debug("Logging started for %s" % self.name)
+        self.end_of_run_info = {}
         self.startup()
 
     def startup(self):
