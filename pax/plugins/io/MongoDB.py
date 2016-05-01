@@ -255,7 +255,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'
         end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
-        end_of_run_info['trigger.mongo_reader_config'] = {k: v for k, v in self.config
+        end_of_run_info['trigger.mongo_reader_config'] = {k: v for k, v in self.config.items()
                                                           if k != 'password' and
                                                           k not in self.processor.config['DEFAULT']}
 

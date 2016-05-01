@@ -110,14 +110,16 @@ def main():
         mongo_settings_override = {}
         for argname in ('detector', 'secret_mode',
                         'host', 'port', 'user', 'password',
-                        'batch_window', 'delete_data', 'edge_safety_margin', 'skip_ahead', 'stop_after_sec'):
+                        'batch_window', 'delete_data', 'edge_safety_margin',
+                        'max_query_workers', 'skip_ahead', 'stop_after_sec'):
             argval = getattr(args, argname)
             if argval is None:
                 continue
             if argname == 'edge_safety_margin':
                  argval *= units.s
             mongo_settings_override[argname] = argval
-        config_dict['MongoDB'] = config_dict.get('MongoDB', {}).update(mongo_settings_override)
+        config_dict.setdefault('MongoDB', {})
+        config_dict.get('MongoDB', {}).update(mongo_settings_override)
 
         # Apply command-line override settings for trigger
         trigger_settings_override = {}
@@ -132,7 +134,8 @@ def main():
                 trigger_settings_override[argname] = argval
         trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
                                                                               'trigger_monitor_data.zip')
-        config_dict['Trigger'] = config_dict.get('Trigger', {}).update(trigger_settings_override)
+        config_dict.setdefault('Trigger', {})
+        config_dict['Trigger'].update(trigger_settings_override)
 
         # Apply command-line override settings for trigger probability
         if args.force_multiplicity_trigger is not None:
