@@ -367,7 +367,8 @@ def get_pulses(client_maker_config, input_info, run_name,
 
     if delete_data:
         pymongo_client = client_maker.get_client(database_name=input_info['database'],
-                                                 uri=input_info['location'])
+                                                 uri=input_info['location'],
+                                                 w=0)
         pymongo_client['untriggered'].get_collection(run_name).delete_many(query)
         pymongo_client.close()
 
