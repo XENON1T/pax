@@ -35,8 +35,8 @@ def main():
     args = get_command_line_arguments()
     log = setup_logging(loglevel=args.log.upper())
 
-    # Check for strange arugment combinations
-    if args.stop_after_sec < float('inf') and not args.secret_mode:
+    # Check for strange argument combinations
+    if args.stop_after_sec and (0 < args.stop_after_sec < float('inf')) and not args.secret_mode:
         print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing "
               "something out. However, you have NOT enabled secret mode and will be writing to official runs db!\n"
               "Are you sure??" % args.stop_after_sec)
