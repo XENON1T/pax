@@ -325,7 +325,11 @@ class WriteZippedEncoder(plugin.TransformPlugin):
         event_number = event.event_number
         data = self.encode_event(event)
         data = zlib.compress(data, self.compresslevel)
-        return EventProxy(data=data, event_number=event_number)
+        # Add start and stop time to the data, for use in MongoDBClearUntriggered
+        return EventProxy(data=dict(blob=data,
+                                    start_time=event.start_time,
+                                    stop_time=event.stop_time),
+                          event_number=event_number)
 
     def encode_event(self, event):
         raise NotImplementedError

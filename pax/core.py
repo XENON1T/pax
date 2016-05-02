@@ -400,7 +400,8 @@ class Processor:
                             self.check_crash()
                             heapq.heappush(block_heap, self.input_queue.get(block=True, timeout=1))
                             self.log.debug("Output just got a block, heap is now %d blocks long" % len(block_heap))
-                            self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0], block_id + 1))
+                            self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0],
+                                                                                         block_id + 1))
 
                     except queue.Empty:
                         if can_end and not len(block_heap):

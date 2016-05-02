@@ -267,7 +267,8 @@ def get_command_line_arguments():
                                         "away from the insertion edge.")
     mongoreader_group.add_argument('--max_query_workers', type=int,
                                    help="Maximum number of parallel pulse time range queries "
-                                        "to fire off in the trigger.")
+                                        "to fire off in the trigger. If delete_data, this is also the maximum "
+                                        "number of parallel delete queries.")
     mongoreader_group.add_argument('--skip_ahead', type=int, default=0,
                                    help="After triggering a batch of data, skip ahead this number of batches "
                                         "without triggering. "
