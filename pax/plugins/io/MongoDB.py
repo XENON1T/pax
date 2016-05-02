@@ -60,8 +60,8 @@ class MongoBase:
         self.input_client = self.cm.get_client(database_name=self.input_info['database'],
                                                uri=self.input_info['location'],
                                                w=0)         # w=0 ensures fast deletes. We're not going to write.
-        self.input_db = self.input_info['database']
-        self.input_collection = self.input_client[self.input_db].get_collection(self.input_info['collection'])
+        self.input_db = self.input_client[self.input_info['database']]
+        self.input_collection = self.input_db.get_collection(self.input_info['collection'])
 
     def refresh_run_doc(self):
         """Update the internal run doc within this class
@@ -342,7 +342,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
         self.last_time_deleted = 0
 
-    def write_event(self, event_proxy):
+    def transform_event(self, event_proxy):
         if not self.config['delete_data']:
             return event_proxy
 
@@ -350,7 +350,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         delete_boundary = self.last_time_deleted + self.config['batch_window']
         if time_since_start > delete_boundary:
             self.log.info("Seen event at %s, clearing all data until %s." % (
-                pax_to_human_time(time_since_start), delete_boundary))
+                pax_to_human_time(time_since_start), pax_to_human_time(delete_boundary)))
             self.executor.submit(delete_pulses,
                                  self.input_collection,
                                  start_mongo_time=self._to_mt(self.last_time_deleted),
