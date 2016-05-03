@@ -44,8 +44,8 @@ class WriteZipped(WriteToFolder):
         self.current_file = zipfile.ZipFile(filename, mode='w')
 
     def write_event_to_current_file(self, event_proxy):
-        # The "events" we get are actually tuples (event_number, compressed zip data)
-        self.current_file.writestr(str(event_proxy.event_number), event_proxy.data)
+        # The "events" we get are actually event proxies: see WriteZippedEncoder in FolderIO.py
+        self.current_file.writestr(str(event_proxy.event_number), event_proxy.data['blob'])
 
     def close(self):
         self.current_file.close()

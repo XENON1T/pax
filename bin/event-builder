@@ -72,7 +72,7 @@ def main():
                                    'host': get_hostname(),
                                    'status': 'transferring',
                                    'location': os.path.join('/data/xenon1t_data', run_doc['name']),
-                                   'creation_time' : datetime.datetime.utcnow(),
+                                   'creation_time': datetime.datetime.utcnow(),
                                    'checksum': None}
                 runs.update({'_id': run_doc['_id']},
                             {'$push': {'data': data_info_entry}})
@@ -115,8 +115,8 @@ def main():
             argval = getattr(args, argname)
             if argval is None:
                 continue
-            if argname == 'edge_safety_margin':
-                 argval *= units.s
+            if argname in ('edge_safety_margin', 'batch_window'):
+                argval *= units.s
             mongo_settings_override[argname] = argval
         config_dict.setdefault('MongoDB', {})
         config_dict.get('MongoDB', {}).update(mongo_settings_override)
@@ -267,7 +267,8 @@ def get_command_line_arguments():
                                         "away from the insertion edge.")
     mongoreader_group.add_argument('--max_query_workers', type=int,
                                    help="Maximum number of parallel pulse time range queries "
-                                        "to fire off in the trigger.")
+                                        "to fire off in the trigger. If delete_data, this is also the maximum "
+                                        "number of parallel delete queries.")
     mongoreader_group.add_argument('--skip_ahead', type=int, default=0,
                                    help="After triggering a batch of data, skip ahead this number of batches "
                                         "without triggering. "
