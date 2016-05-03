@@ -346,15 +346,15 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if not self.config['delete_data']:
             return event_proxy
 
-        time_since_start = event_proxy['data']['stop_time']
-        delete_boundary = self.last_time_deleted + self.config['batch_window']
-        if time_since_start > delete_boundary:
-            self.log.info("Seen event at %s, clearing all data until %s." % (
-                pax_to_human_time(time_since_start), pax_to_human_time(delete_boundary)))
+        time_since_start = event_proxy.data['stop_time'] - self.time_of_run_start
+        if time_since_start > self.last_time_deleted + self.config['batch_window']:
+            self.log.info("Seen event at %s, clearing all data until then." % (
+                pax_to_human_time(time_since_start), pax_to_human_time(time_since_start)))
             self.executor.submit(delete_pulses,
                                  self.input_collection,
                                  start_mongo_time=self._to_mt(self.last_time_deleted),
-                                 stop_mongo_time=self._to_mt(delete_boundary))
+                                 stop_mongo_time=self._to_mt(time_since_start))
+            self.last_time_deleted = time_since_start
 
         return event_proxy
 
@@ -366,7 +366,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         self.executor.shutdown(wait=True)
 
         self.log.info("Dropping data collection")
-        self.input_db.drop_collection(self.run_doc['run_name'])
+        self.input_db.drop_collection(self.run_doc['name'])
         self.log.info("Collection has been dropped")
 
 
