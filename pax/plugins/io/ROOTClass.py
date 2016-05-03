@@ -366,26 +366,36 @@ def find_class_names(filename):
 def load_event_class_code(class_code, other_process_compiles=False):
     """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
-    If other_process_compiles = True,  will not compile the code, but waits for another process to do so.
+    If other_process_compiles = True, will not compile the code, but waits for another process to do so.
     """
     checksum = hashlib.md5(class_code.encode()).hexdigest()
     class_filename = 'pax_event_class-%s.cpp' % checksum
     libfile = get_libname(class_filename)
+    lockfile = get_libname(class_filename) + '.lock'
 
     if other_process_compiles:
         # TODO: use file locks instead, timers are unreliable
-        while not os.path.exists(libfile):
+        while not os.path.exists(libfile) or os.path.exists(lockfile):
             log.debug("Waiting for another process to compile the pax event class")
             time.sleep(5)
-        log.info("Compiled pax event class has been found, "
-                 "sleeping 20 sec to ensure compilation and dictionary generation have finished")
-        time.sleep(20)
     else:
+        if os.path.exists(lockfile):
+            raise RuntimeError("Pax event class compilation lock file present at %s. "
+                               "Either a previous compilation crashed, or you are trying to run several paxes "
+                               "in parallel from the same directory (which won't work). Remove the file manually "
+                               "and try again." % lockfile)
+        with open(lockfile, mode='w') as lf:
+            lf.write("Hi fellas! I just need a minute to compile this pax ROOT class business. "
+                     "Could you just hang on a minute? I started at %s." % (
+                        time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())))
         with open(class_filename, mode='w') as outfile:
             outfile.write(class_code)
 
     # Compile the class (or decide we don't have to)
     load_event_class(os.path.abspath(class_filename))
+
+    if not other_process_compiles:
+        os.remove(lockfile)
 
 
 def load_event_class(filename, force_recompile=False):
