@@ -9,7 +9,7 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
         self.is_pmt_alive = np.array(self.config['gains']) > 0
         self.pf = self.processor.simulator.s1_patterns
         self.config.setdefault('minimizer', 'grid')
-        self.config.setdefault('statistic', 'chi2gamma')
+        self.config.setdefault('statistic', 'likelihood_poisson')
         self.config.setdefault('only_s1s', True)
 
     def reconstruct_position(self, peak):
