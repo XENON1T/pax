@@ -362,12 +362,13 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if not self.config['delete_data']:
             return
 
-        self.log.info("Shutting down delete executor / waiting for deletes")
-        self.executor.shutdown(wait=True)
-
         self.log.info("Dropping data collection")
         self.input_db.drop_collection(self.run_doc['name'])
         self.log.info("Collection has been dropped")
+
+        # May be unnecessary: the drop should just finish all pending deletes instantly.
+        self.log.info("Shutting down delete executor / waiting for deletes")
+        self.executor.shutdown(wait=True)
 
 
 def pax_to_human_time(num):
