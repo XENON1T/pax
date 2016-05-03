@@ -4,6 +4,15 @@ History
 -------
 
 ------------------
+4.9.2 (2016-05-03)
+------------------
+
+* Poisson likelihood statistic for position reconstruction, confidence contour improvement (#342)
+* Event builder: parallel queries, delete-as-we-go, optimized queries, better config / run_doc handling
+* Lock-based race condition prevention for ROOT class compilation (see #351)
+* Fix wrong numbers in connector map (#349)
+
+------------------
 4.9.1 (2016-04-25)
 ------------------
 
