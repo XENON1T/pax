@@ -103,13 +103,11 @@ class MongoBase:
 
 class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
-    """Read from MongoDB and build events
-    This will perform a sliding window trigger on the pulse midpoint times.
-    No PMT pulse data is read in this class to ensure speed.
+    """Read pulse times from MongoDB, pass them to the trigger,
+    and send off EventProxy's for MongoDBReadUntriggeredFiller.
     """
-    use_monary = True
     do_output_check = False
-    latest_collection = 0
+    latest_subcollection = 0           # Last subcollection that was found to contain some data, last time we checked
 
     def startup(self):
         MongoBase.startup(self)
@@ -139,10 +137,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         if self.split_collections:
             # Find the latest collection which has some data in it
             while True:
-                check_collection = self.subcollection(self.latest_collection + 1)
+                check_collection = self.subcollection(self.latest_subcollection + 1)
                 if not check_collection.count():
                     break
-                self.latest_collection += 1
+                self.latest_subcollection += 1
         else:
             check_collection = self.input_collection
 
@@ -157,7 +155,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
         if self.split_collections:
             # Add the offset due to the subcollection number
-            self.last_pulse_time += self.latest_collection * self.batch_window
+            self.last_pulse_time += self.latest_subcollection * self.batch_window
 
         if self.data_taking_ended:
             self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(self.last_pulse_time))
@@ -272,27 +270,26 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                         yield EventProxy(event_number=next_event_number, data=data)
                         next_event_number += 1
 
-        # All went well - print out status information
-        # Get the end of run info from the trigger, and add the 'trigger.' prefix
-        # Also add some MongoDB specific stuff
-        end_of_run_info = self.trigger.shutdown()
-        end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
-        end_of_run_info['trigger.ended'] = True
-        end_of_run_info['trigger.status'] = 'processed'
-        end_of_run_info['trigger.trigger_monitor_data_location'] = self.uri_for_monitor
-        end_of_run_info['trigger.mongo_reader_config'] = {k: v for k, v in self.config.items()
+        # Built all events for the run!
+        # Compile the end of run info for the run doc and for display
+        trigger_end_info = self.trigger.shutdown()
+        trigger_end_info.update(dict(ended=True,
+                                     status='processed',
+                                     trigger_monitor_data_location=self.uri_for_monitor,
+                                     mongo_reader_config={k: v for k, v in self.config.items()
                                                           if k != 'password' and
-                                                          k not in self.processor.config['DEFAULT']}
+                                                          k not in self.processor.config['DEFAULT']}))
 
         if not self.secret_mode:
+            end_of_run_info = {'trigger.%s' % k: v for k, v in trigger_end_info.items()}
             self.runs.update_one({'_id': self.config['run_doc_id']},
                                  {'$set': end_of_run_info})
-        self.log.info("Event building complete. Trigger information: %s" % end_of_run_info)
+        self.log.info("Event building complete. Trigger information: %s" % trigger_end_info)
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
 
-    """Read pulse data from untriggered MongoDB into event ranges provided by trigger MongoDBReadUntriggered
+    """Read pulse data into event ranges provided by trigger MongoDBReadUntriggered.
     This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.
     """
     do_input_check = False
@@ -391,7 +388,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     Else (single collection mode):
         Keeps track of which time is safe to delete, then deletes data from the collection in batches.
         At shutdown, drop the collection
-
 
     """
     do_input_check = False
