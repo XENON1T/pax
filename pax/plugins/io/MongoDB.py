@@ -23,21 +23,24 @@ from pax import plugin, trigger, units
 
 class MongoBase:
 
+    _cached_subcollection_handles = {}
+
     def startup(self):
         self.sample_duration = self.config['sample_duration']
         self.secret_mode = self.config['secret_mode']
-        self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
-        if self.split_collections:
-            self.batch_window = int(self.sample_duration * (2 ** 31))
-            self.log.info("Split collection mode: batch window forced to %s sec" % (self.batch_window / units.s))
-        else:
-            self.batch_window = self.config['batch_window']
 
         # Connect to the runs db
         self.cm = ClientMaker(self.processor.config['MongoDB'])
         self.run_client = self.cm.get_client('run')
         self.runs = self.run_client['run'].get_collection('runs_new')
         self.refresh_run_doc()
+
+        self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
+        if self.split_collections:
+            self.batch_window = int(self.sample_duration * (2 ** 31))
+            self.log.debug("Split collection mode: batch window forced to %s sec" % (self.batch_window / units.s))
+        else:
+            self.batch_window = self.config['batch_window']
 
         # Retrieve information for connecting to the input database from the run doc
         self.input_info = None
@@ -74,9 +77,18 @@ class MongoBase:
         return '%s_%s' % (self.run_doc['name'], number)
 
     def subcollection(self, number):
-        """Return pymongo collection object for subcollection number in the run"""
+        """Return pymongo collection object for subcollection number in the run
+        Caches subcollection handles for you, since it seems to take time to ask for the collection
+        every event
+        Actually this turned out to be some other bug... probably we can remove collection caching now.
+        """
         assert self.split_collections
-        return self.input_db.get_collection(self.subcollection_name(number))
+        if number in self._cached_subcollection_handles:
+            return self._cached_subcollection_handles[number]
+        else:
+            coll = self.input_db.get_collection(self.subcollection_name(number))
+            self._cached_subcollection_handles[number] = coll
+            return coll
 
     def subcollection_with_time(self, time):
         """Returns the number of the subcollection which contains pulses which start at time
@@ -137,28 +149,29 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         if self.split_collections:
             # Find the latest collection which has some data in it
             while True:
-                check_collection = self.subcollection(self.latest_subcollection + 1)
-                if not check_collection.count():
+                if not self.subcollection(self.latest_subcollection + 1).count():
                     break
                 self.latest_subcollection += 1
+            check_collection = self.subcollection(self.latest_subcollection)
         else:
             check_collection = self.input_collection
 
         # Find the last pulse in the collection
         cu = list(check_collection.find().sort('time', direction=pymongo.DESCENDING).limit(1))
         if not len(cu):
-            last_pulse_time = 0         # No pulses in this collection yet?
+            # Apparently the DAQ has not taken any pulses yet?
+            if self.split_collections:
+                assert self.latest_subcollection == 0
+            last_pulse_time = 0
         else:
             last_pulse_time = cu[0]['time']
 
         self.last_pulse_time = self._from_mt(last_pulse_time)
 
-        if self.split_collections:
-            # Add the offset due to the subcollection number
-            self.last_pulse_time += self.latest_subcollection * self.batch_window
-
         if self.data_taking_ended:
             self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(self.last_pulse_time))
+            if self.split_collections:
+                self.log.info("The last subcollection number is %d" % self.latest_subcollection)
             # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
             end_of_run_t = (self.run_doc['end'].timestamp() -
                             self.run_doc['start'].timestamp()) * units.s
@@ -316,7 +329,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         else:
             assert self.split_collections
             collection = self.subcollection(subcollection_number)
-        return collection.find(self.time_range_query(start, stop), {'sort': [('time', 1)]})
+        return collection.find(self.time_range_query(start, stop), sort=[('time', 1)])
 
     def transform_event(self, event_proxy):
         # t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run
@@ -359,7 +372,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 if self.input_info['compressed']:
                     data = snappy.decompress(data)
 
-                time_within_event = self._from_mt(pulse_doc[self.start_key]) - t0  # ns
+                time_within_event = self._from_mt(pulse_doc['time']) - t0  # ns
 
                 event.pulses.append(Pulse(left=self._to_mt(time_within_event),
                                           raw_data=np.fromstring(data,
@@ -408,6 +421,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if self.split_collections:
             coll_number = self.subcollection_with_time(time_since_start)
             while coll_number > self.last_subcollection_not_yet_deleted:
+                self.log.info("Seen event at subcollection %d, clearing subcollection %d" % (
+                    coll_number, self.last_subcollection_not_yet_deleted))
                 self.executor.submit(self.input_db.drop_collection,
                                      self.subcollection_name(self.last_subcollection_not_yet_deleted))
                 self.last_subcollection_not_yet_deleted += 1
@@ -547,11 +562,13 @@ class ClientMaker:
         if monary:
             # Monary clients are not cached
             self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
-            return Monary(uri, **kwargs)
+            client = Monary(uri, **kwargs)
+            self.log.debug("Succesfully connected via monary (probably...)")
+            return client
 
         else:
             self.log.debug("Connecting to Mongo using uri %s" % uri)
             client = pymongo.MongoClient(uri, **kwargs)
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
-            self.log.debug("Succesfully pinged client")
+            self.log.debug("Successfully pinged client")
             return client
