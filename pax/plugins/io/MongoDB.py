@@ -26,10 +26,10 @@ class MongoBase:
     def startup(self):
         self.sample_duration = self.config['sample_duration']
         self.secret_mode = self.config['secret_mode']
-        self.split_collections = self.config['split_collections']
+        self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
         if self.split_collections:
-            self.batch_window = self.run_doc['setting_for_collection_size']
-            self.log.info("Split collection mode: batch window forced to %s by run doc" % self.batch_window)
+            self.batch_window = int(self.sample_duration * (2 ** 31))
+            self.log.info("Split collection mode: batch window forced to %s sec" % (self.batch_window / units.s))
         else:
             self.batch_window = self.config['batch_window']
 
