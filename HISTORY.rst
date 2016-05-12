@@ -3,6 +3,17 @@
 History
 -------
 
+
+------------------
+4.9.3 (2016-05-12)
+------------------
+
+* Temporarily downgrade scipy due to issues with latest build on some systems
+* Event builder: split collections handling, save-all-pulses / mega event / timed trigger mode
+* Lowered threshold in XENON1T-LED config until we can specify optimal threshold (#357)
+* Waveform simulator bugfix (#354), LED signal simulation (#355)
+
+
 ------------------
 4.9.2 (2016-05-03)
 ------------------
