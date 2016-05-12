@@ -68,7 +68,7 @@ install:
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil
   - source activate pax
   # tmp hack will be fixed
   # - conda uninstall -q sqlite libpng libx11 
