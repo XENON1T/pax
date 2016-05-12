@@ -69,6 +69,7 @@ class MongoBase:
         """
         self.log.debug("Retrieving run doc")
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
+        self.log.debug("Run doc retrieved")
         self.data_taking_ended = 'end' in self.run_doc
 
     def subcollection_name(self, number):
@@ -146,13 +147,24 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         """
         self.refresh_run_doc()
 
+        # Find the last collection with data in it
+        self.log.debug("Finding last collection")
         if self.split_collections:
-            # Find the latest collection which has some data in it
-            while True:
-                if not self.subcollection(self.latest_subcollection + 1).count():
-                    break
-                self.latest_subcollection += 1
-            check_collection = self.subcollection(self.latest_subcollection)
+            if self.data_taking_ended:
+                # Get all collection names, find the last subcollection with some data that belongs to the current run.
+                self.latest_subcollection = max([int(x.split('_')[-1]) for x in self.input_db.collection_names()
+                                                 if x.startswith(self.run_doc['name']) and
+                                                 self.input_db.get_collection(x).count()])
+                check_collection = self.subcollection(self.latest_subcollection)
+            else:
+                # While the DAQ is running, we can't use this method, as the reader creates empty collections
+                # ahead of the insertion point. Instead, move forward in subcollections until we find one without data.
+                # This means that if there is a large gap in the data, we won't progress beyond it! (until the run ends)
+                while True:
+                    if not self.subcollection(self.latest_subcollection + 1).count():
+                        break
+                    self.latest_subcollection += 1
+                check_collection = self.subcollection(self.latest_subcollection)
         else:
             check_collection = self.input_collection
 
@@ -172,10 +184,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
             self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(self.last_pulse_time))
             if self.split_collections:
                 self.log.info("The last subcollection number is %d" % self.latest_subcollection)
+
             # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
-            end_of_run_t = (self.run_doc['end'].timestamp() -
-                            self.run_doc['start'].timestamp()) * units.s
-            if end_of_run_t > self.last_pulse_time + 60 * units.s:
+            end_of_run_t = (self.run_doc['end'].timestamp() - self.run_doc['start'].timestamp()) * units.s
+            if not (0 <= self.last_pulse_time - end_of_run_t <= 60 * units.s):
                 self.log.warning("Run is %s long according to run db, but last pulse starts at %s. "
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(self.last_pulse_time)))
@@ -225,6 +237,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     start = next_time_to_search + batch_i * self.batch_window
                     if self.split_collections:
                         subcol_i = self.subcollection_with_time(next_time_to_search) + batch_i
+                        # After a DAQ crash pulses may be inserted in collections which have already been deleted.
+                        # In a 'post-mortem run' on that data, the the event filler queries would be extremely slow.
+                        # Hence we issue a create_index here, which is just a NOP if the index already exists.
+                        self.log.info("Ensuring index for subcollection %d" % subcol_i)
+                        self.subcollection(subcol_i).create_index([('time', 1), ('module', 1), ('channel', 1)])
+                        # Prep the query -- not a very difficult one :-)
                         query = {}
                         collection_name = self.subcollection_name(subcol_i)
                         self.log.info("Submitting query for subcollection %d" % subcol_i)
