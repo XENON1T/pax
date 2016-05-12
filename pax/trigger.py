@@ -204,7 +204,10 @@ class Trigger(object):
 
         # Yield the events to the processor
         for event_i, (start, stop) in enumerate(data.event_ranges):
-            yield (start, stop), data.signals_by_event[event_i]
+            if data.signals_by_event:
+                yield (start, stop), data.signals_by_event[event_i]
+            else:
+                yield (start, stop), []
 
     def shutdown(self):
         """Shut down trigger, return dictionary with end-of-run information."""

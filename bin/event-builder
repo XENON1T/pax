@@ -92,14 +92,32 @@ def main():
 
         # Build configuration for pax. Settings priority:
         #   First priority: command line args
-        #   Second priority: rundb settings (from run_doc['trigger']), from previous runs
+        #   Second priority: rundb's trigger mode, in future complete override settings
         #   Third priority: defaults from pax configuration (pax will take care of loading these)
         # Unit conversion factors are applied to the command line args, but NOT to the rundb values!
         # (to do that, we'd have to un-convert them when we later store the settings we actually used)
 
         # Load run doc settings + basic settings
+        # This is a
+        trigger_mode = run_doc['reader']['ini']['trigger_mode']
+        if trigger_mode.startswith('triggered'):
+            log.debug("Picking up triggered mode: trigger_mode is %s" % trigger_mode)
+            config_dict = {"Trigger": {
+                               "left_extension": 10 * units.us,
+                               "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us
+                           },
+                           "Trigger.DecideTriggers": {
+                               "trigger_probability": {
+                                   "0": {"2": 1},
+                                   "1": {"2": 1},
+                                   "2": {"2": 1}
+                               }
+                           }}
+        else:
+            config_dict = {}
+        # FUTURE: Get a complete override dict from run ini instead
         # run_doc should not try to override something from 'pax', 'DEFAULT', etc.
-        config_dict = run_doc['trigger'].get('config_of_runmode', {})
+        # config_dict = run_doc['reader']['ini'].get('trigger_configuration_override', {})
         config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id']},
                             'pax': {'output_name': data_info_entry['location'],
                                     'n_cpus': args.cpus},
@@ -119,7 +137,7 @@ def main():
                 argval *= units.s
             mongo_settings_override[argname] = argval
         config_dict.setdefault('MongoDB', {})
-        config_dict.get('MongoDB', {}).update(mongo_settings_override)
+        config_dict['MongoDB'].update(mongo_settings_override)
 
         # Apply command-line override settings for trigger
         trigger_settings_override = {}
@@ -147,6 +165,7 @@ def main():
                 '2': {str(level): 1}}
 
         log.info("Building events for %s", run_doc['name'])
+        log.debug("Config override is: %s" % config_dict)
         try:
             p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
                                config_paths=args.config_path,
