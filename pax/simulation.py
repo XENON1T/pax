@@ -429,8 +429,14 @@ class Simulator(object):
                 singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
             )
 
+        elif recoil_type.lower() == 'led':
+
+            # distribute photons uniformly within the LED pulse length
+            timings = np.random.uniform(0, self.config['led_pulse_length'],
+                                        size=n_photons)
+
         else:
-            raise ValueError('Recoil type must be ER, NR or alpha, not %s' % type)
+            raise ValueError('Recoil type must be ER, NR, alpha or LED, not %s' % type)
 
         return timings + t * np.ones(len(timings))
 
