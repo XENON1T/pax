@@ -170,9 +170,9 @@ class EveInput(InputFromFolder):
             # print(positions)
             positions.pop(0)  # throw away first event as it is the cae1724_par event
 
-            self.event_positions = positions
+            self.event_positions = positions[3:]
 
-            return 0, j - 3, j - 3 + 1
+            return 0, j - 3-2, j - 3 -1
 
     def close(self):
         """Close the currently open file"""
@@ -197,7 +197,7 @@ class EveInput(InputFromFolder):
 
         # Start building the event
         event = Event(
-            n_channels=16,  # never trust the config file
+            n_channels=14,  # never trust the config file
             start_time=int(
                 event_event_header['event_timestamp'] * units.s  # +
                 # event_layer_metadata['utc_time_usec'] * units.us
