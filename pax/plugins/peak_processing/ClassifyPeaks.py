@@ -14,9 +14,9 @@ class AdHocClassification1T(plugin.TransformPlugin):
 
             if peak.area > 50:
                 # We don't have to worry about single electrons anymore
-                if width < 175 * units.ns:
+                if width < 150 * units.ns:
                     peak.type = 's1'
-                elif width > 250 * units.ns:
+                elif width > 200 * units.ns:
                     peak.type = 's2'
             else:
                 peak.type = 'unknown'
