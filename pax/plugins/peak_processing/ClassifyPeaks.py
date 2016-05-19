@@ -14,9 +14,9 @@ class AdHocClassification1T(plugin.TransformPlugin):
 
             if peak.area > 50:
                 # We don't have to worry about single electrons anymore
-                if width < 150 * units.ns:
+                if width < 200 * units.ns:
                     peak.type = 's1'
-                elif width > 200 * units.ns:
+                else:
                     peak.type = 's2'
             else:
                 peak.type = 'unknown'
@@ -37,9 +37,9 @@ class AdHocClassification(plugin.TransformPlugin):
 
             if peak.area > 50:
                 # We don't have to worry about single electrons anymore
-                if width < 250 * units.ns:
+                if width < 100 * units.ns:
                     peak.type = 's1'
-                else:
+                elif width > 250 * units.ns:
                     peak.type = 's2'
             else:
                 # Worry about SE-S1 identification.
@@ -50,22 +50,5 @@ class AdHocClassification(plugin.TransformPlugin):
                         peak.type = 'coincidence'
                     elif width > 100 * units.ns:
                         peak.type = 's2'
-
-        return event
-
-
-class GasXenonZeroFieldClassification(plugin.TransformPlugin):
-
-    def transform_event(self, event):
-
-        for peak in event.peaks:
-            # Don't work on noise and lone_hit
-            if peak.type in ('noise', 'lone_hit'):
-                continue
-
-            width = peak.hit_time_std
-
-            if width > 30 * units.ns and width < 250 * units.ns:
-                peak.type = 's1'
 
         return event
