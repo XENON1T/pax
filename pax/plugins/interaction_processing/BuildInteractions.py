@@ -31,7 +31,7 @@ class BuildInteractions(plugin.TransformPlugin):
             for s2 in s2s:
 
                 # Compute drift time, add only interactions with s1 before s2
-                dt = s2.hit_time_mean - s1.hit_time_mean
+                dt = (s2.index_of_maximum - s1.index_of_maximum) * self.config['sample_duration']
                 if dt < 0:
                     continue
 

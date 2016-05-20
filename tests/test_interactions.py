@@ -33,10 +33,12 @@ class TestBuildInteractions(unittest.TestCase):
         e.peaks = [datastructure.Peak(type='s1',
                                       detector='tpc',
                                       area=100 * i,
+                                      index_of_maximum=1000 * i,
                                       hit_time_mean=100 * i) for i in range(10)]
         e.peaks += [datastructure.Peak(type='s2',
                                        detector='tpc',
                                        area=101 * i,
+                                       index_of_maximum=1010 * i,
                                        hit_time_mean=101 * i,
                                        reconstructed_positions=recposes) for i in range(10)]
 

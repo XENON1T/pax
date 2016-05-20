@@ -5,7 +5,7 @@ Use matplotlib to display various things about the event.
 
 import random
 import os
-import time
+import datetime
 import textwrap
 
 import matplotlib
@@ -19,6 +19,11 @@ from six.moves import input
 from mpl_toolkits.mplot3d import Axes3D     # noqa
 
 from pax import plugin, units, datastructure, dsputils
+
+
+def epoch_to_human_time(timestamp):
+    # Unfortunately the python datetime
+    return datetime.datetime.fromtimestamp(timestamp / units.s).strftime("%Y/%m/%d, %H:%M:%S")
 
 
 class PlotBase(plugin.OutputPlugin):
@@ -515,8 +520,8 @@ class PlotEventSummary(PlotBase):
         # If there is no trigger time, show the event start time in the title
         title = 'Event %s from %s\nRecorded at %s UTC, %09d ns' % (
             event.event_number, event.dataset_name,
-            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(self.trigger_time_ns / 10 ** 9)),
-            self.trigger_time_ns % (10 ** 9))
+            epoch_to_human_time(self.trigger_time_ns),
+            self.trigger_time_ns % (units.s))
         plt.suptitle(title, fontsize=18)
 
         if self.config['plot_largest_peaks']:
@@ -620,8 +625,8 @@ class PeakViewer(PlotBase):
         y = start_y + 4 * row_y + y_sep_middle - y_sep_text
         event_text = ''
         event_text += 'Event recorded at %s UTC, %09d ns\n' % (
-            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(self.trigger_time_ns / 10 ** 9)),
-            self.trigger_time_ns % (10 ** 9))
+            epoch_to_human_time(self.trigger_time_ns),
+            self.trigger_time_ns % units.s)
         suspicious_channels = np.where(event.is_channel_suspicious)[0]
         event_text += 'Suspicious channels (# hits rejected):\n ' + ', '.join([
             '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels]) + '\n'
