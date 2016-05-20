@@ -103,7 +103,11 @@ class FindHits(plugin.TransformPlugin):
             w = reference_baseline - w
 
             _results = compute_pulse_properties(w, self.initial_baseline_samples)
-            pulse.baseline, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
+            baseline, baseline_after, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
+
+            # Use the HIGHEST of baselines before and after (high = signal-like), to prevent long hits
+            pulse.baseline = max(baseline_after, baseline)
+            pulse.baseline_increase = baseline_after - baseline
 
             w -= pulse.baseline
 
@@ -309,24 +313,29 @@ def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, d
         hits_buffer[hit_i].index_of_maximum = start + left + argmax
 
 
-@numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
+@numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
            nopython=True)
-def compute_pulse_properties(w, initial_baseline_samples):
+def compute_pulse_properties(w, baseline_samples):
     """Compute basic pulse properties quickly
     :param w: Raw pulse waveform in ADC counts
-    :param initial_baseline_samples: number of samples at start of pulse to use for baseline computation
+    :param baseline_samples: number of samples to use for baseline computation at start and end of pulse
     :return: (baseline, noise_sigma, min, max);
       min and max are relative to baseline
       noise_sigma is the std of samples below baseline
     Does not modify w. Does not assume anything about inversion of w!!
     """
 
-    # First compute baseline
+    # Compute the baseline before and after the self-trigger
     baseline = 0.0
-    initial_baseline_samples = min(initial_baseline_samples, len(w))
-    for x in w[:initial_baseline_samples]:
+    baseline_samples = min(baseline_samples, len(w))
+    for x in w[:baseline_samples]:
         baseline += x
-    baseline /= initial_baseline_samples
+    baseline /= baseline_samples
+
+    baseline_after = 0.0
+    for x in w[-baseline_samples:]:
+        baseline_after += x
+    baseline_after /= baseline_samples
 
     # Now compute mean, noise, and min
     n = 0           # Running count of samples included in noise sample
@@ -350,4 +359,4 @@ def compute_pulse_properties(w, initial_baseline_samples):
     else:
         noise = (m2/n)**0.5
 
-    return baseline, noise, min_a - baseline, max_a - baseline
+    return baseline, baseline_after, noise, min_a - baseline, max_a - baseline

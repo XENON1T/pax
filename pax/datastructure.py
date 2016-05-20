@@ -411,9 +411,15 @@ class Pulse(StrictModel):
     #: Raw wave data (numpy array of int16, raw ADC counts)
     raw_data = np.array([], np.int16)
 
-    #: Baseline in ADC counts relative to reference baseline -- but float!
-    #: This field is omitted in processed data (to save space)
+    #: Baseline, in ADC counts relative to reference baseline -- but float!
+    #: This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
+    #: at the start and at the end of the pulse.
+    #: Use the sign of the baseline_increase field to figure out which: if positive, it is the one at start.
     baseline = float('nan')
+
+    #: Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
+    #: E.g. if it is negative, the baseline increased in signal-like direction = decreased in raw ADC.
+    baseline_increase = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)
     maximum = float('nan')
