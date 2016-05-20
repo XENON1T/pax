@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.FindSignals &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.trigger_plugins.FindSignals &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -40,7 +40,7 @@
   <h1>Source code for pax.trigger_plugins.FindSignals</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numba</span>
-<span class="kn">from</span> <span class="nn">pax.trigger</span> <span class="kn">import</span> <span class="n">TriggerPlugin</span><span class="p">,</span> <span class="n">h5py_append</span>
+<span class="kn">from</span> <span class="nn">pax.trigger</span> <span class="kn">import</span> <span class="n">TriggerPlugin</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
 <span class="kn">from</span> <span class="nn">pax.dsputils</span> <span class="kn">import</span> <span class="n">adc_to_pe</span>
 
@@ -73,30 +73,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">gain_conversion_factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">],</span> <span class="n">ch</span><span class="p">)</span>
                                                  <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">+</span>
                                                 <span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-        <span class="c1"># Create the dark monitoring datasets</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">dark_monitor_data_file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_dataset</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;lone_pulses&#39;</span><span class="p">,</span>
-                                                    <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                    <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">,</span>
-                                                    <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;save_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_dataset</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;all_pulses&#39;</span><span class="p">,</span>
-                                                   <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                   <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                   <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">,</span>
-                                                   <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;save_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_rate_dataset</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;coincidence_tally&#39;</span><span class="p">,</span>
-                                                         <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                         <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span>
-                                                         <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">,</span>
-                                                         <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_rate_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;save_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span> <span class="o">*</span>
-                                                                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_monitor_full_save_every&#39;</span><span class="p">])</span>
 
         <span class="c1"># We must keep track of the next time to save the dark rate between batches, since a batch usually does not</span>
         <span class="c1"># end exactly at a save time.</span>
@@ -154,13 +130,12 @@
         <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">signals</span>
 </div>
 <div class="viewcode-block" id="FindSignals.save_dark_monitor_data"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.FindSignals.FindSignals.save_dark_monitor_data">[docs]</a>    <span class="k">def</span> <span class="nf">save_dark_monitor_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_time</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-
         <span class="c1"># Save the PMT dark rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving pulse rate: </span><span class="si">%d</span><span class="s2"> pulses (of which </span><span class="si">%d</span><span class="s2"> lone pulses)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
-        <span class="n">h5py_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_all_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span> <span class="o">*=</span> <span class="mi">0</span>
-        <span class="n">h5py_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_lone_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span> <span class="o">*=</span> <span class="mi">0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -168,7 +143,7 @@
         <span class="k">if</span> <span class="n">last_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_monitor_full_save_every&#39;</span><span class="p">]:</span>
             <span class="c1"># Save the full coincidence rate</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving coincidence tally matrix, total </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-            <span class="n">h5py_append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coincidence_rate_dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_2pmt_coincidences&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span> <span class="o">*=</span> <span class="mi">0</span>
 
@@ -220,7 +195,9 @@
         <span class="n">pmt</span> <span class="o">=</span> <span class="n">_time</span><span class="o">.</span><span class="n">pmt</span>
         <span class="n">area</span> <span class="o">=</span> <span class="n">_time</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="n">gain_conversion_factors</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">next_save_time</span><span class="p">:</span>
+        <span class="c1"># Save the dark rate. Notice it&#39;s WHILE t &gt;= next_save_time, which ensures we save a lot of zeroes when there is</span>
+        <span class="c1"># a large gap in the data. Let&#39;s hope nobody tries to pass t = float(&#39;inf&#39;)...</span>
+        <span class="k">while</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">next_save_time</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">SAVE_DARK_MONITOR_DATA</span>
             <span class="n">next_save_time</span> <span class="o">+=</span> <span class="n">dark_rate_save_interval</span>
 

@@ -28,14 +28,6 @@ pax.InterpolatingMap module
     :undoc-members:
     :show-inheritance:
 
-pax.MongoManager module
------------------------
-
-.. automodule:: pax.MongoManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pax.PatternFitter module
 ------------------------
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -90,6 +90,8 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;InputFromFolder: No </span><span class="si">%s</span><span class="s2"> files found in input directory </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">,</span>
                                                                                                 <span class="n">input_name</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;trigger_monitor_data.&#39;</span> <span class="ow">in</span> <span class="n">fn</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="k">if</span> <span class="s1">&#39;temp.&#39;</span> <span class="ow">in</span> <span class="n">fn</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Temporary raw data file found in directory: this data is still being built &quot;</span>
                                      <span class="s2">&quot;or has crashed while building!&quot;</span><span class="p">)</span>
@@ -363,7 +365,11 @@
         <span class="n">event_number</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">event_number</span><span class="o">=</span><span class="n">event_number</span><span class="p">)</span>
+        <span class="c1"># Add start and stop time to the data, for use in MongoDBClearUntriggered</span>
+        <span class="k">return</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">blob</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                    <span class="n">start_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                                    <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">),</span>
+                          <span class="n">event_number</span><span class="o">=</span><span class="n">event_number</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteZippedEncoder.encode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>

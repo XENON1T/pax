@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -67,8 +67,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="n">last_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
             <span class="n">data</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[:</span><span class="n">last_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving </span><span class="si">%d</span><span class="s2"> times for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saved </span><span class="si">%d</span><span class="s2"> times for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">batch_info_doc</span><span class="p">[</span><span class="s1">&#39;times_saved_for_next_batch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_times</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="HandleEdgeSignals"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals">[docs]</a><span class="k">class</span> <span class="nc">HandleEdgeSignals</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
@@ -105,8 +105,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="n">last_ok_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
             <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[:</span><span class="n">last_ok_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving </span><span class="si">%d</span><span class="s2"> signals for later&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saved </span><span class="si">%d</span><span class="s2"> signals for next batch&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">batch_info_doc</span><span class="p">[</span><span class="s1">&#39;signals_saved_for_next_batch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">)</span>
 
 </div></div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>

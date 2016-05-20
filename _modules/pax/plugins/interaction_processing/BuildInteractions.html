@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing.BuildInteractions &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.plugins.interaction_processing.BuildInteractions &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -71,7 +71,7 @@
             <span class="k">for</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">s2s</span><span class="p">:</span>
 
                 <span class="c1"># Compute drift time, add only interactions with s1 before s2</span>
-                <span class="n">dt</span> <span class="o">=</span> <span class="n">s2</span><span class="o">.</span><span class="n">hit_time_mean</span> <span class="o">-</span> <span class="n">s1</span><span class="o">.</span><span class="n">hit_time_mean</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">s2</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">-</span> <span class="n">s1</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
 

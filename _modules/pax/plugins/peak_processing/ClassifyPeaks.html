@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.ClassifyPeaks &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.plugins.peak_processing.ClassifyPeaks &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -41,6 +41,29 @@
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
 
 
+<div class="viewcode-block" id="AdHocClassification1T"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T">[docs]</a><span class="k">class</span> <span class="nc">AdHocClassification1T</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AdHocClassification1T.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t work on noise and lone_hit</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">width</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="c1"># We don&#39;t have to worry about single electrons anymore</span>
+                <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">200</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
 <div class="viewcode-block" id="AdHocClassification"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification">[docs]</a><span class="k">class</span> <span class="nc">AdHocClassification</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
 
 <div class="viewcode-block" id="AdHocClassification.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
@@ -67,23 +90,6 @@
                         <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;coincidence&#39;</span>
                     <span class="k">elif</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
                         <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
-
-        <span class="k">return</span> <span class="n">event</span>
-
-</div></div>
-<div class="viewcode-block" id="GasXenonZeroFieldClassification"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.GasXenonZeroFieldClassification">[docs]</a><span class="k">class</span> <span class="nc">GasXenonZeroFieldClassification</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
-
-<div class="viewcode-block" id="GasXenonZeroFieldClassification.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.GasXenonZeroFieldClassification.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-            <span class="c1"># Don&#39;t work on noise and lone_hit</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">):</span>
-                <span class="k">continue</span>
-
-            <span class="n">width</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hit_time_std</span>
-
-            <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span> <span class="ow">and</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">250</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
-                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
 
         <span class="k">return</span> <span class="n">event</span></div></div>
 </pre></div>

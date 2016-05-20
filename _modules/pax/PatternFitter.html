@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.9.3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.9.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.9.3 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -173,8 +173,10 @@
 
         <span class="n">gofs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_gof_base</span><span class="p">(</span><span class="n">index_selection</span><span class="p">,</span> <span class="n">areas_observed</span><span class="p">,</span> <span class="n">pmt_selection</span><span class="p">,</span> <span class="n">square_syst_errors</span><span class="p">,</span> <span class="n">statistic</span><span class="p">)</span>
 
+        <span class="c1"># The below code is for diagnostic plots only</span>
         <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">set_cmap</span><span class="p">(</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
             <span class="c1"># Make the linspaces of coordinates along each dimension</span>
             <span class="c1"># Remember the grid indices are</span>
             <span class="n">q</span> <span class="o">=</span> <span class="p">[]</span>
@@ -191,9 +193,17 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">((</span><span class="n">dimstart</span><span class="p">,</span> <span class="n">dimstop</span><span class="p">))</span>
 
-            <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gofs</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">gofs</span><span class="p">))</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Goodness of fit / minimum&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;likelihood_poisson&#39;</span><span class="p">:</span>
+                <span class="c1"># because ln(a/b) = ln(a) - ln(b), also different ranges</span>
+                <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gofs</span><span class="o">.</span><span class="n">T</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">gofs</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">r&#39;$L - L_0$&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gofs</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">gofs</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Goodness-of-fit / minimum&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x [cm]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;y [cm]&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gofs</span><span class="p">,</span> <span class="n">lowest_indices</span>
 </div>
@@ -240,8 +250,14 @@
             <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;(ao + where(ao &gt; 1, 1, ao) - {ae})**2 /&quot;</span>
                                  <span class="s2">&quot;({ae} + square_syst_errors + 1)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s1">&#39;fractions_expected * total_observed&#39;</span><span class="p">))</span>
         <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;chi2&#39;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;(ao + {ae})**2 /&quot;</span>
-                                 <span class="s2">&quot;({ae} + square_syst_errors&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s1">&#39;fractions_expected * total_observed&#39;</span><span class="p">))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;(ao - {ae})**2 /&quot;</span>
+                                 <span class="s2">&quot;({ae} + square_syst_errors)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s1">&#39;fractions_expected * total_observed&#39;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;likelihood_poisson&#39;</span><span class="p">:</span>
+            <span class="c1"># Simple Poisson likelihood</span>
+            <span class="c1"># Clip areas to range [0.0001, +inf), because of log(0)</span>
+            <span class="n">areas_expected_clip</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">fractions_expected</span> <span class="o">*</span> <span class="n">total_observed</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+            <span class="c1"># Actually compute -2ln(L) so the same interval computation can be used later</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;-2*(ao * log({ae}) - {ae})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s1">&#39;areas_expected_clip&#39;</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Pattern goodness of fit statistic </span><span class="si">%s</span><span class="s1"> not implemented!&#39;</span> <span class="o">%</span> <span class="n">statistic</span><span class="p">)</span>
 
@@ -292,27 +308,38 @@
                 <span class="n">half_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cl_trace</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
                 <span class="n">cl_segment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cl_trace</span><span class="p">[:</span><span class="n">half_length</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
 
-                <span class="n">cl_distances</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;0&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="p">[]}</span>
-                <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">cl_segment</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">):</span>
-                        <span class="n">point</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_to_coordinate</span><span class="p">(</span><span class="n">lowest_indices</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">point</span><span class="p">[</span><span class="n">dim</span><span class="p">],</span> <span class="n">dim</span><span class="p">)</span>
-                        <span class="n">cl_distances</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">-</span> <span class="n">result</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
+                <span class="c1"># Extract the x values and y values seperately, also convert to the TPC coordinate system</span>
+                <span class="n">x_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_to_coordinate</span><span class="p">(</span><span class="n">lowest_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cl_segment</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="n">y_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_to_coordinate</span><span class="p">(</span><span class="n">lowest_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">cl_segment</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]])</span>
 
-                <span class="c1"># Calculate the error tuple for this CL</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cl_distances</span><span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">])</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cl_distances</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">])</span>
+                <span class="c1"># Calculate the confidence tuple for this CL</span>
+                <span class="n">ct</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span>
+                <span class="n">ct</span><span class="o">.</span><span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+                <span class="n">ct</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">))</span>
+                <span class="n">ct</span><span class="o">.</span><span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">))</span>
+
+                <span class="c1"># Does the contour touch the edge of the TPC</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">ct</span><span class="o">.</span><span class="n">at_edge</span> <span class="o">=</span> <span class="bp">True</span>
+
                 <span class="n">confidence_tuples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ct</span><span class="p">)</span>
 
                 <span class="c1"># The contour points, only for plotting</span>
-                <span class="n">cl_segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cl_segment</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+                    <span class="n">contour_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+                    <span class="c1"># Take out point if x or y is nan</span>
+                    <span class="n">contour_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">contour_points</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()]</span>
+                    <span class="n">cl_segments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">contour_points</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">plot</span> <span class="ow">and</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="p">[[</span><span class="n">r</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Grid minimum&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">contour</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cl_segments</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">contour</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="n">color</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;w&#39;</span> <span class="k">if</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;r&#39;</span>
                 <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span><span class="n">contour</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">cls</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
                 <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-            <span class="c1"># plt.savefig(&quot;plot_%.2f_%.2f.png&quot; % (result[0], result[1]), dpi=300)</span>
+            <span class="c1"># plt.savefig(&quot;plot_%.2f_%.2f.pdf&quot; % (result[0], result[1]), dpi=150)</span>
 
         <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">gofs</span><span class="p">[</span><span class="n">min_index</span><span class="p">],</span> <span class="n">confidence_tuples</span>
 </div>
