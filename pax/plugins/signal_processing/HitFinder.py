@@ -103,11 +103,7 @@ class FindHits(plugin.TransformPlugin):
             w = reference_baseline - w
 
             _results = compute_pulse_properties(w, self.initial_baseline_samples)
-            baseline, baseline_after, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
-
-            # Use the HIGHEST of baselines before and after (high = signal-like), to prevent long hits
-            pulse.baseline = max(baseline_after, baseline)
-            pulse.baseline_increase = baseline_after - baseline
+            pulse.baseline, pulse.baseline_increase, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
 
             w -= pulse.baseline
 
@@ -195,6 +191,9 @@ class FindHits(plugin.TransformPlugin):
             elif self.make_diagnostic_plots == 'no hits':
                 if len(hit_bounds_found) != 0:
                     continue
+            elif self.make_diagnostic_plots == 'baseline shifts':
+                if abs(pulse.baseline_increase) < 10:
+                    continue
             elif self.make_diagnostic_plots == 'hits only':
                 if len(hit_bounds_found) == 0:
                     continue
@@ -239,6 +238,7 @@ class FindHits(plugin.TransformPlugin):
                               (both in ADCc above baseline)
                             Pulse baseline: {pulse.baseline}
                               (ADCc above reference baseline)
+                            Baseline increase: {pulse.baseline_increase:.2f}
 
                             Gain in this PMT: {gain:.3g}
 
@@ -319,23 +319,27 @@ def compute_pulse_properties(w, baseline_samples):
     """Compute basic pulse properties quickly
     :param w: Raw pulse waveform in ADC counts
     :param baseline_samples: number of samples to use for baseline computation at start and end of pulse
-    :return: (baseline, noise_sigma, min, max);
-      min and max are relative to baseline
+    :return: (baseline, baseline_increase, noise_sigma, min, max);
+      baseline is the largest baseline of the bl computed at the start and the bl computed at the end
+      baseline_increase = baseline_after - baseline_before
+      min and max relative to baseline
       noise_sigma is the std of samples below baseline
     Does not modify w. Does not assume anything about inversion of w!!
     """
-
     # Compute the baseline before and after the self-trigger
-    baseline = 0.0
+    baseline_before = 0.0
     baseline_samples = min(baseline_samples, len(w))
     for x in w[:baseline_samples]:
-        baseline += x
-    baseline /= baseline_samples
+        baseline_before += x
+    baseline_before /= baseline_samples
 
     baseline_after = 0.0
     for x in w[-baseline_samples:]:
         baseline_after += x
     baseline_after /= baseline_samples
+
+    baseline = max(baseline_before, baseline_after)
+    baseline_increase = baseline_after - baseline_before
 
     # Now compute mean, noise, and min
     n = 0           # Running count of samples included in noise sample
@@ -359,4 +363,4 @@ def compute_pulse_properties(w, baseline_samples):
     else:
         noise = (m2/n)**0.5
 
-    return baseline, baseline_after, noise, min_a - baseline, max_a - baseline
+    return baseline, baseline_increase, noise, min_a - baseline, max_a - baseline

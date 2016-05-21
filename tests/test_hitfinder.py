@@ -83,13 +83,16 @@ class TestHitFinder(unittest.TestCase):
             [42],
         ):
             w = np.array(w, dtype=np.float64)
-            baseline, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, initial_baseline_samples=10)
-            bl_should_be = np.mean(w[:min(len(w), 10)])
-            self.assertEqual(baseline, bl_should_be)
-            self.assertEqual(min_w, np.min(w) - baseline)
-            self.assertEqual(max_w, np.max(w) - baseline)
-            below_bl = w[w < baseline]
-            self.assertAlmostEqual(noise, np.sqrt(np.sum((below_bl - baseline)**2/len(below_bl))))
+            baseline, baseline_increase, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, baseline_samples=10)
+            bl_before = np.mean(w[:min(len(w), 10)])
+            bl_after = np.mean(w[-min(len(w), 10):])
+            self.assertEqual(baseline, max(bl_before, bl_after))
+            self.assertEqual(baseline_increase, bl_after - bl_before)
+            w -= baseline
+            self.assertEqual(min_w, np.min(w))
+            self.assertEqual(max_w, np.max(w))
+            below_bl = w[w < 0]
+            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2/len(below_bl))))
 
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center
