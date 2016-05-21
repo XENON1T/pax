@@ -140,6 +140,22 @@ class OutputPlugin(ProcessPlugin):
         return event
 
 
+class ClusteringPlugin(TransformPlugin):
+    """Base class for clustering plugins"""
+
+    def transform_event(self, event):
+        self.event = event
+        new_peaks = []
+        for peak in event.peaks:
+            new_peaks += self.cluster_peak(peak)
+        event.peaks = new_peaks
+        return event
+
+    def cluster_peak(self, peak):
+        """Takes peak and returns LIST of peaks"""
+        raise NotImplementedError
+
+
 class PosRecPlugin(TransformPlugin):
     """Base plugin for position reconstruction
     Ensures all posrec plugins:
