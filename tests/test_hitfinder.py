@@ -11,7 +11,7 @@ import HitFinder  # flake8: noqa
 class TestHitFinder(unittest.TestCase):
 
     def peak_at(self, i, amplitude=10, width=1):
-        w = np.zeros(100)
+        w = np.zeros(200)
         w[i:i + width] = amplitude
         return w
 
@@ -22,18 +22,19 @@ class TestHitFinder(unittest.TestCase):
                                   config_dict={
                                       'pax': {
                                           'plugin_group_names': ['test'],
+                                          'encoder_plugin': None,
                                           'test':               'HitFinder.FindHits'}})
         plugin = self.pax.get_plugin_by_name('FindHits')
-        for test_w, hit_bounds, pulse_min, pulse_baseline, pulse_max in (
-            [np.zeros(100), [], 0, 0, 0],
-            [np.ones(100), [], 0, 1, 0],
-            [-3 * np.ones(100), [], 0, -3, 0],
+        for test_w, hit_bounds, pulse_min, pulse_max in (
             # Keep in mind the hitfinder flips the pulse...
-            [self.peak_at(70, amplitude=-100, width=4), [[70, 73]], 0, 0, 100],
+            [np.zeros(100), [], 0, 0],
+            [np.ones(100), [], 0, 0],
+            [-3 * np.ones(100), [], 0, 0],
+            [self.peak_at(70, amplitude=-100, width=4), [[70, 73]], 0, 100],
             [self.peak_at(70, amplitude=-100, width=4) + self.peak_at(80, amplitude=10, width=4),
-             [[70, 73]], -10, 0, 100],
+             [[70, 73]], -10, 100],
             [self.peak_at(70, amplitude=-100, width=4) + self.peak_at(80, amplitude=-100, width=4),
-             [[70, 73], [80, 83]], 0, 0, 100],
+             [[70, 73], [80, 83]], 0, 100],
         ):
             e = datastructure.Event(n_channels=plugin.config['n_channels'],
                                     start_time=0,
