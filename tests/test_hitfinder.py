@@ -106,8 +106,8 @@ class TestHitFinder(unittest.TestCase):
             [[0, 14]]
         ):
             raw_hits = np.array(raw_hits, dtype=np.int64)
-            # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i
-            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0)
+            # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold
+            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0, 0)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]
                 self.assertAlmostEqual(hits['area'][i], np.sum(hitw))

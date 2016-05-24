@@ -156,18 +156,9 @@ class FindHits(plugin.TransformPlugin):
             noise_sigma_pe = pulse.noise_sigma * adc_to_pe
 
             build_hits(w, hit_bounds_found, hits_buffer,
-                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i)
+                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i,
+                       saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5)
             hits = hits_buffer[:n_hits_found].copy()
-
-            # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
-            # This is rare enough that it doesn't need to be in numba
-            # -0.5 for same reason as above (floating point rounding)
-            if is_saturated:
-                for i, hit in enumerate(hit_bounds_found):
-                    hits[i]['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
-                                                              self.config['digitizer_reference_baseline'] -
-                                                              pulse.baseline - 0.5)
-
             hits_per_pulse.append(hits)
 
             # Diagnostic plotting
@@ -274,11 +265,13 @@ class FindHits(plugin.TransformPlugin):
 
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
                       numba.from_dtype(datastructure.Hit.get_dtype())[:],
-                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64),
+                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64, numba.float64),
            nopython=True)
-def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i):
+def build_hits(w, hit_bounds,
+               hits_buffer,
+               adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold):
     """Populates hits_buffer with properties from hits indicated by hit_bounds.
-        hit_bounds should be a numpy array of (left, right) bounds (inclusive)
+        hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w
     Returns nothing.
     """
     for hit_i in range(len(hit_bounds)):
@@ -287,12 +280,15 @@ def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, d
         area = 0.0
         center = 0.0
         deviation = 0.0
+        saturation_count = 0
         left = hit_bounds[hit_i, 0]
         right = hit_bounds[hit_i, 1]
         for i, x in enumerate(w[left:right + 1]):
             if x > amplitude:
                 amplitude = x
                 argmax = i
+            if x > saturation_threshold:
+                saturation_count += 1
             area += x
             center += x * i
         center /= area
@@ -311,6 +307,7 @@ def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, d
         hits_buffer[hit_i].center = (start + left + center) * dt
         hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe
         hits_buffer[hit_i].index_of_maximum = start + left + argmax
+        hits_buffer[hit_i].n_saturated = saturation_count
 
 
 @numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
