@@ -74,8 +74,9 @@ class RejectNoiseHits(plugin.TransformPlugin):
         event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]
 
         # Rebuild the event.all_hits field.
-        rejected_hits = np.array(rejected_hits)
-        rejected_hits['is_rejected'] = True
-        event.all_hits = np.concatenate([rejected_hits] + [p.hits for p in event.peaks])
+        if len(rejected_hits):
+            rejected_hits = np.array(rejected_hits)
+            rejected_hits['is_rejected'] = True
+            event.all_hits = np.concatenate([rejected_hits] + [p.hits for p in event.peaks])
 
         return event

@@ -100,7 +100,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
                                      detector=peak.detector, hits=hs)
 
 
-#@numba.jit(numba.float64[:])
+#  @numba.jit(numba.float64[:])
 # TODO: TESTS!
 def find_split_points(w, min_height, min_ratio):
     """"Finds local minima in w,
