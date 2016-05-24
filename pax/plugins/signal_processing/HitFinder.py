@@ -129,15 +129,20 @@ class FindHits(plugin.TransformPlugin):
                                 self.config['absolute_adc_counts_low_threshold'],
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
-            # Call the numba hit finder -- see its docstring for description
-            n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(w,
-                                                                               high_threshold,
-                                                                               low_threshold,
-                                                                               hit_bounds_buffer,
-                                                                               dynamic_low_threshold_coeff)
+            if self.config.get('dont_find_hits_just_integrate_between'):
+                hit_bounds_buffer[0] = self.config.get('dont_find_hits_just_integrate_between')
+                n_hits_found = 1
+            else:
+                # Call the numba hit finder -- see its docstring for description
+                n_hits_found = find_intervals_above_threshold(w,
+                                                              high_threshold,
+                                                              low_threshold,
+                                                              hit_bounds_buffer,
+                                                              dynamic_low_threshold_coeff)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
+            pulse.n_hits_found = n_hits_found
             hit_bounds_found = hit_bounds_buffer[:n_hits_found]
 
             # If no hits were found, this is a noise pulse: update the noise pulse count
