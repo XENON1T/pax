@@ -99,8 +99,8 @@ class Hit(StrictModel):
     #: Weighted sum of absolute deviation (in ns) of hit waveform from hit center
     sum_absolute_deviation = 0.0
 
-    left = 0                 #: Index/sample of left bound (inclusive) of peak.
-    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of peak
+    left = 0                 #: Index/sample of left bound (inclusive) of hit in event.
+    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of hit in event.
 
     @property
     def length(self):
@@ -185,6 +185,7 @@ class Peak(StrictModel):
 
     #: The hits that make up this peak
     #: To save space, we usually only store the hits for s1s.
+    #: NEVER rely on the order of hits in this field!!
     hits = np.array([], dtype=Hit.get_dtype())
 
     #: Total areas of all hits per PMT (pe).
@@ -594,7 +595,8 @@ class Event(StrictModel):
     trigger_signals = np.array([], dtype=TriggerSignal.get_dtype())
 
     #: Array of all hits found in event
-    #: These will get grouped into peaks during clustering
+    #: These will get grouped into peaks during clustering. New hits will be added when peaks are split.
+    #: NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.
     #: This is usually emptied before output (but not in LED mode)
     all_hits = np.array([], dtype=Hit.get_dtype())
 
@@ -602,8 +604,10 @@ class Event(StrictModel):
     sum_waveforms = ListField(SumWaveform)
 
     #: A list of :class:`pax.datastructure.Interaction` objects.
-    #: An pulse holds a stream of samples in one channel provided by the digitizer.
+    #: A pulse holds a stream of samples in one channel provided by the digitizer.
     #: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
+    #: The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field
+    #: referring to the index of a pulse in this field.
     pulses = ListField(Pulse)
 
     #: Number of noise pulses (pulses without any hits found) per channel

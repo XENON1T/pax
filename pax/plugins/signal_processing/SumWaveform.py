@@ -10,6 +10,7 @@ class SumWaveform(plugin.TransformPlugin):
         self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
 
     def transform_event(self, event):
+
         # Initialize empty waveforms for each detector
         # One with only hits, one with raw data
         for postfix in ('', '_raw'):
@@ -23,6 +24,7 @@ class SumWaveform(plugin.TransformPlugin):
 
         # Make dictionary mapping pulse -> non-rejected hits found in pulse
         # Assumes hits are still sorted by pulse
+        event.all_hits = np.sort(event.all_hits, order='found_in_pulse')
         hits_per_pulse = recarray_tools.dict_group_by(event.all_hits[True ^ event.all_hits['is_rejected']],
                                                       'found_in_pulse')
 
@@ -44,8 +46,7 @@ class SumWaveform(plugin.TransformPlugin):
             if pulse_i == 0 or channel != current_channel:      # noqa
                 current_channel = channel                       # noqa
                 detector = self.detector_by_channel[channel]
-                adc_to_pe = dsputils.adc_to_pe(self.config, pulse.channel)
-                gain = self.config['gains'][channel]
+                adc_to_pe = dsputils.adc_to_pe(self.config, channel)
 
                 if detector == 'tpc':
                     if channel in self.config['channels_top']:
@@ -56,12 +57,12 @@ class SumWaveform(plugin.TransformPlugin):
                     sum_w = event.get_sum_waveform(detector)
 
             # Don't consider dead channels
-            if gain == 0:
+            if self.config['gains'][channel] == 0:
                 continue
 
+            # Get the pulse waveform in pe/bin
             baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
-
-            w = baseline_to_subtract - pulse.raw_data.astype(np.float32)
+            w = baseline_to_subtract - pulse.raw_data.astype(np.float64)
             w *= adc_to_pe
 
             sum_w_raw = event.get_sum_waveform(detector+'_raw').samples

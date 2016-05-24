@@ -91,35 +91,6 @@ def get_detector_by_channel(config):
     return detector_by_channel
 
 
-def cluster_by_diff(x, diff_threshold, return_indices=False):
-    """Returns list of lists of indices of clusters in x,
-    making cluster boundaries whenever values are >= threshold apart.
-    """
-    x = sorted(x)
-    if len(x) == 0:
-        return []
-    clusters = []
-    current_cluster = []
-    previous_t = x[0]
-    for i, t in enumerate(x):
-        if t - previous_t > diff_threshold:
-            clusters.append(current_cluster)
-            current_cluster = []
-        current_cluster.append(i if return_indices else t)
-        previous_t = t
-    clusters.append(current_cluster)
-    return clusters
-    # Numpy solution below appears to make processor run slower!
-    # x.sort()
-    # if not isinstance(x, np.ndarray):
-    #     x = np.array(x)
-    # split_indices = np.where(np.diff(x) >= diff_threshold)[0] + 1
-    # if return_indices:
-    #     return np.split(np.arange(len(x)), split_indices)
-    # else:
-    #     return np.split(x, split_indices)
-
-
 @numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),
            nopython=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff):
