@@ -446,8 +446,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.last_subcollection_not_yet_deleted += 1
         else:
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
-                self.log.info("Seen event at %s, clearing all data until then." % (
-                    pax_to_human_time(time_since_start), pax_to_human_time(time_since_start)))
+                self.log.info("Seen event at %s, clearing "
+                              "all data until then." % pax_to_human_time(time_since_start))
                 self.executor.submit(delete_pulses,
                                      self.input_collection,
                                      start_mongo_time=self._to_mt(self.last_time_deleted),
