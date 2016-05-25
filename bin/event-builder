@@ -71,7 +71,8 @@ def main():
                 data_info_entry = {'type': 'raw',
                                    'host': 'xenon1t-daq',
                                    'status': 'transferring',
-                                   'location': os.path.join('/data/xenon1t_data', run_doc['name']),
+                                   'location': os.path.join('/data/xenon/raw',
+                                                            run_doc['name']),
                                    'creation_time': datetime.datetime.utcnow(),
                                    'checksum': None}
                 runs.update({'_id': run_doc['_id']},
@@ -80,7 +81,8 @@ def main():
             run_doc = runs.find_one(run_query)
             if run_doc is None:
                 raise ValueError("Mongodb returned None instead of run document!")
-            data_info_entry = dict(location=os.path.join('.', run_doc['name']))
+            data_info_entry = dict(location=os.path.join('.',
+                                                         run_doc['name']))
             
         if run_doc is None:
             if args.wait <= 0:
