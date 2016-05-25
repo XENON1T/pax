@@ -69,7 +69,7 @@ def main():
 
             if run_doc is not None:
                 data_info_entry = {'type': 'raw',
-                                   'host': get_hostname(),
+                                   'host': 'xenon1t-daq',
                                    'status': 'transferring',
                                    'location': os.path.join('/data/xenon1t_data', run_doc['name']),
                                    'creation_time': datetime.datetime.utcnow(),
