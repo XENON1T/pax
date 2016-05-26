@@ -29,6 +29,7 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
         Will set interior_split_goodness and birthing_split_goodness attributes
         """
         hits = peak.hits
+        hits.sort(order='left')
         n_hits = len(hits)
 
         # Handle trivial cases

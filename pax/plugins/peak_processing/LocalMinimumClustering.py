@@ -62,16 +62,13 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
                 build_hits(w,
                            hit_bounds=hit_bounds,
                            hits_buffer=hits_buffer,
-                           adc_to_pe=1,   # Note this is 1, since waveform has already been
+                           adc_to_pe=adc_to_pe,
                            channel=h['channel'],
                            noise_sigma_pe=pulse.noise_sigma * adc_to_pe,
                            dt=self.config['sample_duration'],
                            start=pulse.left,
                            pulse_i=pulse_i,
                            saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5)
-
-                # Count saturated samples in each hit
-                # TODO: Code duplication with hitfinder! Move this into
 
                 new_hits.append(hits_buffer)
 
@@ -113,12 +110,6 @@ def find_split_points(w, min_height, min_ratio):
     min_since_max_i = 0
 
     for i, x in enumerate(w):
-        if x > last_max:
-            # New max, reset minimum finder state
-            last_max = x
-            min_since_max = float('inf')
-            min_since_max_i = i
-
         if x < min_since_max:
             # New minimum since last max
             min_since_max = x
@@ -128,6 +119,13 @@ def find_split_points(w, min_height, min_ratio):
                                   min_since_max * min_ratio):
             # Significant local minimum: tell caller, reset both max and min finder
             yield min_since_max_i
+            last_max = x
+            min_since_max = float('inf')
+            min_since_max_i = i
+
+        if x > last_max:
+            # New max, reset minimum finder state
+            # Notice this is AFTER the split check, to accomodate very fast rising second peaks
             last_max = x
             min_since_max = float('inf')
             min_since_max_i = i
