@@ -4,6 +4,13 @@ History
 -------
 
 ------------------
+4.10.1 (2016-05-30)
+------------------
+
+* Add PMT information (#364)
+* Event builder changes (#365 plus other commits), including processing related changes.
+
+------------------
 4.10.0 (2016-05-20)
 ------------------
 
