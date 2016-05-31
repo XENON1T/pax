@@ -9,6 +9,11 @@ import psutil
 import sys
 import time
 import multiprocessing
+import heapq
+if six.PY2:
+    import imp
+else:
+    import importlib
 try:
     import queue
 except ImportError:
@@ -19,12 +24,9 @@ from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
 from pax.configuration import load_configuration
+from pax.exceptions import InvalidConfigurationError
 from pax import simulation, utils
-if six.PY2:
-    import imp
-else:
-    import importlib
-import heapq
+from pax.MongoDB_ClientMaker import ClientMaker
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -57,6 +59,9 @@ class Processor:
 
         The config_dict's settings are not evaluated.
 
+        If config['pax']['look_for_config_in_runs_db'], will try to connect to the runs db and fetch configuration
+        for this particular run. The run id is fetched either by number (config['DEFAULT']['run_number']
+
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
 
@@ -66,6 +71,42 @@ class Processor:
           the same log level as the first, regardless of their configuration.  See #78.
         """
         self.config = load_configuration(config_names, config_paths, config_string, config_dict)
+
+        # Do we need to get further configuration from the runs database?
+        if self.config['pax'].get('look_for_config_in_runs_db'):
+            # Connect to MongoDB
+            run_collection = ClientMaker(self.config['MongoDB']).get_client('run')['run'].get_collection('runs_new')
+
+            # Get the run document, either by explicitly specified run number, or by the input name
+            # The last option is a bit of a hack... if you don't like it, think of some way to always pass
+            # the run number explicitly.
+            if self.config.get('DEFAULT', {}).get('run_number') >= 0:
+                run_number = self.config['DEFAULT']['run_number']
+                run_doc = run_collection.find_one({'number': run_number})
+                if not run_doc:
+                    raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
+
+            elif 'input_name' in self.config['pax']:
+                run_name = os.path.basename(self.config['pax']['input_name'])
+                run_doc = run_collection.find_one({'name': run_name})
+                if not run_doc:
+                    raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
+
+            else:
+                raise InvalidConfigurationError("Cannot get configuration from runs db: give run_number of input_name!")
+
+            # The run doc settings get priority just before config_dict, so we can't just do dict.update()
+            for section_name, section_config in run_doc['processor']:
+                if not isinstance(section_config, dict):
+                    raise ValueError("Keys in run_doc.processor should have dictionary values only")
+                config_dict.setdefault(section_name, {})
+                for k, v in section_config:
+                    config_dict[section_name].setdefault(k, v)
+            config_dict['run_number'] = run_doc['number']
+            config_dict['run_name'] = run_doc['name']
+
+            # Reload the configuration
+            self.config = load_configuration(config_names, config_paths, config_string, config_dict)
 
         pc = self.config['pax']
         self.worker_id = pc.get('_worker_id', 'master')
@@ -144,7 +185,7 @@ class Processor:
                                  'If you attempt to load the waveform simulator, pax will crash!')
 
         # Get the list of plugins from the configuration
-        # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
+        # plugin_names is a dict with group names as keys, and the plugins we have to initialize per group as values
         plugin_names = {}
         if 'plugin_group_names' not in pc:
             if not just_testing:

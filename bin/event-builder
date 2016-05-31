@@ -22,7 +22,7 @@ from six.moves import input
 import pymongo
 
 from pax import core, units
-from pax.plugins.io.MongoDB import ClientMaker
+from pax.MongoDB_ClientMaker import ClientMaker
 
 
 def get_hostname():
@@ -243,11 +243,11 @@ def get_command_line_arguments():
                              "If 0, instead shuts down if no new runs are found.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
-    connection_group.add_argument('--host', default='gw', type=str,
+    connection_group.add_argument('--host',type=str,
                                   help='MongoDB hostname')
-    connection_group.add_argument('--port', default=27017, type=int,
+    connection_group.add_argument('--port', type=int,
                                   help='Port on host where MongoDB runs')
-    connection_group.add_argument('--user', default='eb', type=str,
+    connection_group.add_argument('--user', type=str,
                                   help='User to connect to MongoDB')
     connection_group.add_argument('--password', type=str, default=os.environ.get('MONGO_PASSWORD'),
                                   help='Password to connect to MongoDB. '
