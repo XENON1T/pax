@@ -235,6 +235,8 @@ class PatternFitter(object):
         """
         gofs, lowest_indices = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
                                                   pmt_selection, square_syst_errors, statistic, plot)
+        if np.all(np.isnan(gofs)):
+            raise ValueError("Goodness of fit values are all NaN??")
         min_index = np.unravel_index(np.nanargmin(gofs), gofs.shape)
         # Convert index back to position
         result = []
@@ -271,12 +273,15 @@ class PatternFitter(object):
                 # Extract the x values and y values seperately, also convert to the TPC coordinate system
                 x_values = np.array([self._index_to_coordinate(lowest_indices[0] + x, 0) for x in cl_segment[:,0]])
                 y_values = np.array([self._index_to_coordinate(lowest_indices[1] + y, 1) for y in cl_segment[:,1]])
-
-                # Calculate the confidence tuple for this CL
-                ct.x0 = np.nanmin(x_values)
-                ct.y0 = np.nanmin(y_values)
-                ct.dx = abs(np.nanmax(x_values) - np.nanmin(x_values))
-                ct.dy = abs(np.nanmax(y_values) - np.nanmin(y_values))
+                if np.all(np.isnan(x_values)) or np.all(np.isnan(y_values)):
+                    self.log.debug("Cannot compute confidence contour: all x or y values are Nan!")
+                    # If we'd now call nanmin, we get an annoying numpy runtime warning.
+                else:
+                    # Calculate the confidence tuple for this CL
+                    ct.x0 = np.nanmin(x_values)
+                    ct.y0 = np.nanmin(y_values)
+                    ct.dx = abs(np.nanmax(x_values) - np.nanmin(x_values))
+                    ct.dy = abs(np.nanmax(y_values) - np.nanmin(y_values))
 
                 # Does the contour touch the edge of the TPC
                 if np.isnan(x_values).any() or np.isnan(y_values).any():
