@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+4.10.2 (2016-06-01)
+------------------
+
+* ROOT fix (#370)
+* Configurable low-level info (#368)
+* Event builder fixes (scattered commits)
+
+------------------
 4.10.1 (2016-05-30)
 ------------------
 
