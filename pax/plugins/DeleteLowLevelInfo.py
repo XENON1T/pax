@@ -18,7 +18,7 @@ class DeleteLowLevelInfo(plugin.TransformPlugin):
         delopt = self.config.get('delete_hits_and_pulses', 'not_for_s1s')
 
         if not delopt or delopt == 'none':
-            return
+            pass
 
         elif delopt == 'not_for_s1s':
             pulses_to_keep = []
