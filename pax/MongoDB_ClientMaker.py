@@ -6,7 +6,7 @@ import pymongo
 try:
     import Monary
 except ImportError:
-    print("Monary did not import. That's fine, unless you're the event builder...")
+    pass   # Let's hope we're not the event builder.
 
 
 class ClientMaker:
@@ -18,6 +18,8 @@ class ClientMaker:
     def __init__(self, config):
         if 'password' not in config:
             config['password'] = os.environ.get('MONGO_PASSWORD')
+            if not config['password']:
+                raise ValueError("Please provide the mongo password in the environment variable MONGO_PASSWORD")
         # Select only relevant config options, so we can just pass this to .format later.
         self.config = {k: config[k] for k in ('user', 'password', 'host', 'port')}
         self.log = logging.getLogger('Mongo client maker')
