@@ -76,7 +76,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
 
         # Next, split the peaks, sorting hits to the right peak by their maximum index.
         # Iterate over left, right bounds of the new peaks
-        boundaries = list(zip([0] + [x+1 for x in split_points], split_points + [float('inf')]))
+        boundaries = list(zip([0] + [y+1 for y in split_points], split_points + [float('inf')]))
         for l, r in boundaries:
             # Convert to index in event
             l += peak.left
