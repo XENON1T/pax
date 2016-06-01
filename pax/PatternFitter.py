@@ -235,8 +235,6 @@ class PatternFitter(object):
         """
         gofs, lowest_indices = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
                                                   pmt_selection, square_syst_errors, statistic, plot)
-        if np.all(np.isnan(gofs)):
-            raise ValueError("Goodness of fit values are all NaN??")
         min_index = np.unravel_index(np.nanargmin(gofs), gofs.shape)
         # Convert index back to position
         result = []
