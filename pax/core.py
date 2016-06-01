@@ -104,7 +104,7 @@ class Processor:
                 if not isinstance(section_config, dict):
                     raise ValueError("Keys in run_doc.processor should have dictionary values only")
                 config_dict.setdefault(section_name, {})
-                for k, v in section_config:
+                for k, v in section_config.items():
                     config_dict[section_name].setdefault(k, v)
 
             # Add run number and run name to the config_dict
