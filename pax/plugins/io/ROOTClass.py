@@ -174,10 +174,28 @@ class EncodeROOTClass(plugin.TransformPlugin):
                 if element_model_name not in self._custom_types:
                     self._custom_types.append(element_model_name)
                     if not len(field_value):
-                        self.log.debug("Don't have a %s instance to use: making default one..." % element_model_name)
+                        # This event does not have an instance of the required type, we have to make one.
+                        # TODO: These are some very ugly hacks!
+                        # Ultimately this is due to the bad design choice of using a class instance rather than the
+                        # class itself to make the root c++ class from. We have to pay this technical debt someday!
+                        self.log.debug("Don't have a %s instance to use: making a fake one..." % element_model_name)
                         if element_model_name == 'Pulse':
                             # Pulse has a custom __init__ we need to obey... why did we do this again?
                             source = element_model(channel=0, left=0, right=0)
+                        elif element_model_name == 'Peak':
+                            # Peak has some array fields whose length depends on the configuration.
+                            source = element_model()
+                            n_channels = self.config['n_channels']
+                            aargh = self.processor.config['BasicProperties.SumWaveformProperties']
+                            n_waveform_samples = int(aargh['peak_waveform_length'] / self.config['sample_duration']) + 1
+                            for _fn, length in ((
+                                ('area_per_channel', n_channels),
+                                ('hits_per_channel', n_channels),
+                                ('n_saturated_per_channel', n_channels),
+                                ('sum_waveform', n_waveform_samples),
+                                ('sum_waveform_top', n_waveform_samples),
+                            )):
+                                setattr(source, _fn, np.zeros(length, dtype=getattr(source, _fn).dtype))
                         else:
                             source = element_model()
                     else:
