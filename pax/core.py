@@ -81,8 +81,8 @@ class Processor:
 
             # Get the run document, either by explicitly specified run number, or by the input name
             # The last option is a bit of a hack... if you don't like it, think of some way to always pass
-            # the run number explicitly.
-            if self.config.get('DEFAULT', {}).get('run_number') >= 0:
+            # the run number explicitly. By the way, let's hope nobody tries to reprocess run 0..
+            if self.config.get('DEFAULT', {}).get('run_number') > 0:
                 run_number = self.config['DEFAULT']['run_number']
                 run_doc = run_collection.find_one({'number': run_number})
                 if not run_doc:
