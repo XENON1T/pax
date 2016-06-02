@@ -562,6 +562,7 @@ class PeakViewer(PlotBase):
     block_view = True
     hates_tight_layout = True
     max_characters = 70
+    _buttons = []       # Keeps references to the buttons we create alive. Needed for matplotlib 1.5.
 
     def substartup(self):
         # Default setting for first peak to show
@@ -820,3 +821,4 @@ class PeakViewer(PlotBase):
         button_axes = plt.axes(rect)
         button = plt.Button(button_axes, label)
         button.on_clicked(lambda _mpl_event: on_click())
+        self._buttons.append(button)
