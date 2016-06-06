@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 4.9.0 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.9.0',
+        VERSION:     '4.10.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.9.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -46,53 +46,41 @@
 <span class="sd">must be run on the data and will result in triggered data.  Input and output</span>
 <span class="sd">classes are provided for MongoDB access.  More information is in the docstrings.</span>
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">snappy</span>
 <span class="kn">import</span> <span class="nn">pymongo</span>
 
+<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">import</span> <span class="nn">snappy</span>
+<span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="kn">import</span> <span class="n">ClientMaker</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span><span class="p">,</span> <span class="n">EventProxy</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">units</span>
 
 
-<div class="viewcode-block" id="MongoDBReader"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReader">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReader</span><span class="p">:</span>
-    <span class="n">use_monary</span> <span class="o">=</span> <span class="bp">False</span>
+<div class="viewcode-block" id="MongoBase"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase">[docs]</a><span class="k">class</span> <span class="nc">MongoBase</span><span class="p">:</span>
 
-<div class="viewcode-block" id="MongoDBReader.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReader.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">_cached_subcollection_handles</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="MongoBase.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">secret_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;secret_mode&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Setup keys and options for finding pulses</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">start_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;start_key&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;stop_key&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="p">([(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_key</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mongo_find_options</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sort&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">}</span>
-        <span class="c1"># Used to have &#39;cursor_type&#39;: pymongo.cursor.CursorType.EXHAUST here as well</span>
-
-        <span class="c1"># Load the digitizer channel -&gt; PMT index mapping</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;detector&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_mappings</span> <span class="o">=</span> <span class="p">{(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;module&#39;</span><span class="p">],</span>
-                              <span class="n">x</span><span class="p">[</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;channel&#39;</span><span class="p">]):</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;pmt_position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_channels</span> <span class="o">=</span> <span class="p">[]</span>
-
         <span class="c1"># Connect to the runs db</span>
-        <span class="n">mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">mongo_manager</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">runs</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="s1">&#39;run&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s1">&#39;runs_new&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cm</span> <span class="o">=</span> <span class="n">ClientMaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;MongoDB&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="s1">&#39;run&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_client</span><span class="p">[</span><span class="s1">&#39;run&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s1">&#39;runs_new&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_doc</span><span class="p">()</span>
 
-        <span class="c1"># Can we use monary?</span>
-        <span class="c1"># Only relevant for readuntriggered... code stink</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_monary</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">mm</span><span class="o">.</span><span class="n">monary_enabled</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Use of monary was requested, but monary did not import. Reverting to pymongo.&quot;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">use_monary</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;reader&#39;</span><span class="p">][</span><span class="s1">&#39;ini&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rotating_collections&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Split collection mode: batch window forced to </span><span class="si">%s</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;batch_window&#39;</span><span class="p">]</span>
 
-        <span class="c1"># Connect to the input database</span>
-        <span class="c1"># Input database connection settings are specified in the run doc</span>
-        <span class="c1"># TODO: can username, host, password, settings different from standard db access info?</span>
-        <span class="c1"># Then we have to pass extra args to MongoManager</span>
+        <span class="c1"># Retrieve information for connecting to the input database from the run doc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;untriggered&#39;</span><span class="p">:</span>
@@ -100,235 +88,317 @@
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid run document: none of the &#39;data&#39; entries contain untriggered data!&quot;</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;According to the runs db, the data resides in the &#39;admin&#39; database... &quot;</span>
-                             <span class="s2">&quot;Guessing &#39;untriggered&#39; instead.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;untriggered&#39;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_monary</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">monary_client</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
-                                                 <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
-                                                 <span class="n">monary</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;untriggered&#39;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Grabbing collection </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span>
-            <span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
-            <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating index in input collection&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="o">.</span><span class="n">create_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Succesfully grabbed collection </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
+        <span class="c1"># Connect to the input database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
+                                               <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
+                                               <span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>         <span class="c1"># w=0 ensures fast deletes. We&#39;re not going to write.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_client</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
 </div>
-<div class="viewcode-block" id="MongoDBReader.do_monary_query"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReader.do_monary_query">[docs]</a>    <span class="k">def</span> <span class="nf">do_monary_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_monary</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;use_monary is false, monary query isn&#39;t going to happen&quot;</span><span class="p">)</span>
-        <span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span>
-        <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">monary_client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">collection</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="MongoDBReader.refresh_run_doc"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReader.refresh_run_doc">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_run_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="MongoBase.refresh_run_doc"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.refresh_run_doc">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_run_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the internal run doc within this class</span>
 <span class="sd">        (does not change anything in the runs database)</span>
 
 <span class="sd">        This is useful for example checking if a run has ended.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updating run doc&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;run_doc_id&#39;</span><span class="p">]})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving run doc&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs_collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;run_doc_id&#39;</span><span class="p">]})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Run doc retrieved&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span> <span class="o">=</span> <span class="s1">&#39;end&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span>
 </div>
+<div class="viewcode-block" id="MongoBase.subcollection_name"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection_name">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return name of subcollection number in the run&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">number</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MongoBase.subcollection"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return pymongo collection object for subcollection number in the run</span>
+<span class="sd">        Caches subcollection handles for you, since it seems to take time to ask for the collection</span>
+<span class="sd">        every event</span>
+<span class="sd">        Actually this turned out to be some other bug... probably we can remove collection caching now.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">number</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="n">number</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">number</span><span class="p">]</span> <span class="o">=</span> <span class="n">coll</span>
+            <span class="k">return</span> <span class="n">coll</span>
+</div>
+<div class="viewcode-block" id="MongoBase.subcollection_with_time"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection_with_time">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection_with_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of the subcollection which contains pulses which start at time</span>
+<span class="sd">        time: pax units (ns) since start of run</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MongoBase.time_range_query"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.time_range_query">[docs]</a>    <span class="k">def</span> <span class="nf">time_range_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns Mongo query to find pulses that START in [start, stop)</span>
+<span class="sd">        Start and stop are each specified in pax units since start of the run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;$gte&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">start</span><span class="p">),</span>
+                         <span class="s1">&#39;$lt&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">stop</span><span class="p">)}}</span>
+</div>
     <span class="k">def</span> <span class="nf">_to_mt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="c1"># Takes time in ns and converts to samples</span>
-        <span class="c1"># makes number small by 10</span>
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Converts the time x from pax units to mongo units&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_from_mt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="c1"># Takes time in samples and converts to ns</span>
-        <span class="c1"># Makes number bigger by 10</span>
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="o">//</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Converts the time x from mongo units to pax units&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="MongoDBReadUntriggered"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReadUntriggered</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">,</span> <span class="n">MongoDBReader</span><span class="p">):</span>
+<div class="viewcode-block" id="MongoDBReadUntriggered"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReadUntriggered</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">,</span> <span class="n">MongoBase</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Read from MongoDB and build events</span>
-<span class="sd">    This will perform a sliding window trigger on the pulse midpoint times.</span>
-<span class="sd">    No PMT pulse data is read in this class to ensure speed.</span>
+    <span class="sd">&quot;&quot;&quot;Read pulse times from MongoDB, pass them to the trigger,</span>
+<span class="sd">    and send off EventProxy&#39;s for MongoDBReadUntriggeredFiller.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">use_monary</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">latest_subcollection</span> <span class="o">=</span> <span class="mi">0</span>           <span class="c1"># Last subcollection that was found to contain some data, last time we checked</span>
 
 <div class="viewcode-block" id="MongoDBReadUntriggered.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">MongoDBReader</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-        <span class="c1"># Load a few more config settings</span>
+        <span class="n">MongoBase</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;detector&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;search_window&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_query_workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;max_query_workers&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># time (in pax units, i.e. ns) at which the pulse which starts last in the run stops</span>
+        <span class="c1"># It would have been nicer to simply know the last stop time, but pulses are sorted by start time...</span>
 
-        <span class="c1"># Initialize the buffer to hold the pulse ranges</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_ranges_buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pulse_ranges_buffer_size&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e7</span><span class="p">)),</span> <span class="mi">2</span><span class="p">),</span>
-                                           <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting event builder&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">trigger</span><span class="o">.</span><span class="n">Trigger</span><span class="p">(</span><span class="n">pax_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="MongoDBReadUntriggered.get_last_pulse_time"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_last_pulse_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_last_pulse_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops</span>
-<span class="sd">        It would have been nicer to know the last stop time, but pulses are sorted by start time.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="o">.</span><span class="n">find</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">pymongo</span><span class="o">.</span><span class="n">DESCENDING</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">cu</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cu</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">cu</span> <span class="o">==</span> <span class="p">[]:</span>
-            <span class="k">return</span> <span class="mi">0</span>
-
-        <span class="n">value</span> <span class="o">=</span> <span class="n">cu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_key</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_key</span><span class="p">]</span>
+        <span class="c1"># Initialize the trigger</span>
+        <span class="c1"># For now, make a collection in trigger_monitor on the same eb as the untriggered collection</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">secret_mode</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uri_for_monitor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;untriggered&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger_monitor&#39;</span><span class="p">)</span>
+            <span class="n">trig_mon_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="s1">&#39;trigger_monitor&#39;</span><span class="p">,</span>
+                                             <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uri_for_monitor</span><span class="p">)[</span><span class="s1">&#39;trigger_monitor&#39;</span><span class="p">]</span>
+            <span class="n">trig_mon_coll</span> <span class="o">=</span> <span class="n">trig_mon_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_mt</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">trig_mon_coll</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uri_for_monitor</span> <span class="o">=</span> <span class="s1">&#39;nowhere, because secret mode was used&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">trigger</span><span class="o">.</span><span class="n">Trigger</span><span class="p">(</span><span class="n">pax_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                                       <span class="n">trigger_monitor_collection</span><span class="o">=</span><span class="n">trig_mon_coll</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="MongoDBReadUntriggered.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="MongoDBReadUntriggered.refresh_run_info"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.refresh_run_info">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_run_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Refreshes the run doc and last pulse time information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_doc</span><span class="p">()</span>
 
-        <span class="n">last_time_searched</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># ns</span>
-        <span class="n">last_time_to_search</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="n">next_event_number</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Find the last collection with data in it</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finding last collection&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
+                <span class="c1"># Get all collection names, find the last subcollection with some data that belongs to the current run.</span>
+                <span class="n">subcols_with_stuff</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">()</span>
+                                      <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span> <span class="ow">and</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">subcols_with_stuff</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Run contains no collection(s) with any pulses!&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="c1"># This should only happen at the beginning of a run, otherwise something is very wrong with the</span>
+                    <span class="c1"># collection clearing algorithm!</span>
+                    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">==</span> <span class="mi">0</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">subcols_with_stuff</span><span class="p">)</span>
+                <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># While the DAQ is running, we can&#39;t use this method, as the reader creates empty collections</span>
+                <span class="c1"># ahead of the insertion point. Instead, move forward in subcollections until we find one without data.</span>
+                <span class="c1"># This means that if there is a large gap in the data, we won&#39;t progress beyond it! (until the run ends)</span>
+                <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
+                        <span class="k">break</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span>
 
-        <span class="n">more_data_coming</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c1"># Find the last pulse in the collection</span>
+        <span class="n">cu</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">check_collection</span><span class="o">.</span><span class="n">find</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">pymongo</span><span class="o">.</span><span class="n">DESCENDING</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">cu</span><span class="p">):</span>
+            <span class="c1"># Apparently the DAQ has not taken any pulses yet?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="n">cu</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_mt</span><span class="p">(</span><span class="n">last_pulse_time</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
-            <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_last_pulse_time</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The DAQ has stopped, last pulse time is </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_pulse_time</span><span class="p">))</span>
-            <span class="c1"># Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.</span>
-            <span class="n">end_of_run_t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">-</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span>
-            <span class="k">if</span> <span class="n">end_of_run_t</span> <span class="o">&gt;</span> <span class="n">last_pulse_time</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Run is </span><span class="si">%s</span><span class="s2"> long according to run db, but last pulse in collection starts at </span><span class="si">%s</span><span class="s2">. &quot;</span>
-                                 <span class="s2">&quot;Did the DAQ crash?&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">end_of_run_t</span><span class="p">),</span>
-                                                         <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_pulse_time</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The DAQ has stopped, last pulse time is </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The last subcollection number is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
 
-            <span class="c1"># Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)</span>
-            <span class="n">last_time_to_search</span> <span class="o">=</span> <span class="n">last_pulse_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span>
+            <span class="c1"># Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.</span>
+            <span class="n">end_of_run_t</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">end_of_run_t</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">&lt;=</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Run is </span><span class="si">%s</span><span class="s2"> long according to run db, but last pulse starts at </span><span class="si">%s</span><span class="s2">. &quot;</span>
+                                 <span class="s2">&quot;Did the DAQ crash?&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">end_of_run_t</span><span class="p">),</span>
+                                                         <span class="n">pax_to_human_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="MongoDBReadUntriggered.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_info</span><span class="p">()</span>
+        <span class="n">last_time_searched</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)</span>
+        <span class="n">next_event_number</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">more_data_coming</span> <span class="o">=</span> <span class="bp">True</span>
 
         <span class="k">while</span> <span class="n">more_data_coming</span><span class="p">:</span>
-
+            <span class="c1"># Refresh the run info, to find out if data taking has ended</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
-                <span class="c1"># Update the run document, so we know if the run ended.</span>
-                <span class="c1"># This must happen before querying for more data, to avoid a race condition where the run ends</span>
-                <span class="c1"># while the query is in process.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_doc</span><span class="p">()</span>
-                <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_last_pulse_time</span><span class="p">()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
-                    <span class="c1"># Data taking just ended, we can define the time we should stop searching.</span>
-                    <span class="n">last_time_to_search</span> <span class="o">=</span> <span class="n">last_pulse_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Make sure we only query data that is at least one search window away from the last pulse time,</span>
-                    <span class="c1"># to avoid querying near the ragged edge (where readers are inserting asynchronously).</span>
-                    <span class="c1"># Also make sure we only query once a full search window of such safe data is available (to avoid</span>
-                    <span class="c1"># mini-queries). So if search_window = 60 sec, we&#39;ll wait for 2 mins of data before our first query.</span>
-                    <span class="k">if</span> <span class="n">last_pulse_time</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span> <span class="o">&lt;</span> <span class="n">last_time_searched</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DAQ has not taken sufficient data to continue. Sleeping 5 sec...&quot;</span><span class="p">)</span>
-                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_info</span><span class="p">()</span>
 
-            <span class="c1"># Query for pulse start &amp; stop times within a large search window</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Searching for pulses after </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_time_searched</span><span class="p">))</span>
-
-            <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;$gt&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">last_time_searched</span><span class="p">),</span>
-                                      <span class="s1">&#39;$lt&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">last_time_searched</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span><span class="p">)}}</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_monary</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;can_get_area&#39;</span><span class="p">]:</span>
-                    <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_monary_query</span><span class="p">(</span>
-                        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
-                        <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">,</span> <span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="s1">&#39;integral&#39;</span><span class="p">],</span>
-                        <span class="n">types</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">],</span>
-                        <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mongo_find_options</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_monary_query</span><span class="p">(</span>
-                        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
-                        <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">,</span> <span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">],</span>
-                        <span class="n">types</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">],</span>
-                        <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mongo_find_options</span>
-                    <span class="p">)</span>
-                    <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-                <span class="n">times</span> <span class="o">=</span> <span class="n">times</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span>
-
+            <span class="c1"># What is the last time we need to search?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
+                <span class="n">end_of_search_for_this_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">time_docs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
-                                                            <span class="n">projection</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">],</span>
-                                                            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mongo_find_options</span><span class="p">))</span>
-                <span class="c1"># Convert response from list of dictionaries to numpy arrays</span>
-                <span class="c1"># Pulse times must be converted to pax time units (ns)</span>
-                <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_docs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-                <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_docs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-                <span class="n">modules</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_docs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-                <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_docs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-                <span class="n">can_get_area</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;can_get_area&#39;</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">time_docs</span><span class="p">):</span>
-                    <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_mt</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">])</span>
-                    <span class="n">channels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span>
-                    <span class="n">modules</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">can_get_area</span><span class="p">:</span>
-                        <span class="n">areas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span>
+                <span class="n">end_of_search_for_this_run</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquired pulse time data in range [</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">]&quot;</span><span class="p">,</span>
-                              <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                              <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="c1"># What is the earliest time we still need to search?</span>
+            <span class="n">next_time_to_search</span> <span class="o">=</span> <span class="n">last_time_searched</span>
+            <span class="k">if</span> <span class="n">next_time_to_search</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">next_time_to_search</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;skip_ahead&#39;</span><span class="p">]</span>
+
+            <span class="c1"># How many batch windows can we search now?</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
+                <span class="n">batches_to_search</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">end_of_search_for_this_run</span> <span class="o">-</span> <span class="n">next_time_to_search</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pulse data found.&quot;</span><span class="p">)</span>
+                <span class="c1"># Make sure we only query data that is edge_safety_margin away from the last pulse time.</span>
+                <span class="c1"># This is because the readers are inserting the pulse data slightly asynchronously.</span>
+                <span class="c1"># Also make sure we only query once a full batch window of such safe data is available (to avoid</span>
+                <span class="c1"># mini-queries).</span>
+                <span class="n">duration_of_searchable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;edge_safety_margin&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">next_time_to_search</span>
+                <span class="n">batches_to_search</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration_of_searchable</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">batches_to_search</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DAQ has not taken sufficient data to continue. Sleeping 5 sec...&quot;</span><span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                    <span class="k">continue</span>
+            <span class="n">batches_to_search</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batches_to_search</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_query_workers</span><span class="p">)</span>
 
-            <span class="c1"># Record advancement of the search window</span>
-            <span class="c1"># We&#39;ve ensured above that a full search window is always queried, even in live mode.</span>
-            <span class="n">last_time_searched</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_window</span>
+            <span class="c1"># Start new queries in separate processes</span>
+            <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">batches_to_search</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+                <span class="n">futures</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">batch_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batches_to_search</span><span class="p">):</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">next_time_to_search</span> <span class="o">+</span> <span class="n">batch_i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+                        <span class="n">subcol_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_with_time</span><span class="p">(</span><span class="n">next_time_to_search</span><span class="p">)</span> <span class="o">+</span> <span class="n">batch_i</span>
+                        <span class="c1"># After a DAQ crash pulses may be inserted in collections which have already been deleted.</span>
+                        <span class="c1"># In a &#39;post-mortem run&#39; on that data, the the event filler queries would be extremely slow.</span>
+                        <span class="c1"># Hence we issue a create_index here, which is just a NOP if the index already exists.</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ensuring index for subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">subcol_i</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="n">subcol_i</span><span class="p">)</span><span class="o">.</span><span class="n">create_index</span><span class="p">([(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+                        <span class="c1"># Prep the query -- not a very difficult one :-)</span>
+                        <span class="n">query</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">collection_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="n">subcol_i</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting query for subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">subcol_i</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">collection_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                        <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
+                        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_range_query</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting query for batch </span><span class="si">%d</span><span class="s2">, time range [</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                            <span class="n">batch_i</span><span class="p">,</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">stop</span><span class="p">)))</span>
+                    <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_pulses</span><span class="p">,</span>
+                                             <span class="n">client_maker_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                                             <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                                             <span class="n">input_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">,</span>
+                                             <span class="n">collection_name</span><span class="o">=</span><span class="n">collection_name</span><span class="p">,</span>
+                                             <span class="n">get_area</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;can_get_area&#39;</span><span class="p">])</span>
+                    <span class="n">futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
 
-            <span class="n">more_data_coming</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">last_time_searched</span> <span class="o">&lt;</span> <span class="n">last_time_to_search</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">more_data_coming</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Searched to </span><span class="si">%s</span><span class="s2">, which is beyond </span><span class="si">%s</span><span class="s2">. This is the last batch of data&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                    <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_time_searched</span><span class="p">),</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_time_to_search</span><span class="p">)))</span>
+                <span class="c1"># Record advancement of the batch window</span>
+                <span class="n">last_time_searched</span> <span class="o">=</span> <span class="n">next_time_to_search</span> <span class="o">+</span> <span class="n">batches_to_search</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
 
-            <span class="c1"># Send the new data to the trigger</span>
-            <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">last_time_searched</span><span class="o">=</span><span class="n">last_time_searched</span><span class="p">,</span>
-                                         <span class="n">start_times</span><span class="o">=</span><span class="n">times</span><span class="p">,</span>
-                                         <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span>
-                                         <span class="n">modules</span><span class="o">=</span><span class="n">modules</span><span class="p">,</span>
-                                         <span class="n">areas</span><span class="o">=</span><span class="n">areas</span><span class="p">,</span>
-                                         <span class="n">last_data</span><span class="o">=</span><span class="ow">not</span> <span class="n">more_data_coming</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending off event </span><span class="si">%d</span><span class="s2"> with data </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">next_event_number</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
-                <span class="k">yield</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="n">next_event_number</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-                <span class="n">next_event_number</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># Check if more data is coming</span>
+                <span class="n">more_data_coming</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">last_time_searched</span> <span class="o">&lt;</span> <span class="n">end_of_search_for_this_run</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">more_data_coming</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Searched to </span><span class="si">%s</span><span class="s2">, which is beyond </span><span class="si">%s</span><span class="s2">. This is the last batch of data&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">last_time_searched</span><span class="p">),</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">end_of_search_for_this_run</span><span class="p">)))</span>
 
-            <span class="c1"># Trigger stopped giving event ranges; if more data is coming,</span>
-            <span class="c1"># we&#39;ll stay in loop and get more data for the trigger.</span>
+                <span class="c1"># Check if we&#39;ve passed the user-specified stop (if so configured)</span>
+                <span class="n">stop_after_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stop_after_sec&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">stop_after_sec</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">stop_after_sec</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">last_time_searched</span> <span class="o">&gt;</span> <span class="n">stop_after_sec</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Searched to </span><span class="si">%s</span><span class="s2">, which is beyond the user-specified stop at </span><span class="si">%d</span><span class="s2"> sec.&quot;</span>
+                                         <span class="s2">&quot;This is the last batch of data&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">last_time_searched</span><span class="p">,</span>
+                                                                             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;stop_after_sec&#39;</span><span class="p">]))</span>
+                        <span class="n">more_data_coming</span> <span class="o">=</span> <span class="bp">False</span>
 
-        <span class="c1"># All went well - print out status information</span>
-        <span class="c1"># Get the end of run info from the trigger, and add the &#39;trigger.&#39; prefix</span>
-        <span class="c1"># Also add some MongoDB specific stuff</span>
-        <span class="n">end_of_run_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-        <span class="n">end_of_run_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;trigger.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">end_of_run_info</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="n">end_of_run_info</span><span class="p">[</span><span class="s1">&#39;trigger.ended&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="n">end_of_run_info</span><span class="p">[</span><span class="s1">&#39;trigger.status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;processed&#39;</span>
+                <span class="c1"># Retrieve results from the queries, then build events (which must happen serially).</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">future</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">futures</span><span class="p">):</span>
+                    <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="n">times</span> <span class="o">=</span> <span class="n">times</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Batch </span><span class="si">%d</span><span class="s2">: acquired pulses in range [</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                                      <span class="n">i</span><span class="p">,</span>
+                                      <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                      <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Batch </span><span class="si">%d</span><span class="s2">: No pulse data found.&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+
+                    <span class="c1"># Send the new data to the trigger, which will build events from it</span>
+                    <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">last_time_searched</span><span class="o">=</span><span class="n">next_time_to_search</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span><span class="p">,</span>
+                                                 <span class="n">start_times</span><span class="o">=</span><span class="n">times</span><span class="p">,</span>
+                                                 <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">,</span>
+                                                 <span class="n">modules</span><span class="o">=</span><span class="n">modules</span><span class="p">,</span>
+                                                 <span class="n">areas</span><span class="o">=</span><span class="n">areas</span><span class="p">,</span>
+                                                 <span class="n">last_data</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="n">more_data_coming</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">futures</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+                        <span class="k">yield</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="n">next_event_number</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+                        <span class="n">next_event_number</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Built all events for the run!</span>
+        <span class="c1"># Compile the end of run info for the run doc and for display</span>
+        <span class="n">trigger_end_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="n">trigger_end_info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">ended</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                     <span class="n">status</span><span class="o">=</span><span class="s1">&#39;processed&#39;</span><span class="p">,</span>
+                                     <span class="n">trigger_monitor_data_location</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uri_for_monitor</span><span class="p">,</span>
+                                     <span class="n">mongo_reader_config</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                                          <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;password&#39;</span> <span class="ow">and</span>
+                                                          <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">]}))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">secret_mode</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">update_one</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;run_doc_id&#39;</span><span class="p">]},</span>
-                                 <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="n">end_of_run_info</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Event building complete. Trigger information: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">end_of_run_info</span><span class="p">)</span>
+            <span class="n">end_of_run_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;trigger.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">trigger_end_info</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runs_collection</span><span class="o">.</span><span class="n">update_one</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;run_doc_id&#39;</span><span class="p">]},</span>
+                                            <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="n">end_of_run_info</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Event building complete. Trigger information: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">trigger_end_info</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="MongoDBReadUntriggeredFiller"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReadUntriggeredFiller</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">,</span> <span class="n">MongoDBReader</span><span class="p">):</span>
+<div class="viewcode-block" id="MongoDBReadUntriggeredFiller"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReadUntriggeredFiller</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">,</span> <span class="n">MongoBase</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Read pulse data from untriggered MongoDB into event ranges provided by trigger MongoDBReadUntriggered</span>
+    <span class="sd">&quot;&quot;&quot;Read pulse data into event ranges provided by trigger MongoDBReadUntriggered.</span>
 <span class="sd">    This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
 
 <div class="viewcode-block" id="MongoDBReadUntriggeredFiller.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">MongoDBReader</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">MongoBase</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_channels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_of_run_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="c1"># Load the digitizer channel -&gt; PMT index mapping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;detector&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_mappings</span> <span class="o">=</span> <span class="p">{(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;module&#39;</span><span class="p">],</span>
+                              <span class="n">x</span><span class="p">[</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;channel&#39;</span><span class="p">]):</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;pmt_position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">}</span>
 </div>
+    <span class="k">def</span> <span class="nf">_get_cursor_between_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">subcollection_number</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run),</span>
+<span class="sd">        sorted by start time.</span>
+<span class="sd">        Does NOT deal with time ranges split between subcollections!!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">subcollection_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+            <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+            <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="n">subcollection_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_range_query</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">),</span> <span class="n">sort</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+
 <div class="viewcode-block" id="MongoDBReadUntriggeredFiller.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
-        <span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">),</span> <span class="n">trigger_signals</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span>  <span class="c1"># ns</span>
+        <span class="c1"># t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run</span>
+        <span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">),</span> <span class="n">trigger_signals</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Fetching data for event with range [</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">]&quot;</span><span class="p">,</span>
                        <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span>
                        <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">t1</span><span class="p">))</span>
@@ -341,15 +411,25 @@
                       <span class="n">event_number</span><span class="o">=</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span>
                       <span class="n">trigger_signals</span><span class="o">=</span><span class="n">trigger_signals</span><span class="p">)</span>
 
-        <span class="c1"># Convert trigger signal times to ns since start of event (now in ns since start of run)</span>
+        <span class="c1"># Convert trigger signal times to time since start of event</span>
         <span class="n">event</span><span class="o">.</span><span class="n">trigger_signals</span><span class="p">[</span><span class="s1">&#39;left_time&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">t0</span>
         <span class="n">event</span><span class="o">.</span><span class="n">trigger_signals</span><span class="p">[</span><span class="s1">&#39;right_time&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">t0</span>
         <span class="n">event</span><span class="o">.</span><span class="n">trigger_signals</span><span class="p">[</span><span class="s1">&#39;time_mean&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">t0</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">mongo_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="o">.</span><span class="n">find</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$gte&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span>
-                                                                           <span class="s2">&quot;$lte&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">t1</span><span class="p">)}},</span>
-                                                         <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mongo_find_options</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pulse_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mongo_iterator</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="n">start_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_with_time</span><span class="p">(</span><span class="n">t0</span><span class="p">)</span>
+            <span class="n">end_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_with_time</span><span class="p">(</span><span class="n">t1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start_col</span> <span class="o">==</span> <span class="n">end_col</span><span class="p">:</span>
+                <span class="n">mongo_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cursor_between_times</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">start_col</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found event [</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">] which straddles subcollection boundary.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">t0</span><span class="p">),</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">t1</span><span class="p">)))</span>
+                <span class="n">mongo_iterator</span> <span class="o">=</span> <span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_cursor_between_times</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">start_col</span><span class="p">),</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">_get_cursor_between_times</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">end_col</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mongo_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cursor_between_times</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">t1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pulse_doc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mongo_iterator</span><span class="p">):</span>
             <span class="n">digitizer_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">pulse_doc</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">],</span> <span class="n">pulse_doc</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">digitizer_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_mappings</span><span class="p">:</span>
                 <span class="c1"># Fetch the raw data</span>
@@ -357,7 +437,7 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;compressed&#39;</span><span class="p">]:</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">snappy</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-                <span class="n">time_within_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_mt</span><span class="p">(</span><span class="n">pulse_doc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">start_key</span><span class="p">])</span> <span class="o">-</span> <span class="n">t0</span>  <span class="c1"># ns</span>
+                <span class="n">time_within_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_mt</span><span class="p">(</span><span class="n">pulse_doc</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">t0</span>  <span class="c1"># ns</span>
 
                 <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">time_within_event</span><span class="p">),</span>
                                           <span class="n">raw_data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>
@@ -373,33 +453,136 @@
         <span class="k">return</span> <span class="n">event</span>
 
 </div></div>
-<div class="viewcode-block" id="MongoDBWriteTriggered"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBWriteTriggered">[docs]</a><span class="k">class</span> <span class="nc">MongoDBWriteTriggered</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Write raw or processed events to MongoDB</span>
+<div class="viewcode-block" id="MongoDBClearUntriggered"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered">[docs]</a><span class="k">class</span> <span class="nc">MongoDBClearUntriggered</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">,</span> <span class="n">MongoBase</span><span class="p">):</span>
 
-<span class="sd">    These events are already triggered.  We first convert event class to a dict,</span>
-<span class="sd">    then pymongo converts that to BSON.  We have to convert the numpy arrays to</span>
-<span class="sd">    bytes because otherwise we get type errors since pymongo doesn&#39;t know about</span>
-<span class="sd">    numpy.</span>
+    <span class="sd">&quot;&quot;&quot;Clears data whose events have been built from MongoDB&gt;</span>
+<span class="sd">    Will do NOTHING unless delete_data = True in config.</span>
+<span class="sd">    This must run as part of the output group, so it gets the events in order.</span>
+
+<span class="sd">    If split_collections:</span>
+<span class="sd">        Drop sub collections when events from subsequent collections start arriving.</span>
+<span class="sd">        Drop all remaining subcollections on shutdown</span>
+
+<span class="sd">    Else (single collection mode):</span>
+<span class="sd">        Keeps track of which time is safe to delete, then deletes data from the collection in batches.</span>
+<span class="sd">        At shutdown, drop the collection</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">last_time_deleted</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">last_subcollection_not_yet_deleted</span> <span class="o">=</span> <span class="mi">0</span>
 
-<div class="viewcode-block" id="MongoDBWriteTriggered.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBWriteTriggered.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">mm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">mongo_manager</span>
-        <span class="c1"># TODO: grab output_name from somewhere???</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_collection</span> <span class="o">=</span> <span class="n">mm</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="s1">&#39;output&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="MongoDBClearUntriggered.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">MongoBase</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_of_run_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;max_query_workers&#39;</span><span class="p">])</span>
 </div>
-<div class="viewcode-block" id="MongoDBWriteTriggered.write_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBWriteTriggered.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_class</span><span class="p">):</span>
-        <span class="c1"># Convert event class to pymongo-able dictionary, then insert into the database</span>
-        <span class="n">event_dict</span> <span class="o">=</span> <span class="n">event_class</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_collection</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">event_dict</span><span class="p">)</span>
+<div class="viewcode-block" id="MongoDBClearUntriggered.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;delete_data&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">event_proxy</span>
+
+        <span class="n">time_since_start</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;stop_time&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_of_run_start</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="n">coll_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_with_time</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">coll_number</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seen event at subcollection </span><span class="si">%d</span><span class="s2">, clearing subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">coll_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">time_since_start</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;batch_window&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seen event at </span><span class="si">%s</span><span class="s2">, clearing &quot;</span>
+                              <span class="s2">&quot;all data until then.&quot;</span> <span class="o">%</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">delete_pulses</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="p">,</span>
+                                     <span class="n">start_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span><span class="p">),</span>
+                                     <span class="n">stop_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span> <span class="o">=</span> <span class="n">time_since_start</span>
+
+        <span class="k">return</span> <span class="n">event_proxy</span>
+</div>
+<div class="viewcode-block" id="MongoDBClearUntriggered.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;delete_data&#39;</span><span class="p">]:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Clear all (sub)collections for this run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dropping all remaining collections&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">coll_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">coll_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]):</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">coll_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Completed.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Update the run doc to remove the &#39;untriggered&#39; entry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_doc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs_collection</span><span class="o">.</span><span class="n">update_one</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">]},</span>
+                                        <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+                                                           <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;untriggered&#39;</span><span class="p">]}})</span>
 
 </div></div>
 <div class="viewcode-block" id="pax_to_human_time"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.pax_to_human_time">[docs]</a><span class="k">def</span> <span class="nf">pax_to_human_time</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;num is in 1s of ns&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Converts a pax time to a human-readable representation&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ns&#39;</span><span class="p">,</span> <span class="s1">&#39;us&#39;</span><span class="p">,</span> <span class="s1">&#39;ms&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="s1">&#39;ks&#39;</span><span class="p">,</span> <span class="s1">&#39;Ms&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">num</span> <span class="o">&lt;</span> <span class="mf">1000.0</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%3.3f</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
         <span class="n">num</span> <span class="o">/=</span> <span class="mf">1000.0</span>
-    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%3.1f</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%3.1f</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="get_pulses"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.get_pulses">[docs]</a><span class="k">def</span> <span class="nf">get_pulses</span><span class="p">(</span><span class="n">client_maker_config</span><span class="p">,</span> <span class="n">input_info</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">get_area</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Find pulse times according to query using monary.</span>
+<span class="sd">    Returns four numpy arrays: times, modules, channels, areas.</span>
+<span class="sd">    Areas consists of zeros unless get_area = True, in which we also fetch the &#39;integral&#39; field.</span>
+
+<span class="sd">    The monary client is created inside this function, so we can run it with ThreadPoolExecutor or ProcessPoolExecutor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">client_maker</span> <span class="o">=</span> <span class="n">ClientMaker</span><span class="p">(</span><span class="n">client_maker_config</span><span class="p">)</span>
+    <span class="n">monary_client</span> <span class="o">=</span> <span class="n">client_maker</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
+                                            <span class="n">uri</span><span class="o">=</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
+                                            <span class="n">monary</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;integral&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
+    <span class="n">types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monary_client</span><span class="o">.</span><span class="n">block_query</span><span class="p">(</span><span class="s1">&#39;untriggered&#39;</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span>
+                                             <span class="n">block_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e7</span><span class="p">),</span>
+                                             <span class="n">select_fields</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+    <span class="n">monary_client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">modules</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Concatenate results from multiple blocks, in case multiple blocks were needed</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                                   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">))])</span>
+                   <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span>
+
+        <span class="k">if</span> <span class="n">get_area</span><span class="p">:</span>
+            <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="n">results</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="n">results</span>
+            <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Sort ourselves, to spare Mongo the trouble</span>
+        <span class="n">sort_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+        <span class="n">modules</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+        <span class="n">areas</span> <span class="o">=</span> <span class="n">areas</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span>
+
+</div>
+<div class="viewcode-block" id="delete_pulses"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.delete_pulses">[docs]</a><span class="k">def</span> <span class="nf">delete_pulses</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">start_mongo_time</span><span class="p">,</span> <span class="n">stop_mongo_time</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deletes pulse between start_mongo_time (inclusive) and stop_mongo_time (exclusive), both in mongo time units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;$gte&#39;</span><span class="p">:</span> <span class="n">start_mongo_time</span><span class="p">,</span>
+                      <span class="s1">&#39;$lt&#39;</span><span class="p">:</span> <span class="n">stop_mongo_time</span><span class="p">}}</span>
+    <span class="n">collection</span><span class="o">.</span><span class="n">delete_many</span><span class="p">(</span><span class="n">query</span><span class="p">)</span></div>
 </pre></div>
 
           </div>

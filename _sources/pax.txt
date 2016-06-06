@@ -28,6 +28,14 @@ pax.InterpolatingMap module
     :undoc-members:
     :show-inheritance:
 
+pax.MongoDB_ClientMaker module
+------------------------------
+
+.. automodule:: pax.MongoDB_ClientMaker
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.PatternFitter module
 ------------------------
 

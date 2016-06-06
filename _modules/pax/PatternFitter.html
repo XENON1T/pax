@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.10.1 documentation</title>
+    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.10.1',
+        VERSION:     '4.10.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -311,12 +311,15 @@
                 <span class="c1"># Extract the x values and y values seperately, also convert to the TPC coordinate system</span>
                 <span class="n">x_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_to_coordinate</span><span class="p">(</span><span class="n">lowest_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cl_segment</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]])</span>
                 <span class="n">y_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_to_coordinate</span><span class="p">(</span><span class="n">lowest_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">cl_segment</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]])</span>
-
-                <span class="c1"># Calculate the confidence tuple for this CL</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">))</span>
-                <span class="n">ct</span><span class="o">.</span><span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x_values</span><span class="p">))</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_values</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cannot compute confidence contour: all x or y values are Nan!&quot;</span><span class="p">)</span>
+                    <span class="c1"># If we&#39;d now call nanmin, we get an annoying numpy runtime warning.</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Calculate the confidence tuple for this CL</span>
+                    <span class="n">ct</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span>
+                    <span class="n">ct</span><span class="o">.</span><span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+                    <span class="n">ct</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_values</span><span class="p">))</span>
+                    <span class="n">ct</span><span class="o">.</span><span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">y_values</span><span class="p">))</span>
 
                 <span class="c1"># Does the contour touch the edge of the TPC</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x_values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
