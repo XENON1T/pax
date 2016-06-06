@@ -9,6 +9,11 @@ import psutil
 import sys
 import time
 import multiprocessing
+import heapq
+if six.PY2:
+    import imp
+else:
+    import importlib
 try:
     import queue
 except ImportError:
@@ -19,12 +24,9 @@ from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
 from pax.configuration import load_configuration
+from pax.exceptions import InvalidConfigurationError
 from pax import simulation, utils
-if six.PY2:
-    import imp
-else:
-    import importlib
-import heapq
+from pax.MongoDB_ClientMaker import ClientMaker
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -57,6 +59,9 @@ class Processor:
 
         The config_dict's settings are not evaluated.
 
+        If config['pax']['look_for_config_in_runs_db'], will try to connect to the runs db and fetch configuration
+        for this particular run. The run id is fetched either by number (config['DEFAULT']['run_number']
+
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
 
@@ -66,10 +71,52 @@ class Processor:
           the same log level as the first, regardless of their configuration.  See #78.
         """
         self.config = load_configuration(config_names, config_paths, config_string, config_dict)
+        self.log = self.setup_logging()
+
+        # Do we need to get further configuration from the runs database?
+        if self.config['pax'].get('look_for_config_in_runs_db'):
+            self.log.debug("Looking for extra configuration in runs db")
+            # Connect to MongoDB
+            run_collection = ClientMaker(self.config['MongoDB']).get_client('run')['run'].get_collection('runs_new')
+
+            # Get the run document, either by explicitly specified run number, or by the input name
+            # The last option is a bit of a hack... if you don't like it, think of some way to always pass
+            # the run number explicitly. By the way, let's hope nobody tries to reprocess run 0..
+            if self.config.get('DEFAULT', {}).get('run_number') > 0:
+                run_number = self.config['DEFAULT']['run_number']
+                run_doc = run_collection.find_one({'number': run_number})
+                if not run_doc:
+                    raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
+
+            elif 'input_name' in self.config['pax']:
+                run_name = os.path.basename(self.config['pax']['input_name'])
+                run_doc = run_collection.find_one({'name': run_name})
+                if not run_doc:
+                    raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
+
+            else:
+                raise InvalidConfigurationError("Cannot get configuration from runs db: give run_number or input_name!")
+
+            self.log.debug("Found run document for run %d, %s" % (run_doc['number'], run_doc['name']))
+
+            # The run doc settings get priority just before config_dict, so we can't just do dict.update()
+            for section_name, section_config in run_doc.get('processor', {}).items():
+                if not isinstance(section_config, dict):
+                    raise ValueError("Keys in run_doc.processor should have dictionary values only")
+                config_dict.setdefault(section_name, {})
+                for k, v in section_config.items():
+                    config_dict[section_name].setdefault(k, v)
+
+            # Add run number and run name to the config_dict
+            config_dict.setdefault('DEFAULT', {})
+            config_dict['DEFAULT']['run_number'] = run_doc['number']
+            config_dict['DEFAULT']['run_name'] = run_doc['name']
+
+            # Reload the configuration
+            self.config = load_configuration(config_names, config_paths, config_string, config_dict)
 
         pc = self.config['pax']
         self.worker_id = pc.get('_worker_id', 'master')
-        self.log = self.setup_logging()
 
         if self.worker_id != 'master':
             self.log.debug("I'm worker %s" % self.worker_id)
@@ -144,7 +191,7 @@ class Processor:
                                  'If you attempt to load the waveform simulator, pax will crash!')
 
         # Get the list of plugins from the configuration
-        # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
+        # plugin_names is a dict with group names as keys, and the plugins we have to initialize per group as values
         plugin_names = {}
         if 'plugin_group_names' not in pc:
             if not just_testing:
@@ -170,13 +217,13 @@ class Processor:
 
         for plugin_group_name in pc['plugin_group_names']:
             if plugin_group_name not in pc:
-                raise ValueError('Invalid configuration: plugin group list %s missing' % plugin_group_name)
+                raise InvalidConfigurationError('Plugin group list %s missing' % plugin_group_name)
 
             plugin_names[plugin_group_name] = pc[plugin_group_name]
 
             if not isinstance(plugin_names[plugin_group_name], (str, list)):
-                raise ValueError("Invalid configuration: plugin group list %s should be a string, not %s" %
-                                 (plugin_group_name, type(plugin_names)))
+                raise InvalidConfigurationError("Plugin group list %s should be a string, not %s"  % (
+                    plugin_group_name, type(plugin_names)))
 
             if not isinstance(plugin_names[plugin_group_name], list):
                 plugin_names[plugin_group_name] = [plugin_names[plugin_group_name]]
@@ -208,8 +255,8 @@ class Processor:
         # Load input plugin & setup the get_events generator
         if 'input' in pc['plugin_group_names']:
             if len(plugin_names['input']) != 1:
-                raise ValueError("Invalid configuration: there should be one input plugin listed, not %s" %
-                                 len(plugin_names['input']))
+                raise InvalidConfigurationError("There should be one input plugin listed, not %s" %
+                                                len(plugin_names['input']))
 
             self.input_plugin = self.instantiate_plugin(plugin_names['input'][0])
             self.number_of_events = self.input_plugin.number_of_events
@@ -265,7 +312,7 @@ class Processor:
         log_spec = pc.get('logging_level', 'INFO').upper()
         numeric_level = getattr(logging, log_spec, None)
         if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % log_spec)
+            raise InvalidConfigurationError('Invalid log level: %s' % log_spec)
 
         logging.basicConfig(level=numeric_level,
                             format='%(name)s %(processName)-10s L%(lineno)s %(levelname)s %(message)s')
@@ -306,7 +353,7 @@ class Processor:
         if six.PY2:
             file, pathname, description = imp.find_module(name_module, self.plugin_search_paths)
             if file is None:
-                raise ValueError('Invalid configuration: plugin %s not found.' % name)
+                raise InvalidConfigurationError('Plugin %s not found.' % name)
             plugin_module = imp.load_module(name_module, file, pathname, description)
         else:
             # imp has been deprecated in favor of importlib.
@@ -314,7 +361,7 @@ class Processor:
             # we really don't want to use it.
             spec = importlib.machinery.PathFinder.find_spec(name_module, self.plugin_search_paths)
             if spec is None:
-                raise ValueError('Invalid configuration: plugin %s not found.' % name)
+                raise InvalidConfigurationError('Plugin %s not found.' % name)
             plugin_module = spec.loader.load_module()
 
         this_plugin_config = {}
@@ -453,7 +500,7 @@ class Processor:
             if self.input_plugin is None:
                 # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
                 # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
-                raise RuntimeError("You just tried to run a Processor without specifying input plugin.")
+                raise InvalidConfigurationError("You just tried to run a Processor without specifying input plugin.")
 
             if self.input_plugin.has_shut_down:
                 raise RuntimeError("Attempt to run a Processor twice!")

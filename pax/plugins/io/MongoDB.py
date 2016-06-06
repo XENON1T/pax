@@ -8,15 +8,13 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from itertools import chain
 import time
-import logging
-import re
-from concurrent.futures import ThreadPoolExecutor
 
-from monary import Monary
 import numpy as np
-import snappy
 import pymongo
 
+from concurrent.futures import ThreadPoolExecutor
+import snappy
+from pax.MongoDB_ClientMaker import ClientMaker
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, trigger, units
 
@@ -545,57 +543,3 @@ def delete_pulses(collection, start_mongo_time, stop_mongo_time):
     query = {'time': {'$gte': start_mongo_time,
                       '$lt': stop_mongo_time}}
     collection.delete_many(query)
-
-
-class ClientMaker:
-    """Helper class to create MongoDB clients
-
-    On __init__, you can specify options that will be used to format mongodb uri's,
-    in particular user, password, host and port.
-    """
-    def __init__(self, config):
-        self.config = config
-        self.log = logging.getLogger('Mongo client maker')
-
-    def get_client(self, database_name=None, uri=None, monary=False, **kwargs):
-        """Get a Mongoclient. Returns Mongo database object.
-        If you provide a mongodb connection string uri, we will insert user & password into it,
-        otherwise one will be built from the configuration settings.
-        If database_name=None, will connect to the default database of the uri. database=something
-        overrides event the uri's specification of a database.
-        """
-        # Pattern of URI's we expect from database (without user & pass)
-        uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
-
-        # Format of URI we should eventually send to mongo
-        full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
-
-        if uri is None:
-            # Construct the entire URI from default settings
-            uri = full_uri_format.format(database=database_name, **self.config)
-        else:
-            m = re.match(uri_pattern, uri)
-            if m:
-                # URI was provided, but without user & pass.
-                host, port, _database_name = m.groups()
-                if database_name is None:
-                    database_name = _database_name
-                uri = full_uri_format.format(database=database_name, host=host, port=port,
-                                             user=self.config['user'], password=self.config['password'])
-            else:
-                # Some other URI was provided. Maybe works...
-                self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
-
-        if monary:
-            # Monary clients are not cached
-            self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
-            client = Monary(uri, **kwargs)
-            self.log.debug("Succesfully connected via monary (probably...)")
-            return client
-
-        else:
-            self.log.debug("Connecting to Mongo using uri %s" % uri)
-            client = pymongo.MongoClient(uri, **kwargs)
-            client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
-            self.log.debug("Successfully pinged client")
-            return client

@@ -10,6 +10,7 @@ class TestPosRecNeuralNet(unittest.TestCase):
     def setUp(self):
         self.pax = core.Processor(config_names='XENON1T', just_testing=True, config_dict={'pax': {
             'plugin_group_names': ['test'],
+            'look_for_config_in_runs_db': False,
             'test':               'NeuralNet.PosRecNeuralNet'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecNeuralNet')
 

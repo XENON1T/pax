@@ -20,7 +20,9 @@ class TestZLE(unittest.TestCase):
                                           'samples_to_store_before': 50,
                                           'samples_to_store_after': 50,
                                           'max_intervals': 32,
+                                          'special_thresholds': {}
                                       }})
+
         self.plugin = self.pax.get_plugin_by_name('SoftwareZLE')
 
     def tearDown(self):

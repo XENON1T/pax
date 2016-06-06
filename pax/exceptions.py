@@ -13,3 +13,7 @@ class CoordinateOutOfRangeException(Exception):
 
 class MaybeOldFormatException(Exception):
     pass
+
+
+class InvalidConfigurationError(Exception):
+    pass
