@@ -8,15 +8,13 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from itertools import chain
 import time
-import logging
-import re
-from concurrent.futures import ThreadPoolExecutor
 
-from monary import Monary
 import numpy as np
-import snappy
 import pymongo
 
+from concurrent.futures import ThreadPoolExecutor
+import snappy
+from pax.MongoDB_ClientMaker import ClientMaker
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, trigger, units
 
@@ -32,7 +30,7 @@ class MongoBase:
         # Connect to the runs db
         self.cm = ClientMaker(self.processor.config['MongoDB'])
         self.run_client = self.cm.get_client('run')
-        self.runs = self.run_client['run'].get_collection('runs_new')
+        self.runs_collection = self.run_client['run'].get_collection('runs_new')
         self.refresh_run_doc()
 
         self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
@@ -68,7 +66,7 @@ class MongoBase:
         This is useful for example checking if a run has ended.
         """
         self.log.debug("Retrieving run doc")
-        self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
+        self.run_doc = self.runs_collection.find_one({'_id': self.config['run_doc_id']})
         self.log.debug("Run doc retrieved")
         self.data_taking_ended = 'end' in self.run_doc
 
@@ -152,9 +150,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         if self.split_collections:
             if self.data_taking_ended:
                 # Get all collection names, find the last subcollection with some data that belongs to the current run.
-                self.latest_subcollection = max([int(x.split('_')[-1]) for x in self.input_db.collection_names()
-                                                 if x.startswith(self.run_doc['name']) and
-                                                 self.input_db.get_collection(x).count()])
+                subcols_with_stuff = [int(x.split('_')[-1]) for x in self.input_db.collection_names()
+                                      if x.startswith(self.run_doc['name']) and
+                                      self.input_db.get_collection(x).count()]
+                if not len(subcols_with_stuff):
+                    self.log.error("Run contains no collection(s) with any pulses!")
+                    self.last_pulse_time = 0
+                    # This should only happen at the beginning of a run, otherwise something is very wrong with the
+                    # collection clearing algorithm!
+                    assert self.latest_subcollection == 0
+                    return
+                else:
+                    self.latest_subcollection = max(subcols_with_stuff)
                 check_collection = self.subcollection(self.latest_subcollection)
             else:
                 # While the DAQ is running, we can't use this method, as the reader creates empty collections
@@ -187,7 +194,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
             # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
             end_of_run_t = (self.run_doc['end'].timestamp() - self.run_doc['start'].timestamp()) * units.s
-            if not (0 <= self.last_pulse_time - end_of_run_t <= 60 * units.s):
+            if not (0 <= end_of_run_t - self.last_pulse_time <= 60 * units.s):
                 self.log.warning("Run is %s long according to run db, but last pulse starts at %s. "
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(self.last_pulse_time)))
@@ -313,8 +320,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
         if not self.secret_mode:
             end_of_run_info = {'trigger.%s' % k: v for k, v in trigger_end_info.items()}
-            self.runs.update_one({'_id': self.config['run_doc_id']},
-                                 {'$set': end_of_run_info})
+            self.runs_collection.update_one({'_id': self.config['run_doc_id']},
+                                            {'$set': end_of_run_info})
         self.log.info("Event building complete. Trigger information: %s" % trigger_end_info)
 
 
@@ -446,8 +453,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.last_subcollection_not_yet_deleted += 1
         else:
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
-                self.log.info("Seen event at %s, clearing all data until then." % (
-                    pax_to_human_time(time_since_start), pax_to_human_time(time_since_start)))
+                self.log.info("Seen event at %s, clearing "
+                              "all data until then." % pax_to_human_time(time_since_start))
                 self.executor.submit(delete_pulses,
                                      self.input_collection,
                                      start_mongo_time=self._to_mt(self.last_time_deleted),
@@ -460,19 +467,19 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if not self.config['delete_data']:
             return
 
-        if self.split_collections:
-            if self.subcollection(self.last_subcollection_not_yet_deleted).count():
-                self.log.info("Dropping final data subcollection %d" % self.last_subcollection_not_yet_deleted)
-                self.input_db.drop_collection(self.subcollection_name(self.last_subcollection_not_yet_deleted))
-            else:
-                self.log.warning("No (or just an empty) final data collection remains??")
-        else:
-            self.log.info("Dropping data collection")
-            self.input_db.drop_collection(self.run_doc['name'])
-        self.log.info("Collection has been dropped")
+        # Clear all (sub)collections for this run
+        self.log.info("Dropping all remaining collections")
+        for coll_name in self.input_db.collection_names():
+            if not coll_name.startswith(self.run_doc['name']):
+                continue
+            self.input_db.drop_collection(coll_name)
+        self.log.info("Completed.")
 
-        self.log.info("Shutting down delete executor / waiting for deletes")
-        self.executor.shutdown(wait=True)
+        # Update the run doc to remove the 'untriggered' entry
+        self.refresh_run_doc()
+        self.runs_collection.update_one({'_id': self.run_doc['_id']},
+                                        {'$set': {'data': [d for d in self.run_doc['data']
+                                                           if d['type'] != 'untriggered']}})
 
 
 def pax_to_human_time(num):
@@ -536,57 +543,3 @@ def delete_pulses(collection, start_mongo_time, stop_mongo_time):
     query = {'time': {'$gte': start_mongo_time,
                       '$lt': stop_mongo_time}}
     collection.delete_many(query)
-
-
-class ClientMaker:
-    """Helper class to create MongoDB clients
-
-    On __init__, you can specify options that will be used to format mongodb uri's,
-    in particular user, password, host and port.
-    """
-    def __init__(self, config):
-        self.config = config
-        self.log = logging.getLogger('Mongo client maker')
-
-    def get_client(self, database_name=None, uri=None, monary=False, **kwargs):
-        """Get a Mongoclient. Returns Mongo database object.
-        If you provide a mongodb connection string uri, we will insert user & password into it,
-        otherwise one will be built from the configuration settings.
-        If database_name=None, will connect to the default database of the uri. database=something
-        overrides event the uri's specification of a database.
-        """
-        # Pattern of URI's we expect from database (without user & pass)
-        uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
-
-        # Format of URI we should eventually send to mongo
-        full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
-
-        if uri is None:
-            # Construct the entire URI from default settings
-            uri = full_uri_format.format(database=database_name, **self.config)
-        else:
-            m = re.match(uri_pattern, uri)
-            if m:
-                # URI was provided, but without user & pass.
-                host, port, _database_name = m.groups()
-                if database_name is None:
-                    database_name = _database_name
-                uri = full_uri_format.format(database=database_name, host=host, port=port,
-                                             user=self.config['user'], password=self.config['password'])
-            else:
-                # Some other URI was provided. Maybe works...
-                self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
-
-        if monary:
-            # Monary clients are not cached
-            self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
-            client = Monary(uri, **kwargs)
-            self.log.debug("Succesfully connected via monary (probably...)")
-            return client
-
-        else:
-            self.log.debug("Connecting to Mongo using uri %s" % uri)
-            client = pymongo.MongoClient(uri, **kwargs)
-            client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
-            self.log.debug("Successfully pinged client")
-            return client

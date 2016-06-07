@@ -157,7 +157,7 @@ class PlotBase(plugin.OutputPlugin):
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
-                if peak.type == 'lone_hit':
+                if self.config.get('hide_peak_info') or peak.type == 'lone_hit':
                     continue
                 textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
@@ -202,6 +202,8 @@ class PlotBase(plugin.OutputPlugin):
             peaks = [source]
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in peaks:
+            if self.config.get('hide_peak_info'):
+                continue
             shade_color = self.peak_colors.get(peak.type, 'black') if peak.detector == 'tpc' else 'red'
             ax.axvspan((peak.left - 1) * self.samples_to_us,
                        peak.right * self.samples_to_us,
@@ -210,6 +212,8 @@ class PlotBase(plugin.OutputPlugin):
 
     def draw_trigger_signals(self, event, y=0, ax=None):
         """Draw markers (stars) indicating the signals found by the trigger"""
+        if self.config.get('hide_trigger_info'):
+            return
         if ax is None:
             ax = plt.gca()
 
@@ -562,6 +566,7 @@ class PeakViewer(PlotBase):
     block_view = True
     hates_tight_layout = True
     max_characters = 70
+    _buttons = []       # Keeps references to the buttons we create alive. Needed for matplotlib 1.5.
 
     def substartup(self):
         # Default setting for first peak to show
@@ -820,3 +825,4 @@ class PeakViewer(PlotBase):
         button_axes = plt.axes(rect)
         button = plt.Button(button_axes, label)
         button.on_clicked(lambda _mpl_event: on_click())
+        self._buttons.append(button)

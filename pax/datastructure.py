@@ -183,9 +183,9 @@ class Peak(StrictModel):
     #  Hit, area, and saturation data
     ##
 
-    #: The hits that make up this peak
-    #: To save space, we usually only store the hits for s1s.
-    #: NEVER rely on the order of hits in this field!!
+    #: The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.
+    #: Do not rely on the order of hits in this field!!
+    #: For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)
     hits = np.array([], dtype=Hit.get_dtype())
 
     #: Total areas of all hits per PMT (pe).
