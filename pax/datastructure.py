@@ -99,8 +99,8 @@ class Hit(StrictModel):
     #: Weighted sum of absolute deviation (in ns) of hit waveform from hit center
     sum_absolute_deviation = 0.0
 
-    left = 0                 #: Index/sample of left bound (inclusive) of peak.
-    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of peak
+    left = 0                 #: Index/sample of left bound (inclusive) of hit in event.
+    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of hit in event.
 
     @property
     def length(self):
@@ -183,8 +183,8 @@ class Peak(StrictModel):
     #  Hit, area, and saturation data
     ##
 
-    #: The hits that make up this peak
-    #: To save space, we usually only store the hits for s1s.
+    #: The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.
+    #: Do not rely on the order of hits in this field!!
     #: For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)
     hits = np.array([], dtype=Hit.get_dtype())
 
@@ -412,9 +412,15 @@ class Pulse(StrictModel):
     #: Raw wave data (numpy array of int16, raw ADC counts)
     raw_data = np.array([], np.int16)
 
-    #: Baseline in ADC counts relative to reference baseline -- but float!
-    #: This field is omitted in processed data (to save space)
+    #: Baseline, in ADC counts relative to reference baseline -- but float!
+    #: This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
+    #: at the start and at the end of the pulse.
+    #: Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.
     baseline = float('nan')
+
+    #: Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
+    #: E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.
+    baseline_increase = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)
     maximum = float('nan')
@@ -589,7 +595,8 @@ class Event(StrictModel):
     trigger_signals = np.array([], dtype=TriggerSignal.get_dtype())
 
     #: Array of all hits found in event
-    #: These will get grouped into peaks during clustering
+    #: These will get grouped into peaks during clustering. New hits will be added when peaks are split.
+    #: NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.
     #: This is usually emptied before output (but not in LED mode)
     all_hits = np.array([], dtype=Hit.get_dtype())
 
@@ -597,8 +604,10 @@ class Event(StrictModel):
     sum_waveforms = ListField(SumWaveform)
 
     #: A list of :class:`pax.datastructure.Interaction` objects.
-    #: An pulse holds a stream of samples in one channel provided by the digitizer.
+    #: A pulse holds a stream of samples in one channel provided by the digitizer.
     #: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
+    #: The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field
+    #: referring to the index of a pulse in this field.
     pulses = ListField(Pulse)
 
     #: Number of noise pulses (pulses without any hits found) per channel

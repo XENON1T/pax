@@ -6,7 +6,7 @@ from pax import plugin, datastructure
 from pax import dsputils
 
 
-class NaturalBreaksClustering(plugin.TransformPlugin):
+class NaturalBreaksClustering(plugin.ClusteringPlugin):
     """Split peaks by a variation on the 'natural breaks' algorithm.
     Any gaps (distances between hits) in peaks larger than min_gap_size_for_break are tested by computing a
     'goodness of split' for splitting the cluster at that point.
@@ -23,19 +23,13 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'], k=1)
         self.dt = self.config['sample_duration']
 
-    def transform_event(self, event):
-        new_peaks = []
-        for peak in event.peaks:
-            new_peaks += self.cluster(peak)
-        event.peaks = new_peaks
-        return event
-
-    def cluster(self, peak):
+    def cluster_peak(self, peak):
         """Cluster hits in peak by variant on the natural breaks algorithm.
         Returns list of new peaks constructed from the peak (if no change, will be list with one element).
         Will set interior_split_goodness and birthing_split_goodness attributes
         """
         hits = peak.hits
+        hits.sort(order='left')
         n_hits = len(hits)
 
         # Handle trivial cases
@@ -78,7 +72,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                                             detector=peak.detector,
                                             birthing_split_goodness=split_goodness,
                                             birthing_split_fraction=np.sum(hits['area'][split_i:]) / area_tot)
-                return self.cluster(peak_l) + self.cluster(peak_r)
+                return self.cluster_peak(peak_l) + self.cluster_peak(peak_r)
             else:
                 self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
                     split_i, split_goodness, split_threshold))

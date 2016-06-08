@@ -114,10 +114,6 @@ class SumWaveformProperties(plugin.TransformPlugin):
             peak.area_midpoint += peak.left * dt
 
             # Store the waveform; for tpc also store the top waveform
-            self.log.debug("Storing sum waveform for peak %d-%d-%d in %s" % (peak.left,
-                                                                             int(round(peak.center_time / dt)),
-                                                                             peak.right,
-                                                                             peak.detector))
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':
                 put_w_in_center_of_field(event.get_sum_waveform('tpc_top').samples[peak.left:peak.right + 1],

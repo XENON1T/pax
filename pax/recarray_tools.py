@@ -133,6 +133,8 @@ def group_by(x, group_by_fields='Event', return_group_indices=False):
 def dict_group_by(x, group_by_fields='Event', return_group_indices=False):
     """Same as group_by, but returns OrderedDict of value -> group,
     where value is the value (or tuple of values) of group_by_fields in each subgroup
+    Gotcha: assumes x is sorted by group_by_fields (works in either order, reversed or not)
+    See also group_by
     """
     groups = group_by(x, group_by_fields, return_group_indices)
     return OrderedDict([(fields_view(gr[0:1], group_by_fields)[0], gr) for gr in groups])
