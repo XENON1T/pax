@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -737,7 +737,8 @@ and list of objects (such as Peak, Hit and Pulse) containing lower-level informa
 <dt id="pax.datastructure.Event.all_hits">
 <code class="descname">all_hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of all hits found in event
-These will get grouped into peaks during clustering
+These will get grouped into peaks during clustering. New hits will be added when peaks are split.
+NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.
 This is usually emptied before output (but not in LED mode)</p>
 </dd></dl>
 
@@ -867,8 +868,10 @@ Has to be the same as n_channels in config, provided here for deserialization ea
 <dt id="pax.datastructure.Event.pulses">
 <code class="descname">pulses</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list of <a class="reference internal" href="#pax.datastructure.Interaction" title="pax.datastructure.Interaction"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Interaction</span></code></a> objects.
-An pulse holds a stream of samples in one channel provided by the digitizer.
-To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)</p>
+A pulse holds a stream of samples in one channel provided by the digitizer.
+To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
+The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field
+referring to the index of a pulse in this field.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1012,7 +1015,7 @@ This means the hit should be disregarded by clustering algorithms.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.left">
 <code class="descname">left</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.left" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index/sample of left bound (inclusive) of peak.</p>
+<dd><p>Index/sample of left bound (inclusive) of hit in event.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1037,7 +1040,7 @@ Note: in Pulse the same number is stored in ADC-counts.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.right">
 <code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index/sample of right bound (INCLUSIVE!!) of peak</p>
+<dd><p>Index/sample of right bound (INCLUSIVE!!) of hit in event.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1290,8 +1293,8 @@ unless it doesn&#8217;t exist or is a nan position, then moves on to further alg
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
 <code class="descname">hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
-<dd><p>The hits that make up this peak
-To save space, we usually only store the hits for s1s.
+<dd><p>The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.
+Do not rely on the order of hits in this field!!
 For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)</p>
 </dd></dl>
 
@@ -1483,8 +1486,17 @@ raw_data field is never stored.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.baseline">
 <code class="descname">baseline</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Baseline in ADC counts relative to reference baseline &#8211; but float!
-This field is omitted in processed data (to save space)</p>
+<dd><p>Baseline, in ADC counts relative to reference baseline &#8211; but float!
+This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
+at the start and at the end of the pulse.
+Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Pulse.baseline_increase">
+<code class="descname">baseline_increase</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline_increase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
+E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1732,13 +1744,6 @@ Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</p>
 </ul>
 </div></blockquote>
 <p>If neither of these are true, and gain is 0, will return 0.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.dsputils.cluster_by_diff">
-<code class="descclassname">pax.dsputils.</code><code class="descname">cluster_by_diff</code><span class="sig-paren">(</span><em>x</em>, <em>diff_threshold</em>, <em>return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#cluster_by_diff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.cluster_by_diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns list of lists of indices of clusters in x,
-making cluster boundaries whenever values are &gt;= threshold apart.</p>
 </dd></dl>
 
 <dl class="function">
@@ -2105,7 +2110,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'L': &lt;class 'numpy.int64'&gt;, 'O': &lt;class 'bool'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O'), 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2120,7 +2125,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int16': '/S', 'bool': '/O', 'int32': '/I', 'S': '/C', 'float64': '/D', 'float32': '/F', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'bool': '/O', 'int32': '/I', 'int16': '/S', 'float32': '/F', 'float64': '/D', 'int64': '/L', 'S': '/C'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2233,6 +2238,29 @@ transform would modify the event object.</p>
 <dl class="method">
 <dt id="pax.plugin.BasePlugin.startup">
 <code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugin.ClusteringPlugin">
+<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">ClusteringPlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ClusteringPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ClusteringPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<p>Base class for clustering plugins</p>
+<dl class="method">
+<dt id="pax.plugin.ClusteringPlugin.cluster_peak">
+<code class="descname">cluster_peak</code><span class="sig-paren">(</span><em>peak</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ClusteringPlugin.cluster_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ClusteringPlugin.cluster_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes peak and returns LIST of peaks</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.ClusteringPlugin.finalize_event">
+<code class="descname">finalize_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ClusteringPlugin.finalize_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ClusteringPlugin.finalize_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.ClusteringPlugin.transform_event">
+<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ClusteringPlugin.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ClusteringPlugin.transform_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2369,7 +2397,9 @@ If fields already exists in data, will overwrite</p>
 <dt id="pax.recarray_tools.dict_group_by">
 <code class="descclassname">pax.recarray_tools.</code><code class="descname">dict_group_by</code><span class="sig-paren">(</span><em>x</em>, <em>group_by_fields='Event'</em>, <em>return_group_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#dict_group_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.dict_group_by" title="Permalink to this definition">¶</a></dt>
 <dd><p>Same as group_by, but returns OrderedDict of value -&gt; group,
-where value is the value (or tuple of values) of group_by_fields in each subgroup</p>
+where value is the value (or tuple of values) of group_by_fields in each subgroup
+Gotcha: assumes x is sorted by group_by_fields (works in either order, reversed or not)
+See also group_by</p>
 </dd></dl>
 
 <dl class="function">

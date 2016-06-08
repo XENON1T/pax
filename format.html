@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Installation and setup" href="faq.html" />
    
@@ -65,7 +65,8 @@ and list of objects (such as Peak, Hit and Pulse) containing lower-level informa
 <dt id="pax.datastructure.Event.all_hits">
 <code class="descname">all_hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of all hits found in event
-These will get grouped into peaks during clustering
+These will get grouped into peaks during clustering. New hits will be added when peaks are split.
+NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.
 This is usually emptied before output (but not in LED mode)</p>
 </dd></dl>
 
@@ -195,8 +196,10 @@ Has to be the same as n_channels in config, provided here for deserialization ea
 <dt id="pax.datastructure.Event.pulses">
 <code class="descname">pulses</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list of <a class="reference internal" href="pax.html#pax.datastructure.Interaction" title="pax.datastructure.Interaction"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Interaction</span></code></a> objects.
-An pulse holds a stream of samples in one channel provided by the digitizer.
-To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)</p>
+A pulse holds a stream of samples in one channel provided by the digitizer.
+To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
+The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field
+referring to the index of a pulse in this field.</p>
 </dd></dl>
 
 <dl class="method">
@@ -513,8 +516,8 @@ unless it doesn&#8217;t exist or is a nan position, then moves on to further alg
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
 <code class="descname">hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
-<dd><p>The hits that make up this peak
-To save space, we usually only store the hits for s1s.
+<dd><p>The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.
+Do not rely on the order of hits in this field!!
 For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)</p>
 </dd></dl>
 
@@ -817,7 +820,7 @@ This means the hit should be disregarded by clustering algorithms.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.left">
 <code class="descname">left</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.left" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index/sample of left bound (inclusive) of peak.</p>
+<dd><p>Index/sample of left bound (inclusive) of hit in event.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -842,7 +845,7 @@ Note: in Pulse the same number is stored in ADC-counts.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.right">
 <code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index/sample of right bound (INCLUSIVE!!) of peak</p>
+<dd><p>Index/sample of right bound (INCLUSIVE!!) of hit in event.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -911,8 +914,17 @@ raw_data field is never stored.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.baseline">
 <code class="descname">baseline</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Baseline in ADC counts relative to reference baseline &#8211; but float!
-This field is omitted in processed data (to save space)</p>
+<dd><p>Baseline, in ADC counts relative to reference baseline &#8211; but float!
+This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
+at the start and at the end of the pulse.
+Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Pulse.baseline_increase">
+<code class="descname">baseline_increase</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline_increase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
+E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.</p>
 </dd></dl>
 
 <dl class="attribute">

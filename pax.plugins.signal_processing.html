@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -184,7 +184,7 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
 <code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">build_hits</code><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#build_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.build_hits" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Populates hits_buffer with properties from hits indicated by hit_bounds.</dt>
-<dd>hit_bounds should be a numpy array of (left, right) bounds (inclusive)</dd>
+<dd>hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w</dd>
 </dl>
 <p>Returns nothing.</p>
 </dd></dl>
@@ -194,10 +194,12 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
 <code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">compute_pulse_properties</code><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#compute_pulse_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.compute_pulse_properties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute basic pulse properties quickly
 :param w: Raw pulse waveform in ADC counts
-:param initial_baseline_samples: number of samples at start of pulse to use for baseline computation
-:return: (baseline, noise_sigma, min, max);</p>
+:param baseline_samples: number of samples to use for baseline computation at start and end of pulse
+:return: (baseline, baseline_increase, noise_sigma, min, max);</p>
 <blockquote>
-<div>min and max are relative to baseline
+<div>baseline is the largest baseline of the bl computed at the start and the bl computed at the end
+baseline_increase = baseline_after - baseline_before
+min and max relative to baseline
 noise_sigma is the std of samples below baseline</div></blockquote>
 <p>Does not modify w. Does not assume anything about inversion of w!!</p>
 </dd></dl>

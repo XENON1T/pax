@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -170,7 +170,7 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 <dl class="class">
 <dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering">
 <em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.NaturalBreaksClustering.</code><code class="descname">NaturalBreaksClustering</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.ClusteringPlugin" title="pax.plugin.ClusteringPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.ClusteringPlugin</span></code></a></p>
 <p>Split peaks by a variation on the &#8216;natural breaks&#8217; algorithm.
 Any gaps (distances between hits) in peaks larger than min_gap_size_for_break are tested by computing a
 &#8216;goodness of split&#8217; for splitting the cluster at that point.
@@ -181,8 +181,8 @@ This can be done by simulating them with pax&#8217;s integrated waveform simulat
 Keep in mind that this simulation has to be re-done with every significant change in a detector property
 that affects the signal shape (in particular, a change in electric fields).</p>
 <dl class="method">
-<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster">
-<code class="descname">cluster</code><span class="sig-paren">(</span><em>peak</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster_peak">
+<code class="descname">cluster_peak</code><span class="sig-paren">(</span><em>peak</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.cluster_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cluster hits in peak by variant on the natural breaks algorithm.
 Returns list of new peaks constructed from the peak (if no change, will be list with one element).
 Will set interior_split_goodness and birthing_split_goodness attributes</p>
@@ -191,11 +191,6 @@ Will set interior_split_goodness and birthing_split_goodness attributes</p>
 <dl class="method">
 <dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.startup">
 <code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

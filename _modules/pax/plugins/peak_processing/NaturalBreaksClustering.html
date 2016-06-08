@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -46,7 +46,7 @@
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">dsputils</span>
 
 
-<div class="viewcode-block" id="NaturalBreaksClustering"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering">[docs]</a><span class="k">class</span> <span class="nc">NaturalBreaksClustering</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="NaturalBreaksClustering"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering">[docs]</a><span class="k">class</span> <span class="nc">NaturalBreaksClustering</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">ClusteringPlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Split peaks by a variation on the &#39;natural breaks&#39; algorithm.</span>
 <span class="sd">    Any gaps (distances between hits) in peaks larger than min_gap_size_for_break are tested by computing a</span>
 <span class="sd">    &#39;goodness of split&#39; for splitting the cluster at that point.</span>
@@ -63,19 +63,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;split_goodness_threshold&#39;</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="NaturalBreaksClustering.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="n">new_peaks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-            <span class="n">new_peaks</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
-        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">new_peaks</span>
-        <span class="k">return</span> <span class="n">event</span>
-</div>
-<div class="viewcode-block" id="NaturalBreaksClustering.cluster"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster">[docs]</a>    <span class="k">def</span> <span class="nf">cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
+<div class="viewcode-block" id="NaturalBreaksClustering.cluster_peak"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster_peak">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Cluster hits in peak by variant on the natural breaks algorithm.</span>
 <span class="sd">        Returns list of new peaks constructed from the peak (if no change, will be list with one element).</span>
 <span class="sd">        Will set interior_split_goodness and birthing_split_goodness attributes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span>
+        <span class="n">hits</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
         <span class="n">n_hits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
         <span class="c1"># Handle trivial cases</span>
@@ -118,7 +112,7 @@
                                             <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
                                             <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
                                             <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">split_i</span><span class="p">:])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">peak_l</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">peak_r</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_peak</span><span class="p">(</span><span class="n">peak_l</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_peak</span><span class="p">(</span><span class="n">peak_r</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Proposed split at </span><span class="si">%d</span><span class="s2"> not good enough (</span><span class="si">%0.3f</span><span class="s2"> &lt; </span><span class="si">%0.3f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">split_i</span><span class="p">,</span> <span class="n">split_goodness</span><span class="p">,</span> <span class="n">split_threshold</span><span class="p">))</span>

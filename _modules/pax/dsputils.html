@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -129,35 +129,6 @@
         <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">chs</span><span class="p">:</span>
             <span class="n">detector_by_channel</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
     <span class="k">return</span> <span class="n">detector_by_channel</span>
-
-</div>
-<div class="viewcode-block" id="cluster_by_diff"><a class="viewcode-back" href="../../pax.html#pax.dsputils.cluster_by_diff">[docs]</a><span class="k">def</span> <span class="nf">cluster_by_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">,</span> <span class="n">return_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns list of lists of indices of clusters in x,</span>
-<span class="sd">    making cluster boundaries whenever values are &gt;= threshold apart.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[]</span>
-    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">previous_t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">t</span> <span class="o">-</span> <span class="n">previous_t</span> <span class="o">&gt;</span> <span class="n">diff_threshold</span><span class="p">:</span>
-            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-            <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">current_cluster</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span> <span class="k">if</span> <span class="n">return_indices</span> <span class="k">else</span> <span class="n">t</span><span class="p">)</span>
-        <span class="n">previous_t</span> <span class="o">=</span> <span class="n">t</span>
-    <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">clusters</span>
-    <span class="c1"># Numpy solution below appears to make processor run slower!</span>
-    <span class="c1"># x.sort()</span>
-    <span class="c1"># if not isinstance(x, np.ndarray):</span>
-    <span class="c1">#     x = np.array(x)</span>
-    <span class="c1"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
-    <span class="c1"># if return_indices:</span>
-    <span class="c1">#     return np.split(np.arange(len(x)), split_indices)</span>
-    <span class="c1"># else:</span>
-    <span class="c1">#     return np.split(x, split_indices)</span>
 
 </div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>

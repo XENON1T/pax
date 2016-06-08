@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -139,8 +139,8 @@
     <span class="c1">#: Weighted sum of absolute deviation (in ns) of hit waveform from hit center</span>
     <span class="n">sum_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c1">#: Index/sample of left bound (inclusive) of peak.</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c1">#: Index/sample of right bound (INCLUSIVE!!) of peak</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c1">#: Index/sample of left bound (inclusive) of hit in event.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c1">#: Index/sample of right bound (INCLUSIVE!!) of hit in event.</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -223,8 +223,8 @@
     <span class="c1">#  Hit, area, and saturation data</span>
     <span class="c1">##</span>
 
-    <span class="c1">#: The hits that make up this peak</span>
-    <span class="c1">#: To save space, we usually only store the hits for s1s.</span>
+    <span class="c1">#: The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.</span>
+    <span class="c1">#: Do not rely on the order of hits in this field!!</span>
     <span class="c1">#: For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)</span>
     <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
@@ -452,9 +452,15 @@
     <span class="c1">#: Raw wave data (numpy array of int16, raw ADC counts)</span>
     <span class="n">raw_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="c1">#: Baseline in ADC counts relative to reference baseline -- but float!</span>
-    <span class="c1">#: This field is omitted in processed data (to save space)</span>
+    <span class="c1">#: Baseline, in ADC counts relative to reference baseline -- but float!</span>
+    <span class="c1">#: This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed</span>
+    <span class="c1">#: at the start and at the end of the pulse.</span>
+    <span class="c1">#: Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.</span>
     <span class="n">baseline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c1">#: Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)</span>
+    <span class="c1">#: E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.</span>
+    <span class="n">baseline_increase</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)</span>
     <span class="n">maximum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
@@ -629,7 +635,8 @@
     <span class="n">trigger_signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
     <span class="c1">#: Array of all hits found in event</span>
-    <span class="c1">#: These will get grouped into peaks during clustering</span>
+    <span class="c1">#: These will get grouped into peaks during clustering. New hits will be added when peaks are split.</span>
+    <span class="c1">#: NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.</span>
     <span class="c1">#: This is usually emptied before output (but not in LED mode)</span>
     <span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
@@ -637,8 +644,10 @@
     <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">SumWaveform</span><span class="p">)</span>
 
     <span class="c1">#: A list of :class:`pax.datastructure.Interaction` objects.</span>
-    <span class="c1">#: An pulse holds a stream of samples in one channel provided by the digitizer.</span>
+    <span class="c1">#: A pulse holds a stream of samples in one channel provided by the digitizer.</span>
     <span class="c1">#: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)</span>
+    <span class="c1">#: The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field</span>
+    <span class="c1">#: referring to the index of a pulse in this field.</span>
     <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
     <span class="c1">#: Number of noise pulses (pulses without any hits found) per channel</span>

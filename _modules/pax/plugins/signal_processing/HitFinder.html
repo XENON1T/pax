@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -143,7 +143,7 @@
             <span class="n">w</span> <span class="o">=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">w</span>
 
             <span class="n">_results</span> <span class="o">=</span> <span class="n">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span><span class="p">)</span>
-            <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">=</span> <span class="n">_results</span>
+            <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline_increase</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">=</span> <span class="n">_results</span>
 
             <span class="n">w</span> <span class="o">-=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
 
@@ -196,18 +196,9 @@
             <span class="n">noise_sigma_pe</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
 
             <span class="n">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds_found</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span>
-                       <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">)</span>
+                       <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span>
+                       <span class="n">saturation_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
             <span class="n">hits</span> <span class="o">=</span> <span class="n">hits_buffer</span><span class="p">[:</span><span class="n">n_hits_found</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-            <span class="c1"># If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit</span>
-            <span class="c1"># This is rare enough that it doesn&#39;t need to be in numba</span>
-            <span class="c1"># -0.5 for same reason as above (floating point rounding)</span>
-            <span class="k">if</span> <span class="n">is_saturated</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">):</span>
-                    <span class="n">hits</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;n_saturated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span>
-                                                              <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span>
-                                                              <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
-
             <span class="n">hits_per_pulse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
             <span class="c1"># Diagnostic plotting</span>
@@ -230,6 +221,9 @@
                             <span class="k">continue</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;no hits&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;baseline shifts&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">baseline_increase</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;hits only&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -275,6 +269,7 @@
 <span class="s2">                              (both in ADCc above baseline)</span>
 <span class="s2">                            Pulse baseline: {pulse.baseline}</span>
 <span class="s2">                              (ADCc above reference baseline)</span>
+<span class="s2">                            Baseline increase: {pulse.baseline_increase:.2f}</span>
 
 <span class="s2">                            Gain in this PMT: {gain:.3g}</span>
 
@@ -310,11 +305,13 @@
 </div></div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span>
                       <span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:],</span>
-                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="build_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.build_hits">[docs]</a><span class="k">def</span> <span class="nf">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span> <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">):</span>
+<div class="viewcode-block" id="build_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.build_hits">[docs]</a><span class="k">def</span> <span class="nf">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds</span><span class="p">,</span>
+               <span class="n">hits_buffer</span><span class="p">,</span>
+               <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">saturation_threshold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Populates hits_buffer with properties from hits indicated by hit_bounds.</span>
-<span class="sd">        hit_bounds should be a numpy array of (left, right) bounds (inclusive)</span>
+<span class="sd">        hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w</span>
 <span class="sd">    Returns nothing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">hit_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds</span><span class="p">)):</span>
@@ -323,12 +320,15 @@
         <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">center</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">saturation_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">left</span> <span class="o">=</span> <span class="n">hit_bounds</span><span class="p">[</span><span class="n">hit_i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">right</span> <span class="o">=</span> <span class="n">hit_bounds</span><span class="p">[</span><span class="n">hit_i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]):</span>
             <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">amplitude</span><span class="p">:</span>
                 <span class="n">amplitude</span> <span class="o">=</span> <span class="n">x</span>
                 <span class="n">argmax</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">saturation_threshold</span><span class="p">:</span>
+                <span class="n">saturation_count</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">area</span> <span class="o">+=</span> <span class="n">x</span>
             <span class="n">center</span> <span class="o">+=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">i</span>
         <span class="n">center</span> <span class="o">/=</span> <span class="n">area</span>
@@ -347,26 +347,36 @@
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">left</span> <span class="o">+</span> <span class="n">center</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">argmax</span> <span class="o">+</span> <span class="n">left</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">left</span> <span class="o">+</span> <span class="n">argmax</span>
+        <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">n_saturated</span> <span class="o">=</span> <span class="n">saturation_count</span>
 
 </div>
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">((</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">((</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="compute_pulse_properties"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.compute_pulse_properties">[docs]</a><span class="k">def</span> <span class="nf">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">initial_baseline_samples</span><span class="p">):</span>
+<div class="viewcode-block" id="compute_pulse_properties"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.compute_pulse_properties">[docs]</a><span class="k">def</span> <span class="nf">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">baseline_samples</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Compute basic pulse properties quickly</span>
 <span class="sd">    :param w: Raw pulse waveform in ADC counts</span>
-<span class="sd">    :param initial_baseline_samples: number of samples at start of pulse to use for baseline computation</span>
-<span class="sd">    :return: (baseline, noise_sigma, min, max);</span>
-<span class="sd">      min and max are relative to baseline</span>
+<span class="sd">    :param baseline_samples: number of samples to use for baseline computation at start and end of pulse</span>
+<span class="sd">    :return: (baseline, baseline_increase, noise_sigma, min, max);</span>
+<span class="sd">      baseline is the largest baseline of the bl computed at the start and the bl computed at the end</span>
+<span class="sd">      baseline_increase = baseline_after - baseline_before</span>
+<span class="sd">      min and max relative to baseline</span>
 <span class="sd">      noise_sigma is the std of samples below baseline</span>
 <span class="sd">    Does not modify w. Does not assume anything about inversion of w!!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute the baseline before and after the self-trigger</span>
+    <span class="n">baseline_before</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">baseline_samples</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">baseline_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">w</span><span class="p">[:</span><span class="n">baseline_samples</span><span class="p">]:</span>
+        <span class="n">baseline_before</span> <span class="o">+=</span> <span class="n">x</span>
+    <span class="n">baseline_before</span> <span class="o">/=</span> <span class="n">baseline_samples</span>
 
-    <span class="c1"># First compute baseline</span>
-    <span class="n">baseline</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">initial_baseline_samples</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">initial_baseline_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">w</span><span class="p">[:</span><span class="n">initial_baseline_samples</span><span class="p">]:</span>
-        <span class="n">baseline</span> <span class="o">+=</span> <span class="n">x</span>
-    <span class="n">baseline</span> <span class="o">/=</span> <span class="n">initial_baseline_samples</span>
+    <span class="n">baseline_after</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">w</span><span class="p">[</span><span class="o">-</span><span class="n">baseline_samples</span><span class="p">:]:</span>
+        <span class="n">baseline_after</span> <span class="o">+=</span> <span class="n">x</span>
+    <span class="n">baseline_after</span> <span class="o">/=</span> <span class="n">baseline_samples</span>
+
+    <span class="n">baseline</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">baseline_before</span><span class="p">,</span> <span class="n">baseline_after</span><span class="p">)</span>
+    <span class="n">baseline_increase</span> <span class="o">=</span> <span class="n">baseline_after</span> <span class="o">-</span> <span class="n">baseline_before</span>
 
     <span class="c1"># Now compute mean, noise, and min</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>           <span class="c1"># Running count of samples included in noise sample</span>
@@ -390,7 +400,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">m2</span><span class="o">/</span><span class="n">n</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
 
-    <span class="k">return</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">min_a</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">max_a</span> <span class="o">-</span> <span class="n">baseline</span></div>
+    <span class="k">return</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">baseline_increase</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">min_a</span> <span class="o">-</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">max_a</span> <span class="o">-</span> <span class="n">baseline</span></div>
 </pre></div>
 
           </div>

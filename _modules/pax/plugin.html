@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -180,6 +180,26 @@
         <span class="k">return</span> <span class="n">event</span>
 
 </div>
+<div class="viewcode-block" id="ClusteringPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.ClusteringPlugin">[docs]</a><span class="k">class</span> <span class="nc">ClusteringPlugin</span><span class="p">(</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for clustering plugins&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ClusteringPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.ClusteringPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">event</span>
+        <span class="n">new_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="n">new_peaks</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_peak</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">new_peaks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize_event</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="ClusteringPlugin.cluster_peak"><a class="viewcode-back" href="../../pax.html#pax.plugin.ClusteringPlugin.cluster_peak">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Takes peak and returns LIST of peaks&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="ClusteringPlugin.finalize_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.ClusteringPlugin.finalize_event">[docs]</a>    <span class="k">def</span> <span class="nf">finalize_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+</div></div>
 <div class="viewcode-block" id="PosRecPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.PosRecPlugin">[docs]</a><span class="k">class</span> <span class="nc">PosRecPlugin</span><span class="p">(</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base plugin for position reconstruction</span>
 <span class="sd">    Ensures all posrec plugins:</span>

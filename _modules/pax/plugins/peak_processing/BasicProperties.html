@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.BasicProperties &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.peak_processing.BasicProperties &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -154,10 +154,6 @@
             <span class="n">peak</span><span class="o">.</span><span class="n">area_midpoint</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">*</span> <span class="n">dt</span>
 
             <span class="c1"># Store the waveform; for tpc also store the top waveform</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Storing sum waveform for peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
-                                                                             <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">center_time</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)),</span>
-                                                                             <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span>
-                                                                             <span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">))</span>
             <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="p">,</span> <span class="n">cog_idx</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">==</span> <span class="s1">&#39;tpc&#39;</span><span class="p">:</span>
                 <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s1">&#39;tpc_top&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>

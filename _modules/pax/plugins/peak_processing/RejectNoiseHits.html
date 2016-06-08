@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.RejectNoiseHits &mdash; Processor for Analyzing XENON1T 4.10.2 documentation</title>
+    <title>pax.plugins.peak_processing.RejectNoiseHits &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.10.2',
+        VERSION:     '4.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.10.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -41,7 +41,6 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
-<span class="kn">from</span> <span class="nn">pax.recarray_tools</span> <span class="kn">import</span> <span class="n">fields_view</span>
 
 
 <div class="viewcode-block" id="RejectNoiseHits"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.RejectNoiseHits.RejectNoiseHits">[docs]</a><span class="k">class</span> <span class="nc">RejectNoiseHits</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
@@ -114,15 +113,11 @@
         <span class="c1"># Delete any peaks which have gone empty</span>
         <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">peaks_to_delete</span><span class="p">]</span>
 
-        <span class="c1"># Set the is_rejected flag for the hits in event.all_hits (needed for sumwaveform and plotting)</span>
-        <span class="c1"># Assume found_in_pulse + left uniquely identifies each hit</span>
-        <span class="c1"># First collect indices, then set, as advanced indexing would return a view</span>
+        <span class="c1"># Rebuild the event.all_hits field.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rejected_hits</span><span class="p">):</span>
             <span class="n">rejected_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rejected_hits</span><span class="p">)</span>
-            <span class="n">rejected_hit_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">fields_view</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;found_in_pulse&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">)),</span>
-                                                    <span class="n">fields_view</span><span class="p">(</span><span class="n">rejected_hits</span><span class="p">,</span>  <span class="p">(</span><span class="s1">&#39;found_in_pulse&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">))))[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">hit_i</span> <span class="ow">in</span> <span class="n">rejected_hit_indices</span><span class="p">:</span>
-                <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="n">hit_i</span><span class="p">][</span><span class="s1">&#39;is_rejected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">rejected_hits</span><span class="p">[</span><span class="s1">&#39;is_rejected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">rejected_hits</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">hits</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">event</span></div></div>
 </pre></div>
