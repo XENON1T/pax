@@ -4,8 +4,8 @@ import os
 
 import pymongo
 try:
-    import Monary
-except ImportError:
+    from monary import Monary
+except Exception:
     pass   # Let's hope we're not the event builder.
 
 

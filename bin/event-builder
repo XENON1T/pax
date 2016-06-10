@@ -83,7 +83,7 @@ def main():
                 raise ValueError("Mongodb returned None instead of run document!")
             data_info_entry = dict(location=os.path.join('.',
                                                          run_doc['name']))
-            
+
         if run_doc is None:
             if args.wait <= 0:
                 log.info("No runs to process: exiting.")
@@ -117,10 +117,12 @@ def main():
                            }}
         else:
             config_dict = {}
+
         # FUTURE: Get a complete override dict from run ini instead
         # run_doc should not try to override something from 'pax', 'DEFAULT', etc.
         # config_dict = run_doc['reader']['ini'].get('trigger_configuration_override', {})
-        config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id']},
+        config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id'],
+                                        'run_number': run_doc['number']},
                             'pax': {'output_name': data_info_entry['location'],
                                     'n_cpus': args.cpus},
                             'BSON': {'fields_to_ignore': [],
@@ -133,7 +135,7 @@ def main():
                         'batch_window', 'delete_data', 'edge_safety_margin',
                         'max_query_workers', 'skip_ahead', 'stop_after_sec'):
             argval = getattr(args, argname)
-            if argval is None:
+            if argval is None or argval == '':
                 continue
             if argname in ('edge_safety_margin', 'batch_window'):
                 argval *= units.s
@@ -243,11 +245,12 @@ def get_command_line_arguments():
                              "If 0, instead shuts down if no new runs are found.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
-    connection_group.add_argument('--host',type=str,
+    # TODO: Unfortunate we have to specify defaults here and again in configuration...
+    connection_group.add_argument('--host',type=str, default='gw',
                                   help='MongoDB hostname')
-    connection_group.add_argument('--port', type=int,
+    connection_group.add_argument('--port', type=int, default=27017,
                                   help='Port on host where MongoDB runs')
-    connection_group.add_argument('--user', type=str,
+    connection_group.add_argument('--user', type=str, default='eb',
                                   help='User to connect to MongoDB')
     connection_group.add_argument('--password', type=str, default=os.environ.get('MONGO_PASSWORD'),
                                   help='Password to connect to MongoDB. '
