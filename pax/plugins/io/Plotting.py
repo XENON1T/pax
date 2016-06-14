@@ -34,7 +34,7 @@ class PlotBase(plugin.OutputPlugin):
         if self.config['output_name'] != 'SCREEN':
             self.output_dir = self.config['output_name']
             if not os.path.exists(self.output_dir):
-                os.mself.akedirs(self.output_dir)
+                os.self.makedirs(self.output_dir)
         else:
             self.output_dir = None
 
