@@ -21,7 +21,7 @@ import shutil
 from six.moves import input
 import pymongo
 
-from pax import core, units
+from pax import core, units, configuration
 from pax.MongoDB_ClientMaker import ClientMaker
 
 
@@ -94,16 +94,17 @@ def main():
 
         # Build configuration for pax. Settings priority:
         #   First priority: command line args
-        #   Second priority: rundb's trigger mode, in future complete override settings
+        #   Second priority: rundoc's trigger mode and trigger_config_override (latter has higher priority)
         #   Third priority: defaults from pax configuration (pax will take care of loading these)
         # Unit conversion factors are applied to the command line args, but NOT to the rundb values!
         # (to do that, we'd have to un-convert them when we later store the settings we actually used)
 
         # Load run doc settings + basic settings
         # This is a
+        config_dict = {}
         trigger_mode = run_doc['reader']['ini']['trigger_mode']
         if trigger_mode.startswith('triggered'):
-            log.debug("Picking up triggered mode: trigger_mode is %s" % trigger_mode)
+            log.info("Picked up triggered mode %s, special settings activated" % trigger_mode)
             config_dict = {"Trigger": {
                                "left_extension": 10 * units.us,
                                "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us
@@ -115,18 +116,18 @@ def main():
                                    "2": {"2": 1}
                                }
                            }}
-        else:
-            config_dict = {}
 
-        # FUTURE: Get a complete override dict from run ini instead
-        # run_doc should not try to override something from 'pax', 'DEFAULT', etc.
-        # config_dict = run_doc['reader']['ini'].get('trigger_configuration_override', {})
-        config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id'],
-                                        'run_number': run_doc['number']},
-                            'pax': {'output_name': data_info_entry['location'],
-                                    'n_cpus': args.cpus},
-                            'BSON': {'fields_to_ignore': [],
-                                     'overwrite_output': True}})
+        config_dict = configuration.combine_configs(config_dict, {
+            'DEFAULT': {'run_doc_id': run_doc['_id'],
+                        'run_number': run_doc['number']},
+            'pax': {'output_name': data_info_entry['location'],
+                    'n_cpus': args.cpus},
+            'BSON': {'fields_to_ignore': [],
+                     'overwrite_output': True}})
+
+        # Set any extra settings specified in the run doc
+        config_dict = configuration.combine_configs(config_dict,
+                                                    run_doc['reader']['ini'].get('trigger_config_override', {}))
 
         # Apply command-line override settings for MongoDB
         mongo_settings_override = {}
@@ -140,11 +141,11 @@ def main():
             if argname in ('edge_safety_margin', 'batch_window'):
                 argval *= units.s
             mongo_settings_override[argname] = argval
-        config_dict.setdefault('MongoDB', {})
-        config_dict['MongoDB'].update(mongo_settings_override)
+        config_dict = configuration.combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
 
         # Apply command-line override settings for trigger
-        trigger_settings_override = {}
+        trigger_settings_override = {'trigger_monitor_file_path': os.path.join(data_info_entry['location'],
+                                                                               'trigger_monitor_data.zip')}
         for argname, factor in (('left_extension', units.us),
                                 ('right_extension', units.us),
                                 ('signal_separation', units.us),
@@ -154,19 +155,15 @@ def main():
                 if factor is not None:
                     argval = int(factor * argval)
                 trigger_settings_override[argname] = argval
-        trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
-                                                                              'trigger_monitor_data.zip')
-        config_dict.setdefault('Trigger', {})
-        config_dict['Trigger'].update(trigger_settings_override)
+        config_dict = configuration.combine_configs(config_dict, dict(Trigger=trigger_settings_override))
 
         # Apply command-line override settings for trigger probability
         if args.force_multiplicity_trigger is not None:
-            level = args.force_multiplicity_trigger
-            config_dict.setdefault('Trigger.DecideTriggers', {})
-            config_dict['Trigger.DecideTriggers']['trigger_probability'] = {
-                '0': {str(level): 1},
-                '1': {str(level): 1},
-                '2': {str(level): 1}}
+            str_level = str(args.force_multiplicity_trigger)
+            config_dict = configuration.combine_configs(config_dict, {'Trigger.DecideTriggers': {
+                '0': {str_level: 1},
+                '1': {str_level: 1},
+                '2': {str_level: 1}}})
 
         log.info("Building events for %s", run_doc['name'])
         log.debug("Config override is: %s" % config_dict)
@@ -176,22 +173,24 @@ def main():
                                config_dict=config_dict)
             p.run()     # The run() method includes a call to shutdown()
 
-        # If a timeout occurred, set the status of this run to 'error'
-        # Add other exceptions as they come during commissioning
-        except pymongo.errors.ServerSelectionTimeoutError as e:
+        except Exception as e:
+            # There was some problem -- maybe next run will be better
             log.exception(e)
-            runs.update({'name': run_doc['name'], 'detector' : args.detector},
-                        {'$set': {status_name: 'error'}})
+            if not args.secret_mode:
+                runs.update({'name': run_doc['name'], 'detector': args.detector},
+                            {'$set': {status_name: 'error'}})
+
+        else:
+            # Things went fine :-)
+            if not args.secret_mode:
+                data_info_entry['status'] = 'verifying'
+                runs.update({'_id': run_doc['_id'],
+                             'data.host': data_info_entry['host']},
+                            {'$set': {'data.$': data_info_entry}})
 
         # Copy the log file to the output dir, then clear it for the next run
         shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
         open('eventbuilder.log', mode='w').close()
-
-        if not args.secret_mode:
-            data_info_entry['status'] = 'verifying'
-            runs.update({'_id': run_doc['_id'],
-                         'data.host': data_info_entry['host']},
-                        {'$set': {'data.$': data_info_entry}})
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:

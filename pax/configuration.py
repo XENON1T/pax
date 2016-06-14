@@ -115,11 +115,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
             evaled_config[section_name][key] = eval(value, visible_variables)
 
     # Apply the config_dict
-    for section_name in config_dict.keys():
-        if section_name in evaled_config:
-            evaled_config[section_name].update(config_dict[section_name])
-        else:
-            evaled_config[section_name] = config_dict[section_name]
+    evaled_config = combine_configs(evaled_config, config_dict)
 
     # Make sure [DEFAULT] is at least present
     evaled_config['DEFAULT'] = evaled_config.get('DEFAULT', {})
@@ -127,3 +123,14 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
         del evaled_config['Why_doesnt_configparser_let_me_disable_DEFAULT']
 
     return evaled_config
+
+
+def combine_configs(config, overrides):
+    """Apply overrides to config, then returns config.
+    Config and overrides must be configuration dictionaries, i.e. have at most one level of sections.
+    Settings in overrides override settings in config (as you might have guessed).
+    """
+    for section_name, stuff in overrides.items():
+        config.setdefault(section_name, {})
+        config[section_name].update(stuff)
+    return config
