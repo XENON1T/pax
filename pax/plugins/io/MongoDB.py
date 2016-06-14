@@ -178,10 +178,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         # Find the last pulse in the collection
         cu = list(check_collection.find().sort('time', direction=pymongo.DESCENDING).limit(1))
         if not len(cu):
-            # Apparently the DAQ has not taken any pulses yet?
             if self.split_collections:
-                assert self.latest_subcollection == 0
-            last_pulse_time = 0
+                if not self.latest_subcollection == 0:
+                    self.log.warning("Latest subcollection %d seems empty now, but wasn't before... Race condition/edge"
+                                     " case in mongodb, bug in clearing code, or something else weird? Investigate if "
+                                     "this occurs often!!")
+                last_pulse_time = self.latest_subcollection * self.batch_window
+            else:
+                # Apparently the DAQ has not taken any pulses yet?
+                last_pulse_time = 0
         else:
             last_pulse_time = cu[0]['time']
 
