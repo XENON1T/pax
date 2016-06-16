@@ -53,7 +53,8 @@ For both Linux and Mac OS X::
 
 You need to point Anaconda to the physics-specific packages e.g. ROOT.  You can do this by running the following::
 
-  conda config --add channels http://conda.anaconda.org/NLeSC  
+  conda config --add channels http://conda.anaconda.org/NLeSC 
+  conda config --add channels http://conda.anaconda.org/XENON1T 
 
 
 Check that no other ROOT is seen
@@ -79,20 +80,18 @@ Pax depends on several other python packages. While most python packages will in
 some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries 
 for your platform using the `conda` tool as follows. Make sure to replace <environment_name> with the desired name of your environment (usually it is 'pax' for central installations) in the following command::
 
-  conda update conda
-  conda create -n <environment_name> python=3.4 root=6 numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter
+  conda install -q anaconda-client conda conda-env
+  conda env create -n pax_environment_name XENON1T/pax_head
 
-If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
-
-Whenever you want to use `pax`, you have to run the following command to set it up your environment (containing all the dependencies)::
+You can replace "pax_environment_name" with whatever.  Whenever you want to use `pax`, you have to run the following command to set it up your environment (containing all the dependencies)::
   
-  source activate <environment_name>
+  source activate pax_environment_name
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (<environment_name>) at the beginning of your command line.
 
 -----------------------------------
 
-Of course we assume you have a functional basic compilation environment. On a fresh Ubuntu you may have to do e.g.
+Of course we assume you have a functional basic compilation environment. On a fresh Ubuntu you may have to do e.g.::
 
   sudo apt-get install build-essential
   

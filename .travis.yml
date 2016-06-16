@@ -65,14 +65,14 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
+  - conda install -q anaconda-client conda=3.19.3 conda-env=2.4.5
   - conda info -a # Useful for debugging any issues with conda
-  - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter
-  - source activate pax
-  # tmp hack will be fixed
-  # - conda uninstall -q sqlite libpng libx11 
-  - pip install coveralls nose coverage
+  - conda config --add channels defaults
+  - conda config --add channels http://conda.anaconda.org/NLeSC
+  - conda config --add channels http://conda.anaconda.org/XENON1T
+  - conda env create -q -n pax_head XENON1T/pax_head
+  - conda install -q -n pax_head python=${PYTHON} root=${ROOT} six psutil numexpr
+  - source activate pax_head
 
   # Install pax
   - python setup.py install
