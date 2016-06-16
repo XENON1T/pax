@@ -171,6 +171,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     if not self.subcollection(self.latest_subcollection + 1).count():
                         break
                     self.latest_subcollection += 1
+                self.log.info("Last subcollection with data is %d" % self.latest_subcollection)
                 check_collection = self.subcollection(self.latest_subcollection)
         else:
             check_collection = self.input_collection
