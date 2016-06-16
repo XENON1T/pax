@@ -142,4 +142,4 @@ def fix_sections_from_mongo(config):
     """Returns configuration with | replaced with . in section keys.
     Needed because . in field names has special meaning in MongoDB
     """
-    return {k.replace('|', '.'): v for k, v in config}
+    return {k.replace('|', '.'): v for k, v in config.items()}
