@@ -125,12 +125,21 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
     return evaled_config
 
 
-def combine_configs(config, overrides):
+def combine_configs(config, override):
     """Apply overrides to config, then returns config.
     Config and overrides must be configuration dictionaries, i.e. have at most one level of sections.
     Settings in overrides override settings in config (as you might have guessed).
     """
-    for section_name, stuff in overrides.items():
+    for section_name, section_config in override.items():
         config.setdefault(section_name, {})
-        config[section_name].update(stuff)
+        if not isinstance(section_config, dict):
+            raise ValueError("COnfiguration dictionary should be a dictionary of dictionaries.")
+        config[section_name].update(section_config)
     return config
+
+
+def fix_sections_from_mongo(config):
+    """Returns configuration with | replaced with . in section keys.
+    Needed because . in field names has special meaning in MongoDB
+    """
+    return {k.replace('|', '.'): v for k, v in config}

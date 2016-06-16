@@ -23,7 +23,7 @@ from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
-from pax.configuration import load_configuration
+from pax.configuration import load_configuration, fix_sections_from_mongo, combine_configs
 from pax.exceptions import InvalidConfigurationError
 from pax import simulation, utils
 from pax.MongoDB_ClientMaker import ClientMaker
@@ -82,7 +82,7 @@ class Processor:
             # Get the run document, either by explicitly specified run number, or by the input name
             # The last option is a bit of a hack... if you don't like it, think of some way to always pass
             # the run number explicitly. By the way, let's hope nobody tries to reprocess run 0..
-            if self.config.get('DEFAULT', {}).get('run_number') > 0:
+            if self.config.get('DEFAULT', {}).get('run_number', 0) > 0:
                 run_number = self.config['DEFAULT']['run_number']
                 run_doc = run_collection.find_one({'number': run_number})
                 if not run_doc:
@@ -99,21 +99,16 @@ class Processor:
 
             self.log.debug("Found run document for run %d, %s" % (run_doc['number'], run_doc['name']))
 
-            # The run doc settings get priority just before config_dict, so we can't just do dict.update()
-            for section_name, section_config in run_doc.get('processor', {}).items():
-                if not isinstance(section_config, dict):
-                    raise ValueError("Keys in run_doc.processor should have dictionary values only")
-                config_dict.setdefault(section_name, {})
-                for k, v in section_config.items():
-                    config_dict[section_name].setdefault(k, v)
+            # The run doc settings act as (but do not override) config_dict
+            mongo_conf = fix_sections_from_mongo(run_doc.get('processor', {}))
+            config_dict = combine_configs(mongo_conf, override=config_dict)
 
             # Add run number and run name to the config_dict
             config_dict.setdefault('DEFAULT', {})
             config_dict['DEFAULT']['run_number'] = run_doc['number']
             config_dict['DEFAULT']['run_name'] = run_doc['name']
 
-            # Reload the configuration
-            self.config = load_configuration(config_names, config_paths, config_string, config_dict)
+            self.config = combine_configs(self.config, override=config_dict)
 
         pc = self.config['pax']
         self.worker_id = pc.get('_worker_id', 'master')

@@ -19,9 +19,9 @@ import socket
 import shutil
 
 from six.moves import input
-import pymongo
 
-from pax import core, units, configuration
+from pax import core, units
+from pax.configuration import combine_configs, fix_sections_from_mongo
 from pax.MongoDB_ClientMaker import ClientMaker
 
 
@@ -117,7 +117,7 @@ def main():
                                }
                            }}
 
-        config_dict = configuration.combine_configs(config_dict, {
+        config_dict = combine_configs(config_dict, {
             'DEFAULT': {'run_doc_id': run_doc['_id'],
                         'run_number': run_doc['number']},
             'pax': {'output_name': data_info_entry['location'],
@@ -126,8 +126,8 @@ def main():
                      'overwrite_output': True}})
 
         # Set any extra settings specified in the run doc
-        config_dict = configuration.combine_configs(config_dict,
-                                                    run_doc['reader']['ini'].get('trigger_config_override', {}))
+        mongo_conf = fix_sections_from_mongo(run_doc['reader']['ini'].get('trigger_config_override', {}))
+        config_dict = combine_configs(config_dict, mongo_conf)
 
         # Apply command-line override settings for MongoDB
         mongo_settings_override = {}
@@ -141,7 +141,7 @@ def main():
             if argname in ('edge_safety_margin', 'batch_window'):
                 argval *= units.s
             mongo_settings_override[argname] = argval
-        config_dict = configuration.combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
+        config_dict = combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
 
         # Apply command-line override settings for trigger
         trigger_settings_override = {'trigger_monitor_file_path': os.path.join(data_info_entry['location'],
@@ -155,12 +155,12 @@ def main():
                 if factor is not None:
                     argval = int(factor * argval)
                 trigger_settings_override[argname] = argval
-        config_dict = configuration.combine_configs(config_dict, dict(Trigger=trigger_settings_override))
+        config_dict = combine_configs(config_dict, dict(Trigger=trigger_settings_override))
 
         # Apply command-line override settings for trigger probability
         if args.force_multiplicity_trigger is not None:
             str_level = str(args.force_multiplicity_trigger)
-            config_dict = configuration.combine_configs(config_dict, {'Trigger.DecideTriggers': {
+            config_dict = combine_configs(config_dict, {'Trigger.DecideTriggers': {
                 '0': {str_level: 1},
                 '1': {str_level: 1},
                 '2': {str_level: 1}}})
@@ -174,7 +174,7 @@ def main():
             p.run()     # The run() method includes a call to shutdown()
 
         except Exception as e:
-            # There was some problem -- maybe next run will be better
+            # There was some problem -- write it to the log. Set the trigger status to error.
             log.exception(e)
             if not args.secret_mode:
                 runs.update({'name': run_doc['name'], 'detector': args.detector},
