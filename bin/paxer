@@ -23,7 +23,6 @@ if os.name != 'nt' and not os.environ.get('DISPLAY'):
 import pax    # flake8: noqa
 from pax import core, utils, formats    # flake8: noqa
 
-
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
     parser = get_argsparser(input_plugin_aliases, output_plugin_aliases)
@@ -51,6 +50,8 @@ def main():
         value = getattr(args, argname)
         if value is not None:
             override_dict['pax'][configname] = value
+    if args.ignore_rundb:
+        override_dict['pax']['look_for_config_in_runs_db'] = False
 
     # Process input type options
     if args.input_type is not None:
@@ -184,6 +185,8 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
     config_group.add_argument('--config_string', default='',
                               help="String specifying additional configuration options. Semicolons become newlines.\n"
                                    "For example: '[WaveformSimulator]event_repetitions=2;electron_lifetime=50*us'")
+    config_group.add_argument('--ignore_rundb', action='store_true',
+                              help="Do not try to look for run-specific config overrides in runs database.")
 
     # Control events to process
     event_group = parser.add_argument_group(title='Event specification')
