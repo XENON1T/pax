@@ -750,11 +750,12 @@ class PeakViewer(PlotBase):
         self.bot_hitp_sc = self.plot_hitpattern(peak=peak, ax=self.bot_hitp_ax, array='bottom')
 
         # Update peak waveforms
-        peak_padding = 10
+        peak_padding = self.config.get('peak_padding_samples', 30)
         self.plot_waveform(self.event, left=peak.left, right=peak.right,
                            pad=peak_padding, show_legend=False, log_y_axis=False, ax=self.peak_sumwv_ax)
         self.peak_chwvs_ax.set_xlim((peak.left - peak_padding) * self.chwvs_2s_time_scale,
                                     (peak.right + peak_padding) * self.chwvs_2s_time_scale)
+        self.peak_sumwv_ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=4))
 
         # Update peak text
 
