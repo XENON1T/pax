@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.MongoDB_ClientMaker &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
+    <title>pax.MongoDB_ClientMaker &mdash; Processor for Analyzing XENON1T 5.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.11.0',
+        VERSION:     '5.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -44,8 +44,8 @@
 
 <span class="kn">import</span> <span class="nn">pymongo</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">Monary</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">monary</span> <span class="kn">import</span> <span class="n">Monary</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
     <span class="k">pass</span>   <span class="c1"># Let&#39;s hope we&#39;re not the event builder.</span>
 
 

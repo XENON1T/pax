@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
+    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 5.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.11.0',
+        VERSION:     '5.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -155,18 +155,34 @@
             <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">visible_variables</span><span class="p">)</span>
 
     <span class="c1"># Apply the config_dict</span>
-    <span class="k">for</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">config_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">:</span>
-            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span>
+    <span class="n">evaled_config</span> <span class="o">=</span> <span class="n">combine_configs</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
 
     <span class="c1"># Make sure [DEFAULT] is at least present</span>
     <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaled_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span>
     <span class="k">if</span> <span class="s1">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">:</span>
         <span class="k">del</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">evaled_config</span></div>
+    <span class="k">return</span> <span class="n">evaled_config</span>
+
+</div>
+<div class="viewcode-block" id="combine_configs"><a class="viewcode-back" href="../../pax.html#pax.configuration.combine_configs">[docs]</a><span class="k">def</span> <span class="nf">combine_configs</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">override</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Apply overrides to config, then returns config.</span>
+<span class="sd">    Config and overrides must be configuration dictionaries, i.e. have at most one level of sections.</span>
+<span class="sd">    Settings in overrides override settings in config (as you might have guessed).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">section_config</span> <span class="ow">in</span> <span class="n">override</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">section_name</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">section_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;COnfiguration dictionary should be a dictionary of dictionaries.&quot;</span><span class="p">)</span>
+        <span class="n">config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">section_config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config</span>
+
+</div>
+<div class="viewcode-block" id="fix_sections_from_mongo"><a class="viewcode-back" href="../../pax.html#pax.configuration.fix_sections_from_mongo">[docs]</a><span class="k">def</span> <span class="nf">fix_sections_from_mongo</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns configuration with | replaced with . in section keys.</span>
+<span class="sd">    Needed because . in field names has special meaning in MongoDB</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 </pre></div>
 
           </div>

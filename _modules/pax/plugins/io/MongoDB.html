@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 4.11.0 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 5.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.11.0',
+        VERSION:     '5.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.11.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -211,6 +211,7 @@
                     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
                         <span class="k">break</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Last subcollection with data is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
                 <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span>
@@ -218,10 +219,15 @@
         <span class="c1"># Find the last pulse in the collection</span>
         <span class="n">cu</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">check_collection</span><span class="o">.</span><span class="n">find</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">pymongo</span><span class="o">.</span><span class="n">DESCENDING</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">cu</span><span class="p">):</span>
-            <span class="c1"># Apparently the DAQ has not taken any pulses yet?</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Latest subcollection </span><span class="si">%d</span><span class="s2"> seems empty now, but wasn&#39;t before... Race condition/edge&quot;</span>
+                                     <span class="s2">&quot; case in mongodb, bug in clearing code, or something else weird? Investigate if &quot;</span>
+                                     <span class="s2">&quot;this occurs often!!&quot;</span><span class="p">)</span>
+                <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Apparently the DAQ has not taken any pulses yet?</span>
+                <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">last_pulse_time</span> <span class="o">=</span> <span class="n">cu</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
 
