@@ -219,7 +219,7 @@ def main():
                 daq_control.insert(insert_doc)
 
                 # Raise error on website
-                alerts = run_db.get_collection('alerts')
+                alerts = run_db.get_collection('log')
                 # 3 = ERROR, requires acknowledgement
                 alert_doc = { "priority": 3,
                                "time": datetime.datetime.now(),
