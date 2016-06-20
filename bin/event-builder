@@ -16,6 +16,7 @@ import os
 import time
 import datetime
 import socket
+import pymongo
 import shutil
 
 from six.moves import input
@@ -173,13 +174,63 @@ def main():
                                config_dict=config_dict)
             p.run()     # The run() method includes a call to shutdown()
 
-        except Exception as e:
+        except pymongo.errors.ServerSelectionTimeoutError as e:
             # There was some problem -- write it to the log. Set the trigger status to error.
             log.exception(e)
             if not args.secret_mode:
+                run_db = clientmaker.get_client('run')['run']
+
+                # Raise error on website
+                alerts = run_db.get_collection('alerts')
+                # 3 = ERROR, requires acknowledgement
+                alert_doc = { "priority": 1,
+                               "time": datetime.datetime.now(),
+                               "run": run_doc['number'],
+                               "message": "Mongo timeout, will restart: %s" % str(e),
+                               "sender": "trigger",
+                               }
+                alerts.insert(alert_doc)
+
+                # Mark run as errored
                 runs.update({'name': run_doc['name'], 'detector': args.detector},
                             {'$set': {status_name: 'error'}})
+        except Exception as e:
+            # If general exception caught, log then
+            # stop acquisition (if possible) then raise.
+            log.fatal("Caught unknown exception.")
+            log.exception(e)
 
+            if not args.secret_mode:
+                log.fatal("Stopping DAQ.")
+                # Run database object
+                run_db = clientmaker.get_client('run')['run']
+
+                # Clear DAQ queue of runs to take
+                run_queue = run_db.get_collection('daq_queue')
+                run_queue.remove({})
+
+                # Stop acquisition
+                daq_control = run_db.get_collection('daq_control')
+                insert_doc = {}
+                insert_doc['command'] = 'Stop'
+                insert_doc['detector'] = 'all'
+                insert_doc['user'] = 'trigger'
+                insert_doc['comment'] = 'Caught exception in trigger'
+                daq_control.insert(insert_doc)
+
+                # Raise error on website
+                alerts = run_db.get_collection('log')
+                # 3 = ERROR, requires acknowledgement
+                alert_doc = { "priority": 3,
+                               "time": datetime.datetime.now(),
+                               "run": run_doc['number'],
+                               "message": "Exception caught: %s" % str(e),
+                               "sender": "trigger",
+                               }
+                alerts.insert(alert_doc)
+
+            log.fatal("Raising unknown exception")
+            raise
         else:
             # Things went fine :-)
             if not args.secret_mode:
@@ -189,7 +240,8 @@ def main():
                             {'$set': {'data.$': data_info_entry}})
 
         # Copy the log file to the output dir, then clear it for the next run
-        shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
+        shutil.copyfile('eventbuilder.log',
+                        data_info_entry['location'] + '/eventbuilder.log')
         open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
