@@ -175,7 +175,7 @@ def main():
             p.run()     # The run() method includes a call to shutdown()
 
         except pymongo.errors.ServerSelectionTimeoutError as e:
-            # There was some problem -- write it to the log. Set the trigger status to error.
+            # There was a mongo timeout. This probably means the connection to the DB has been lost.
             log.exception(e)
             if not args.secret_mode:
                 run_db = clientmaker.get_client('run')['run']
@@ -194,9 +194,9 @@ def main():
                 # Mark run as errored
                 runs.update({'name': run_doc['name'], 'detector': args.detector},
                             {'$set': {status_name: 'error'}})
+
         except Exception as e:
-            # If general exception caught, log then
-            # stop acquisition (if possible) then raise.
+            # If general exception caught, log then stop acquisition (if possible) then raise.
             log.fatal("Caught unknown exception.")
             log.exception(e)
 
@@ -221,28 +221,31 @@ def main():
                 # Raise error on website
                 alerts = run_db.get_collection('log')
                 # 3 = ERROR, requires acknowledgement
-                alert_doc = { "priority": 3,
-                               "time": datetime.datetime.now(),
-                               "run": run_doc['number'],
-                               "message": "Exception caught: %s" % str(e),
-                               "sender": "trigger",
-                               }
+                alert_doc = {"priority": 3,
+                             "time": datetime.datetime.now(),
+                             "run": run_doc['number'],
+                             "message": "Exception caught: %s" % str(e),
+                             "sender": "trigger"}
                 alerts.insert(alert_doc)
 
             log.fatal("Raising unknown exception")
             raise
+
         else:
-            # Things went fine :-)
+            # Things went fine, tell the runs DB
             if not args.secret_mode:
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host': data_info_entry['host']},
                             {'$set': {'data.$': data_info_entry}})
 
-        # Copy the log file to the output dir, then clear it for the next run
-        shutil.copyfile('eventbuilder.log',
-                        data_info_entry['location'] + '/eventbuilder.log')
-        open('eventbuilder.log', mode='w').close()
+        finally:
+            # Whether or not a crash occurred, we should copy out the log file.
+            # Otherwise the error log would be overwritten when the next run continues / the trigger restarts.
+            shutil.copyfile('eventbuilder.log',
+                            data_info_entry['location'] + '/eventbuilder.log')
+            # Clear the log file, so previous run starts with a clean slate
+            open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
