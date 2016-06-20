@@ -213,7 +213,7 @@ def main():
                 daq_control = run_db.get_collection('daq_control')
                 insert_doc = {}
                 insert_doc['command'] = 'Stop'
-                insert_doc['detector'] = 'TPC'
+                insert_doc['detector'] = 'all'
                 insert_doc['user'] = 'trigger'
                 insert_doc['comment'] = 'Caught exception in trigger'
                 daq_control.insert(insert_doc)
