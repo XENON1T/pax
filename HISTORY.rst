@@ -7,7 +7,7 @@ History
 5.0.0 (2016-06-20)
 ------------------
 
-* Minor DAQ fixes, including error handling (#384)
+* Minor DAQ fixes including error handling (#384)
 
 ------------------
 5.0.0 (2016-06-08)
