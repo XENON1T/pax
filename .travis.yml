@@ -67,6 +67,7 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
+  - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
   - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter
   - source activate pax
