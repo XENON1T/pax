@@ -79,7 +79,7 @@ class Trigger(object):
         # Configuration sanity check
         if self.config['event_separation'] < self.config['left_extension'] + self.config['right_extension']:
             raise InvalidConfigurationError("event_separation must not be smaller "
-                                            "than left_extension + right_extension")            
+                                            "than left_extension + right_extension")
 
         # Build a (module, channel) ->  lookup matrix
         # I whish numba had some kind of dictionary / hashtable support...
