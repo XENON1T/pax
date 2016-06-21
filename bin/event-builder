@@ -210,10 +210,11 @@ def main():
         finally:
             # Whether or not a crash occurred, we should copy out the log file.
             # Otherwise the error log would be overwritten when the next run continues / the trigger restarts.
-            shutil.copyfile('eventbuilder.log',
-                            data_info_entry['location'] + '/eventbuilder.log')
-            # Clear the log file, so previous run starts with a clean slate
-            open('eventbuilder.log', mode='w').close()
+            if os.path.exists('eventbuilder.log'):
+                shutil.copyfile('eventbuilder.log',
+                                data_info_entry['location'] + '/eventbuilder.log')
+                # Clear the log file, so previous run starts with a clean slate
+                open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
