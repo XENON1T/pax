@@ -185,7 +185,7 @@ def main():
             if not args.secret_mode:
                 mark_run_errored(args, run_doc, runs, status_name)
                 stop_acquisition(clientmaker)
-                communicate_alert(clientmaker, e, log, run_doc)
+                communicate_alert(clientmaker, e, log, run_doc, priority=1)
         except Exception as e:
             # If general exception caught, log then stop acquisition (if possible) then raise.
             log.fatal("Caught unknown exception.")
@@ -243,13 +243,14 @@ def clear_run_queue(clientmaker):
 
 
 def communicate_alert(clientmaker, e, log, run_doc, priority=3):
+    # Send an alert to website
     run_db = clientmaker.get_client('run')['run']
     log.error("Communicating alert to run DB")
     log.exception(e)
 
     # Raise error on website
     alerts = run_db.get_collection('log')
-    alert_doc = {"priority": priority,
+    alert_doc = {"priority": priority, # Low priority is less severe
                  "time"    : datetime.datetime.now(),
                  "run"     : run_doc['number'],
                  "message" : str(e),
