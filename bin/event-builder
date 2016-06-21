@@ -170,6 +170,7 @@ def main():
         log.info("Building events for %s", run_doc['name'])
         log.info("Config override is: %s" % config_dict)
         try:
+            raise ValueError()
             p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
                                config_paths=args.config_path,
                                config_dict=config_dict)
