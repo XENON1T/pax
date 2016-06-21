@@ -246,7 +246,7 @@ def communicate_alert(clientmaker, e, log, run_doc, priority=3):
     log.exception(e)
 
     # Raise error on website
-    alerts = run_db.get_collection('alerts')
+    alerts = run_db.get_collection('log')
     alert_doc = {"priority": priority,
                  "time"    : datetime.datetime.now(),
                  "run"     : run_doc['number'],
