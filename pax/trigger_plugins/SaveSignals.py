@@ -1,6 +1,7 @@
 import numba
 import numpy as np
 from pax.trigger import TriggerPlugin
+from pax.exceptions import TriggerGroupSignals
 
 
 class SaveSignals(TriggerPlugin):
@@ -52,7 +53,7 @@ def group_signals(signals, event_ranges, signal_indices_buffer, is_in_event):
         if not in_event:
             if signal['left_time'] >= event_ranges[current_event, 0]:
                 if signal['left_time'] > event_ranges[current_event, 1]:
-                    raise ValueError("Error during signal grouping: event without signals??")
+                    raise TriggerGroupSignals("Error during signal grouping: event without signals??")
                 # Signal is the first in the current event
                 in_event = True
                 signals_start = signal_i

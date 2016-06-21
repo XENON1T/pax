@@ -1,19 +1,25 @@
 
-class PulseBeyondEventError(Exception):
+class PaxException(Exception):
+    pass
+
+class PulseBeyondEventError(PaxException):
     pass
 
 
-class OutputFileAlreadyExistsError(Exception):
+class OutputFileAlreadyExistsError(PaxException):
     pass
 
 
-class CoordinateOutOfRangeException(Exception):
+class CoordinateOutOfRangeException(PaxException):
     pass
 
 
-class MaybeOldFormatException(Exception):
+class MaybeOldFormatException(PaxException):
     pass
 
 
-class InvalidConfigurationError(Exception):
+class InvalidConfigurationError(PaxException):
+    pass
+
+class TriggerGroupSignals(PaxException):
     pass
