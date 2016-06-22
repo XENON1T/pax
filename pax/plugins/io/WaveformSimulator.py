@@ -311,7 +311,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         filename = self.config['input_name']
         import ROOT
         self.f = ROOT.TFile(utils.data_file_name(filename))
-        self.t = self.f.Get("events/events")  # 
+        self.t = self.f.Get("events/events")  # new MC structure, 160622
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
@@ -342,6 +342,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
                     p['recoil_type'] = 'ER'
             # Sort by time
             interaction_instructions.sort(key=lambda p: p['t'])
+
             yield interaction_instructions
 
 
@@ -355,7 +356,7 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
-        ('photon_arriving_times',             'time',     1000000000.),
+        ('photon_arriving_times',             'pmthitTime',     1000000000.),
         ('photon_hit_pmt_ids',             'pmthitID',     1),
     )
 
@@ -382,20 +383,12 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
                     conversion_factor
                     ) in self.variables:
                 # get stuff from root
-                branchroofs = getattr(self.t, root_thing_name)
-                values = np.reshape(branchroofs, len(branchroofs))
-                values_length = len(values)
-                if root_thing_name=='time':
-                    # if the vector is time
-                    # need to remove the part with type not opticalphoton
-                    for (i, value), step_type in zip(
-                            enumerate(reversed(values)),
-                            self.t.type
-                            ):
-                        ID = values_length - i - 1
-                        if not step_type=='opticalphoton':
-                            values = np.delete(values, ID)
-                conversion_factors = [conversion_factor]*values_length
+                # the two variables in this plugin are all vectors
+                values = np.reshape(
+                    getattr(self.t, root_thing_name),
+                    self.t.npmthits
+                    )
+                conversion_factors = [conversion_factor]*self.t.npmthits
                 instructions[variable_name] = [
                     x*y for x, y in zip(values, conversion_factors)
                     ]
