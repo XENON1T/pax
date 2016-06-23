@@ -70,7 +70,7 @@ def main():
 
             if run_doc is not None:
                 data_info_entry = {'type': 'raw',
-                                   'host': 'xenon1t-daq',
+                                   'host': 'xe1t-datamanager',
                                    'status': 'transferring',
                                    'location': os.path.join('/data/xenon/raw',
                                                             run_doc['name']),
