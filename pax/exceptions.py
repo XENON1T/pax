@@ -2,6 +2,7 @@
 class PaxException(Exception):
     pass
 
+
 class PulseBeyondEventError(PaxException):
     pass
 
@@ -20,6 +21,7 @@ class MaybeOldFormatException(PaxException):
 
 class InvalidConfigurationError(PaxException):
     pass
+
 
 class TriggerGroupSignals(PaxException):
     pass
