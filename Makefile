@@ -64,7 +64,11 @@ major: clean docs
 	bumpversion major
 	git push
 	git push --tags
-
+	git checkout stable
+	git merge master
+	git push
+	git push --tags
+	git checkout master
 
 minor: clean docs
 	emacs HISTORY.rst
@@ -72,6 +76,11 @@ minor: clean docs
 	bumpversion minor
 	git push
 	git push --tags
+	git checkout stable
+	git merge master
+	git push
+	git push --tags
+	git checkout master
 
 patch: clean docs
 	emacs HISTORY.rst
@@ -79,3 +88,8 @@ patch: clean docs
 	bumpversion patch
 	git push
 	git push --tags
+	git checkout stable
+	git merge master
+	git push
+	git push --tags
+	git checkout master
