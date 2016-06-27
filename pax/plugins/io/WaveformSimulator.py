@@ -311,7 +311,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         filename = self.config['input_name']
         import ROOT
         self.f = ROOT.TFile(utils.data_file_name(filename))
-        self.t = self.f.Get("t1")  # For Xerawdp use T1, for MC t1
+        self.t = self.f.Get("events/events")  # new MC structure, 160622
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
@@ -356,7 +356,7 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
-        ('photon_arriving_times',             'time',     1000000000.),
+        ('photon_arriving_times',             'pmthitTime',     1000000000.),
         ('photon_hit_pmt_ids',             'pmthitID',     1),
     )
 
@@ -386,9 +386,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
                 # the two variables in this plugin are all vectors
                 values = np.reshape(
                     getattr(self.t, root_thing_name),
-                    self.t.nsteps
+                    self.t.npmthits
                     )
-                conversion_factors = [conversion_factor]*self.t.nsteps
+                conversion_factors = [conversion_factor]*self.t.npmthits
                 instructions[variable_name] = [
                     x*y for x, y in zip(values, conversion_factors)
                     ]
