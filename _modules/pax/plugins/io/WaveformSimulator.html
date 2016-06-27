@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 5.0.1 documentation</title>
+    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 5.0.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.0.1',
+        VERSION:     '5.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.0.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -351,7 +351,7 @@
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;input_name&#39;</span><span class="p">]</span>
         <span class="kn">import</span> <span class="nn">ROOT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s2">&quot;t1&quot;</span><span class="p">)</span>  <span class="c1"># For Xerawdp use T1, for MC t1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s2">&quot;events/events&quot;</span><span class="p">)</span>  <span class="c1"># new MC structure, 160622</span>
         <span class="n">WaveformSimulator</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntries</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_repetitions&#39;</span><span class="p">]</span>
 </div>
@@ -396,7 +396,7 @@
 
     <span class="n">variables</span> <span class="o">=</span> <span class="p">(</span>
         <span class="c1"># Fax name        #Root name    #Conversion factor (multiplicative)</span>
-        <span class="p">(</span><span class="s1">&#39;photon_arriving_times&#39;</span><span class="p">,</span>             <span class="s1">&#39;time&#39;</span><span class="p">,</span>     <span class="mf">1000000000.</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;photon_arriving_times&#39;</span><span class="p">,</span>             <span class="s1">&#39;pmthitTime&#39;</span><span class="p">,</span>     <span class="mf">1000000000.</span><span class="p">),</span>
         <span class="p">(</span><span class="s1">&#39;photon_hit_pmt_ids&#39;</span><span class="p">,</span>             <span class="s1">&#39;pmthitID&#39;</span><span class="p">,</span>     <span class="mi">1</span><span class="p">),</span>
     <span class="p">)</span>
 
@@ -426,9 +426,9 @@
                 <span class="c1"># the two variables in this plugin are all vectors</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">root_thing_name</span><span class="p">),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">nsteps</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">npmthits</span>
                     <span class="p">)</span>
-                <span class="n">conversion_factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">conversion_factor</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">nsteps</span>
+                <span class="n">conversion_factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">conversion_factor</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">npmthits</span>
                 <span class="n">instructions</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">conversion_factors</span><span class="p">)</span>
                     <span class="p">]</span>

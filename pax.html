@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 5.0.1 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 5.0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.0.1',
+        VERSION:     '5.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.0.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.2 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -99,6 +99,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.GroupTriggers">pax.trigger_plugins.GroupTriggers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.HandleEdgeThings">pax.trigger_plugins.HandleEdgeThings module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.SaveSignals">pax.trigger_plugins.SaveSignals module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.TimedTrigger">pax.trigger_plugins.TimedTrigger module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins">Module contents</a></li>
 </ul>
 </li>
@@ -1807,31 +1808,43 @@ We&#8217;ll also ensure any confused_channels not in channels_in_pattern are ign
 <dl class="exception">
 <dt id="pax.exceptions.CoordinateOutOfRangeException">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">CoordinateOutOfRangeException</code><a class="reference internal" href="_modules/pax/exceptions.html#CoordinateOutOfRangeException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.CoordinateOutOfRangeException" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="pax.exceptions.InvalidConfigurationError">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">InvalidConfigurationError</code><a class="reference internal" href="_modules/pax/exceptions.html#InvalidConfigurationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.InvalidConfigurationError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="pax.exceptions.MaybeOldFormatException">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">MaybeOldFormatException</code><a class="reference internal" href="_modules/pax/exceptions.html#MaybeOldFormatException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.MaybeOldFormatException" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="pax.exceptions.OutputFileAlreadyExistsError">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">OutputFileAlreadyExistsError</code><a class="reference internal" href="_modules/pax/exceptions.html#OutputFileAlreadyExistsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.OutputFileAlreadyExistsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pax.exceptions.PaxException">
+<em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">PaxException</code><a class="reference internal" href="_modules/pax/exceptions.html#PaxException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.PaxException" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 </dd></dl>
 
 <dl class="exception">
 <dt id="pax.exceptions.PulseBeyondEventError">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">PulseBeyondEventError</code><a class="reference internal" href="_modules/pax/exceptions.html#PulseBeyondEventError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.PulseBeyondEventError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pax.exceptions.TriggerGroupSignals">
+<em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">TriggerGroupSignals</code><a class="reference internal" href="_modules/pax/exceptions.html#TriggerGroupSignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.TriggerGroupSignals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.exceptions.PaxException" title="pax.exceptions.PaxException"><code class="xref py py-class docutils literal"><span class="pre">pax.exceptions.PaxException</span></code></a></p>
 </dd></dl>
 
 </div>
@@ -2125,7 +2138,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2140,7 +2153,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'float64': '/D', 'float32': '/F', 'bool': '/O', 'int16': '/S', 'int32': '/I', 'S': '/C', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'S': '/C', 'int64': '/L', 'float32': '/F', 'float64': '/D', 'bool': '/O', 'int16': '/S', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

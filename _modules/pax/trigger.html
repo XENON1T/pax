@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger &mdash; Processor for Analyzing XENON1T 5.0.1 documentation</title>
+    <title>pax.trigger &mdash; Processor for Analyzing XENON1T 5.0.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.0.1',
+        VERSION:     '5.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.0.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -55,6 +55,7 @@
 <span class="kn">import</span> <span class="nn">pax</span>          <span class="c1"># For version number</span>
 <span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">PAX_DIR</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
+<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="kn">import</span> <span class="n">InvalidConfigurationError</span>
 
 <span class="n">times_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
                         <span class="p">(</span><span class="s1">&#39;pmt&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
@@ -114,6 +115,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No trigger monitor collection provided: won&#39;t write trigger monitor data to MongoDB&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span> <span class="o">=</span> <span class="p">[]</span>         <span class="c1"># Cache of (data_type, doc), with doc document to insert into db / write to zip.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type_counter</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>    <span class="c1"># Counts how often a document of each data type has been inserted</span>
+
+        <span class="c1"># Configuration sanity check</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_separation&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;left_extension&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;right_extension&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">InvalidConfigurationError</span><span class="p">(</span><span class="s2">&quot;event_separation must not be smaller &quot;</span>
+                                            <span class="s2">&quot;than left_extension + right_extension&quot;</span><span class="p">)</span>
 
         <span class="c1"># Build a (module, channel) -&gt;  lookup matrix</span>
         <span class="c1"># I whish numba had some kind of dictionary / hashtable support...</span>

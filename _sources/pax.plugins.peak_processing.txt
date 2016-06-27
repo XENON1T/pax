@@ -28,10 +28,26 @@ pax.plugins.peak_processing.HitpatternSpread module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.peak_processing.LocalMinimumClustering module
+---------------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.LocalMinimumClustering
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.peak_processing.NaturalBreaksClustering module
 ----------------------------------------------------------
 
 .. automodule:: pax.plugins.peak_processing.NaturalBreaksClustering
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.peak_processing.PeakAreaCorrections module
+------------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.PeakAreaCorrections
     :members:
     :undoc-members:
     :show-inheritance:

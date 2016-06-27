@@ -52,6 +52,14 @@ pax.trigger_plugins.SaveSignals module
     :undoc-members:
     :show-inheritance:
 
+pax.trigger_plugins.TimedTrigger module
+---------------------------------------
+
+.. automodule:: pax.trigger_plugins.TimedTrigger
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

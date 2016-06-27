@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 5.0.1 documentation</title>
+    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 5.0.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.0.1',
+        VERSION:     '5.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.0.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.2 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -165,6 +165,46 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.plugins.peak_processing.LocalMinimumClustering">
+<span id="pax-plugins-peak-processing-localminimumclustering-module"></span><h2>pax.plugins.peak_processing.LocalMinimumClustering module<a class="headerlink" href="#module-pax.plugins.peak_processing.LocalMinimumClustering" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering">
+<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.LocalMinimumClustering.</code><code class="descname">LocalMinimumClustering</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/LocalMinimumClustering.html#LocalMinimumClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.ClusteringPlugin" title="pax.plugin.ClusteringPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.ClusteringPlugin</span></code></a></p>
+<dl class="method">
+<dt id="pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.cluster_peak">
+<code class="descname">cluster_peak</code><span class="sig-paren">(</span><em>peak</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/LocalMinimumClustering.html#LocalMinimumClustering.cluster_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.cluster_peak" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.finalize_event">
+<code class="descname">finalize_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/LocalMinimumClustering.html#LocalMinimumClustering.finalize_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.finalize_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.split_peak">
+<code class="descname">split_peak</code><span class="sig-paren">(</span><em>peak</em>, <em>split_points</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/LocalMinimumClustering.html#LocalMinimumClustering.split_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.split_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields new peaks split from peak at split_points = sample indices within peak
+Samples at the split points will fall to the right (so if we split [0, 5] on 2, you get [0, 1] and [2, 5]).
+Hits that straddle a split point are themselves split into two hits: peak.hits is updated.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.peak_processing.LocalMinimumClustering.find_split_points">
+<code class="descclassname">pax.plugins.peak_processing.LocalMinimumClustering.</code><code class="descname">find_split_points</code><span class="sig-paren">(</span><em>w</em>, <em>min_height</em>, <em>min_ratio</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/LocalMinimumClustering.html#find_split_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.LocalMinimumClustering.find_split_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8220;Finds local minima in w,
+whose peaks to the left and right both satisfy:</p>
+<blockquote>
+<div><ul class="simple">
+<li>larger than minimum + min_height</li>
+<li>larger than minimum * min_ratio</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.peak_processing.NaturalBreaksClustering">
 <span id="pax-plugins-peak-processing-naturalbreaksclustering-module"></span><h2>pax.plugins.peak_processing.NaturalBreaksClustering module<a class="headerlink" href="#module-pax.plugins.peak_processing.NaturalBreaksClustering" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -216,6 +256,43 @@ area: area of hits</dd>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.plugins.peak_processing.PeakAreaCorrections">
+<span id="pax-plugins-peak-processing-peakareacorrections-module"></span><h2>pax.plugins.peak_processing.PeakAreaCorrections module<a class="headerlink" href="#module-pax.plugins.peak_processing.PeakAreaCorrections" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection">
+<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.PeakAreaCorrections.</code><code class="descname">S2SaturationCorrection</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SaturationCorrection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<p>Compute S2 saturation(x,y,pmtpattern) area correction</p>
+<dl class="method">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SaturationCorrection.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection.transform_event">
+<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SaturationCorrection.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SaturationCorrection.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection">
+<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.PeakAreaCorrections.</code><code class="descname">S2SpatialCorrection</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SpatialCorrection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<p>Compute S2 spatial(x,y) area correction</p>
+<dl class="method">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SpatialCorrection.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection.transform_event">
+<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/PeakAreaCorrections.html#S2SpatialCorrection.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.PeakAreaCorrections.S2SpatialCorrection.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.peak_processing.RejectNoiseHits">
 <span id="pax-plugins-peak-processing-rejectnoisehits-module"></span><h2>pax.plugins.peak_processing.RejectNoiseHits module<a class="headerlink" href="#module-pax.plugins.peak_processing.RejectNoiseHits" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -261,7 +338,9 @@ Works with a penalty point system (see #126):
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.BasicProperties">pax.plugins.peak_processing.BasicProperties module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.ClassifyPeaks">pax.plugins.peak_processing.ClassifyPeaks module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.HitpatternSpread">pax.plugins.peak_processing.HitpatternSpread module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.peak_processing.LocalMinimumClustering">pax.plugins.peak_processing.LocalMinimumClustering module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.NaturalBreaksClustering">pax.plugins.peak_processing.NaturalBreaksClustering module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.peak_processing.PeakAreaCorrections">pax.plugins.peak_processing.PeakAreaCorrections module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.RejectNoiseHits">pax.plugins.peak_processing.RejectNoiseHits module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing">Module contents</a></li>
 </ul>

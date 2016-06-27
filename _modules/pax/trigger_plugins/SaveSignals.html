@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.SaveSignals &mdash; Processor for Analyzing XENON1T 5.0.1 documentation</title>
+    <title>pax.trigger_plugins.SaveSignals &mdash; Processor for Analyzing XENON1T 5.0.2 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '5.0.1',
+        VERSION:     '5.0.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.0.1 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.0.2 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -41,6 +41,7 @@
 <span class="kn">import</span> <span class="nn">numba</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pax.trigger</span> <span class="kn">import</span> <span class="n">TriggerPlugin</span>
+<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="kn">import</span> <span class="n">TriggerGroupSignals</span>
 
 
 <div class="viewcode-block" id="SaveSignals"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.SaveSignals.SaveSignals">[docs]</a><span class="k">class</span> <span class="nc">SaveSignals</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
@@ -92,7 +93,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_event</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="s1">&#39;left_time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">event_ranges</span><span class="p">[</span><span class="n">current_event</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="s1">&#39;left_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">event_ranges</span><span class="p">[</span><span class="n">current_event</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error during signal grouping: event without signals??&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">TriggerGroupSignals</span><span class="p">(</span><span class="s2">&quot;Error during signal grouping: event without signals??&quot;</span><span class="p">)</span>
                 <span class="c1"># Signal is the first in the current event</span>
                 <span class="n">in_event</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="n">signals_start</span> <span class="o">=</span> <span class="n">signal_i</span>
