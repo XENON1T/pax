@@ -4,6 +4,17 @@ History
 -------
 
 ------------------
+5.1.0 (2016-06-27)
+------------------
+
+* S1 relative light yield map update (#382)
+* Makefile now writes to stable branch (#379)
+* Geant4 interface simulates from below cathode if desired (#389)
+* Trigger changes with error handling (#386)
+* Trigger prevent invalid event ranges (#388)
+* Equalized gains (#387)
+
+------------------
 5.0.2 (2016-06-20)
 ------------------
 
