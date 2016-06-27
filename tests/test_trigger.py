@@ -7,6 +7,7 @@ from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
 from pax.trigger_plugins.FindSignals import signal_finder
 from pax.trigger_plugins.SaveSignals import group_signals
+from pax.exceptions import TriggerGroupSignals
 import tempfile
 
 
@@ -104,7 +105,7 @@ class TestSaveSignals(unittest.TestCase):
         self.assertEqual(is_in_event.tolist(), [True, True, True, False, False, False, False, False, False, False])
 
         # Test error on event without signals
-        self.assertRaises(ValueError, do_test, sig_times=[0, 1, 10, 11], event_ranges=[[2, 3]])
+        self.assertRaises(TriggerGroupSignals, do_test, sig_times=[0, 1, 10, 11], event_ranges=[[2, 3]])
 
 
 class TestGroupTriggers(unittest.TestCase):
