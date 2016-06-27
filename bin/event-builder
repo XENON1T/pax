@@ -16,15 +16,18 @@ import os
 import time
 import datetime
 import socket
-import pymongo
 import shutil
 
+import pymongo
 from six.moves import input
 
 from pax import core, units
 from pax.configuration import combine_configs, fix_sections_from_mongo
+from pax.exceptions import PaxException
 from pax.MongoDB_ClientMaker import ClientMaker
 
+# Name of the field in the run doc which holds the trigger status
+STATUS_FIELD_NAME = 'trigger.status'
 
 def get_hostname():
     return socket.gethostname().split('.')[0]
@@ -53,20 +56,19 @@ def main():
     runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
 
     # Build the query used to search for runs
-    status_name = 'trigger.status'
     if args.run_name:
         run_query = {'name': args.run_name}
     elif args.run is not None:
         run_query = {'number': args.run}
     else:
-        run_query = {status_name: 'waiting_to_be_processed',
+        run_query = {STATUS_FIELD_NAME: 'waiting_to_be_processed',
                      'data.type': 'untriggered'}
     run_query['detector'] = args.detector
     log.info("Starting run search with query %s" % run_query)
 
     while 1:
         if not args.secret_mode:
-            run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+            run_doc = runs.find_one_and_update(run_query, {'$set': {STATUS_FIELD_NAME: 'staging'}})
 
             if run_doc is not None:
                 data_info_entry = {'type': 'raw',
@@ -174,59 +176,29 @@ def main():
                                config_dict=config_dict)
             p.run()     # The run() method includes a call to shutdown()
 
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            # There was a mongo timeout. This probably means the connection to the DB has been lost.
-            log.exception(e)
+        except (pymongo.errors.ServerSelectionTimeoutError,
+                PaxException) as e:
+            # An exception occurred which we can probably understand, but forced us to stop building this run.
+            # We stop the acquisition of this run (if it is still going) to avoid overfilling the MongoDB buffer.
+            log.fatal("Caught known exception, starting next run.")
+
             if not args.secret_mode:
-                run_db = clientmaker.get_client('run')['run']
-
-                # Raise error on website
-                alerts = run_db.get_collection('alerts')
-                # 3 = ERROR, requires acknowledgement
-                alert_doc = { "priority": 1,
-                               "time": datetime.datetime.now(),
-                               "run": run_doc['number'],
-                               "message": "Mongo timeout, will restart: %s" % str(e),
-                               "sender": "trigger",
-                               }
-                alerts.insert(alert_doc)
-
-                # Mark run as errored
-                runs.update({'name': run_doc['name'], 'detector': args.detector},
-                            {'$set': {status_name: 'error'}})
+                mark_run_errored(args, run_doc, runs)
+                stop_acquisition(clientmaker)
+                communicate_alert(clientmaker, e, log, run_doc, priority=1)
 
         except Exception as e:
-            # If general exception caught, log then stop acquisition (if possible) then raise.
+            # A new type of exception occurred.
+            # In addition to stopping the acquisition, we clear the run queue and re-raise the exception
+            # (halting the event builder) to avoid new runs starting while we are potentially in a strange state.
             log.fatal("Caught unknown exception.")
             log.exception(e)
 
             if not args.secret_mode:
-                log.fatal("Stopping DAQ.")
-                # Run database object
-                run_db = clientmaker.get_client('run')['run']
-
-                # Clear DAQ queue of runs to take
-                run_queue = run_db.get_collection('daq_queue')
-                run_queue.remove({})
-
-                # Stop acquisition
-                daq_control = run_db.get_collection('daq_control')
-                insert_doc = {}
-                insert_doc['command'] = 'Stop'
-                insert_doc['detector'] = 'all'
-                insert_doc['user'] = 'trigger'
-                insert_doc['comment'] = 'Caught exception in trigger'
-                daq_control.insert(insert_doc)
-
-                # Raise error on website
-                alerts = run_db.get_collection('log')
-                # 3 = ERROR, requires acknowledgement
-                alert_doc = {"priority": 3,
-                             "time": datetime.datetime.now(),
-                             "run": run_doc['number'],
-                             "message": "Exception caught: %s" % str(e),
-                             "sender": "trigger"}
-                alerts.insert(alert_doc)
+                clear_run_queue(clientmaker)
+                mark_run_errored(args, run_doc, runs)
+                stop_acquisition(clientmaker)
+                communicate_alert(clientmaker, e, log, run_doc, priority=3)
 
             log.fatal("Raising unknown exception")
             raise
@@ -242,14 +214,55 @@ def main():
         finally:
             # Whether or not a crash occurred, we should copy out the log file.
             # Otherwise the error log would be overwritten when the next run continues / the trigger restarts.
-            shutil.copyfile('eventbuilder.log',
-                            data_info_entry['location'] + '/eventbuilder.log')
-            # Clear the log file, so previous run starts with a clean slate
-            open('eventbuilder.log', mode='w').close()
+            if os.path.exists('eventbuilder.log') and \
+                    os.path.exists(data_info_entry['location']):
+                shutil.copyfile('eventbuilder.log',
+                                data_info_entry['location'] + '/eventbuilder.log')
+                # Clear the log file, so previous run starts with a clean slate
+                open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
             break
+
+
+def stop_acquisition(clientmaker):
+    """Stop acquisition of the current run"""
+    run_db = clientmaker.get_client('run')['run']
+    daq_control = run_db.get_collection('daq_control')
+    insert_doc = {}
+    insert_doc['command'] = 'Stop'
+    insert_doc['detector'] = 'all'
+    insert_doc['user'] = 'trigger'
+    insert_doc['comment'] = 'Caught exception in trigger'
+    daq_control.insert(insert_doc)
+
+
+def clear_run_queue(clientmaker):
+    """Clear the DAQ queue of runs to take"""
+    run_db = clientmaker.get_client('run')['run']
+    run_queue = run_db.get_collection('daq_queue')
+    run_queue.remove({})
+
+
+def communicate_alert(clientmaker, e, log, run_doc, priority=3):
+    """Write an exception e to the log and send an alert the DAQ database (visible on the website)"""
+    log.exception(e)
+    log.error("Communicating alert to run DB")
+    run_db = clientmaker.get_client('run')['run']
+    alerts = run_db.get_collection('log')
+    alert_doc = {"priority": priority,   # Low priority is less severe
+                 "time": datetime.datetime.now(),
+                 "run": run_doc['number'],
+                 "message": str(e),
+                 "sender": "trigger"}
+    alerts.insert(alert_doc)
+
+
+def mark_run_errored(args, run_doc, runs_collection):
+    """Sets the current run's trigger status as 'error'"""
+    runs_collection.update({'name': run_doc['name'], 'detector': args.detector},
+                           {'$set': {STATUS_FIELD_NAME: 'error'}})
 
 
 def setup_logging(loglevel='DEBUG'):
