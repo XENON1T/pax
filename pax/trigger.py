@@ -15,6 +15,7 @@ import numpy as np
 import pax          # For version number
 from pax.utils import PAX_DIR
 from pax.datastructure import TriggerSignal
+from pax.exceptions import InvalidConfigurationError
 
 times_dtype = np.dtype([('time', np.int64),
                         ('pmt', np.int32),
@@ -74,6 +75,11 @@ class Trigger(object):
             self.log.info("No trigger monitor collection provided: won't write trigger monitor data to MongoDB")
         self.monitor_cache = []         # Cache of (data_type, doc), with doc document to insert into db / write to zip.
         self.data_type_counter = defaultdict(float)    # Counts how often a document of each data type has been inserted
+
+        # Configuration sanity check
+        if self.config['event_separation'] < self.config['left_extension'] + self.config['right_extension']:
+            raise InvalidConfigurationError("event_separation must not be smaller "
+                                            "than left_extension + right_extension")
 
         # Build a (module, channel) ->  lookup matrix
         # I whish numba had some kind of dictionary / hashtable support...
