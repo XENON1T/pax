@@ -32,8 +32,10 @@ Pax is written in Python; we recommend the scientific python distribution `Anaco
 
   wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
   bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc and specify the installation directory
-  
+  conda install -q conda=4.1.1
 --------------------------------
+
+The last line is a temporary workaround.
 
 For Mac OS X, you should instead download the .sh file located here:
 
