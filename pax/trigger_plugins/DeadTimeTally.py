@@ -15,7 +15,7 @@ class DeadTimeTally(TriggerPlugin):
         # Read the on/off status channels from the configuration
         self.systems = OrderedDict()
         self.special_channels = {}
-        for detector, channels in self.trigger.pax_config['DEFAULT']['channels_in_detector']:
+        for detector, channels in self.trigger.pax_config['DEFAULT']['channels_in_detector'].items():
             if detector.endswith('_on') or detector.endswith('_off'):
                 assert len(channels) == 1
                 channel = channels[0]
@@ -31,11 +31,12 @@ class DeadTimeTally(TriggerPlugin):
                                                                "'on' or 'off', not %s" % status)
                 self.special_channels[channel] = {'system': system, 'means_on': status == 'on'}
 
-        self.log.info(self.systems)
+        self.log.info("Dead time tally info: %s" % str(self.systems))
+        self.log.info("Special channels: %s" % str(self.special_channels))
 
     def save_monitor_data(self):
         # Save the dead time in this interval
-        dead_times = {}
+        dead_times = {'time': self.next_save_time}
         for system_name, system in self.systems.items():
 
             if system['active']:
@@ -49,12 +50,13 @@ class DeadTimeTally(TriggerPlugin):
 
         self.trigger.save_monitor_data('dead_time_info', dead_times)
 
-
     def process(self, data):
         self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
+        special_times = data.times[np.in1d(data.times['pmt'], self.special_channels.keys())]
+        self.log.info("Found %d signal in on/off acquisition monitor channels" % len(special_times))
 
-        for t in data.times[np.in1d(data.times['pmt'], self.special_channels.keys())]:
+        for t in special_times:
 
             while t > self.next_save_time:
                 self.save_monitor_data()
@@ -82,3 +84,11 @@ class DeadTimeTally(TriggerPlugin):
                     self.log.warning("%s-off signal received while system was not yet active!\n"
                                      "The signal has been ignored." % system_name)
                     pass
+
+        if data.last_data:
+            # Save the dead time info for the final part of the run
+            # If there is no dead time anywhere in the run, this is actually the only time
+            # we store information!
+            while data.times[-1]['time'] > self.next_save_time:
+                self.save_monitor_data()
+                self.next_save_time += self.save_interval
