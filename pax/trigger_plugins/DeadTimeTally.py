@@ -15,7 +15,7 @@ class DeadTimeTally(TriggerPlugin):
         # Read the on/off status channels from the configuration
         self.systems = OrderedDict()
         self.special_channels = {}
-        for detector, channels in self.config['channels_in_detector']:
+        for detector, channels in self.trigger.pax_config['DEFAULT']['channels_in_detector']:
             if detector.endswith('_on') or detector.endswith('_off'):
                 assert len(channels) == 1
                 channel = channels[0]
