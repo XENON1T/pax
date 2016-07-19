@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 5.2.0 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 5.2.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.2.0',
+        VERSION:     '5.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.2.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -89,7 +89,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid run document: none of the &#39;data&#39; entries contain untriggered data!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;untriggered&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;untriggered&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;detector&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;tpc&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TPC data is expected in the &#39;untriggered&#39; database,&quot;</span>
+                             <span class="s2">&quot; but this run is in </span><span class="si">%s</span><span class="s2">?!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span>
 
         <span class="c1"># Connect to the input database</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
@@ -550,7 +552,7 @@
                                             <span class="n">monary</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;integral&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
     <span class="n">types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
-    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monary_client</span><span class="o">.</span><span class="n">block_query</span><span class="p">(</span><span class="s1">&#39;untriggered&#39;</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monary_client</span><span class="o">.</span><span class="n">block_query</span><span class="p">(</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span>
                                              <span class="n">block_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e7</span><span class="p">),</span>
                                              <span class="n">select_fields</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
     <span class="n">monary_client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
