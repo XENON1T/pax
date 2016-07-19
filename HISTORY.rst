@@ -4,6 +4,13 @@ History
 -------
 
 ------------------
+5.3.0 (2016-07-19)
+------------------
+
+* Trigger changes for deadtime and acquisition monitor - no backword compatbility for new data (#395)
+* Muon veto DAQ changes (#396)
+
+------------------
 5.2.1 (2016-07-06)
 ------------------
 
