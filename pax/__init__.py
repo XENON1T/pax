@@ -7,4 +7,4 @@ Provides a framework for calling plugins that manipulate data.
 
 __author__ = 'Christopher Tunnell'
 __email__ = 'ctunnell@nikhef.nl'
-__version__ = '5.2.1'
+__version__ = '5.3.0'
