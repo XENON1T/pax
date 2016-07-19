@@ -178,9 +178,9 @@ def main():
 
         except (pymongo.errors.ServerSelectionTimeoutError,
                 PaxException) as e:
-            # An exception occurred which we can probably understand, but forced us to stop building this run.
             # We stop the acquisition of this run (if it is still going) to avoid overfilling the MongoDB buffer.
-            log.fatal("Caught known exception, starting next run.")
+            log.fatal("Caught known exception, aborting this run (not clearing queue).")
+            log.fatal(str(type(e)) + ": " + str(e))
 
             if not args.secret_mode:
                 mark_run_errored(args, run_doc, runs)
