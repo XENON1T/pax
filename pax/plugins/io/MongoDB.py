@@ -49,7 +49,9 @@ class MongoBase:
         else:
             raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
         self.input_info['database'] = self.input_info['location'].split('/')[-1]
-        assert self.input_info['database'] == 'untriggered'
+        if not self.input_info['database'] == 'untriggered' and self.config['detector'] == 'tpc':
+            raise ValueError("TPC data is expected in the 'untriggered' database,"
+                             " but this run is in %s?!" % self.input_info['database'])
 
         # Connect to the input database
         self.input_client = self.cm.get_client(database_name=self.input_info['database'],
@@ -510,7 +512,7 @@ def get_pulses(client_maker_config, input_info, collection_name, query, get_area
                                             monary=True)
     fields = ['time', 'module', 'channel'] + (['integral'] if get_area else [])
     types = ['int64', 'int32', 'int32'] + (['area'] if get_area else [])
-    results = list(monary_client.block_query('untriggered', collection_name, query, fields, types,
+    results = list(monary_client.block_query(input_info['database'], collection_name, query, fields, types,
                                              block_size=int(1e7),
                                              select_fields=True))
     monary_client.close()
