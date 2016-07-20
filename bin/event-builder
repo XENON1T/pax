@@ -194,7 +194,7 @@ def main():
             log.fatal("Caught unknown exception.")
             log.exception(e)
 
-            if not args.secret_mode:
+            if not args.secret_mode and args.detector == 'tpc':
                 clear_run_queue(clientmaker)
                 mark_run_errored(args, run_doc, runs)
                 stop_acquisition(clientmaker)
@@ -205,7 +205,7 @@ def main():
 
         else:
             # Things went fine, tell the runs DB
-            if not args.secret_mode:
+            if not args.secret_mode and args.detector == 'tpc':
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host': data_info_entry['host']},
