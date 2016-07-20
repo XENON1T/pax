@@ -89,6 +89,6 @@ class DeadTimeTally(TriggerPlugin):
             # Save the dead time info for the final part of the run
             # If there is no dead time anywhere in the run, this is actually the only time
             # we store information!
-            while data.times[-1]['time'] > self.next_save_time:
+            while data.last_time_searched > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
