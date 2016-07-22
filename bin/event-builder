@@ -110,7 +110,8 @@ def main():
             log.info("Picked up triggered mode %s, special settings activated" % trigger_mode)
             config_dict = {"Trigger": {
                                "left_extension": 10 * units.us,
-                               "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us
+                               "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us,
+                               "event_separation": 2 * units.ms if trigger_mode.endswith('long') else 110 * units.us,
                            },
                            "Trigger.DecideTriggers": {
                                "trigger_probability": {
