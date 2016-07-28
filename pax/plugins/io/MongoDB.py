@@ -6,14 +6,15 @@ either be triggered or untriggered. In the case of untriggered, an event builder
 must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
+from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 import time
 
+import pytz
 import numpy as np
 import pymongo
-
-from concurrent.futures import ThreadPoolExecutor
 import snappy
+
 from pax.MongoDB_ClientMaker import ClientMaker
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, trigger, units
@@ -443,7 +444,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def startup(self):
         MongoBase.startup(self)
-        self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
+        start_datetime = self.run_doc['start'].replace(tzinfo=pytz.utc).timestamp()
+        self.time_of_run_start = int(start_datetime * units.s)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
 
     def transform_event(self, event_proxy):
