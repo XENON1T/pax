@@ -133,9 +133,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         # Initialize the trigger
         # For now, make a collection in trigger_monitor on the same eb as the untriggered collection
         if not self.secret_mode:
-            self.uri_for_monitor = self.input_info['location'].replace('untriggered', 'trigger_monitor')
-            trig_mon_db = self.cm.get_client('trigger_monitor',
-                                             uri=self.uri_for_monitor)['trigger_monitor']
+            self.uri_for_monitor = self.config['trigger_monitor_mongo_uri']
+            trig_mon_db = self.cm.get_client('trigger_monitor', uri=self.uri_for_monitor)['trigger_monitor']
             trig_mon_coll = trig_mon_db.get_collection(self.run_doc['name'])
         else:
             trig_mon_coll = None
