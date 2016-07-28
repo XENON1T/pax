@@ -4,6 +4,25 @@ History
 -------
 
 ------------------
+5.3.5 (2016-07-25)
+------------------
+
+* Trying to get a DOI
+
+------------------
+5.3.4 (2016-07-25)
+------------------
+
+* Small tweak to description in setup.py (which I actually made because I want to get a DOI for pax).
+
+
+------------------
+5.3.3 (2016-07-25)
+------------------
+
+* Small DAQ fixes.
+
+------------------
 5.3.2 (2016-07-20)
 ------------------
 
