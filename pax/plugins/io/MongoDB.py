@@ -62,6 +62,9 @@ class MongoBase:
 
         self.input_collection = self.input_db.get_collection(self.input_info['collection'])
 
+        start_datetime = self.run_doc['start'].replace(tzinfo=pytz.utc).timestamp()
+        self.time_of_run_start = int(start_datetime * units.s)
+
     def refresh_run_doc(self):
         """Update the internal run doc within this class
         (does not change anything in the runs database)
@@ -343,7 +346,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.ignored_channels = []
-        self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
@@ -443,8 +445,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def startup(self):
         MongoBase.startup(self)
-        start_datetime = self.run_doc['start'].replace(tzinfo=pytz.utc).timestamp()
-        self.time_of_run_start = int(start_datetime * units.s)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
 
     def transform_event(self, event_proxy):
