@@ -509,7 +509,7 @@ def get_pulses(client_maker_config, input_info, collection_name, query, get_area
     pymongo_client = client_maker.get_client(database_name=input_info['database'],
                                              uri=input_info['location'])
     coll = pymongo_client[input_info['database']].get_collection(collection_name)
-    coll.create_index([('time', 1), ('module', 1), ('channel', 1)], background=True)
+    coll.create_index([('time', 1), ('module', 1), ('channel', 1)])
 
     monary_client = client_maker.get_client(database_name=input_info['database'],
                                             uri=input_info['location'],
