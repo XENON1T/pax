@@ -170,13 +170,34 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 check_collection = self.subcollection(self.latest_subcollection)
             else:
                 # While the DAQ is running, we can't use this method, as the reader creates empty collections
-                # ahead of the insertion point. Instead, move forward in subcollections until we find one without data.
-                # This means that if there is a large gap in the data, we won't progress beyond it! (until the run ends)
-                while True:
-                    if not self.subcollection(self.latest_subcollection + 1).count():
-                        break
-                    self.latest_subcollection += 1
-                self.log.info("Last subcollection with data is %d" % self.latest_subcollection)
+                # ahead of the insertion point.
+                if self.config.get('use_run_status_doc'):
+                    # Dan made a doc with the approximate insertion point of each digitizer: the min of these should
+                    # be safe to use
+                    status_doc = self.input_db.get_collection('status').find_one({'collection': self.run_doc['name']})
+                    if status_doc is None:
+                        raise RuntimeError("Missing run status doc!")
+                    safe_col = float('inf')
+                    for k, v in status_doc:
+                        if isinstance(v, int):
+                            safe_col = min(v, safe_col)
+                    safe_col -= 1
+                    if safe_col < 0 or safe_col == float('inf'):
+                        print("No subcollection is safe for triggering yet")
+                        self.last_pulse_time = 0
+                        return
+                    self.latest_subcollection = safe_col
+                    self.log.info("First safe subcollection is %d" % self.latest_subcollection)
+                else:
+                    # Old method: find the last collection with some data, rely on large safety margin
+                    # Keep fingers crossed. Instead, move forward in subcollections until we find one without data.
+                    # If there is a large gap in the data, we won't progress beyond it until the run ends.
+                    while True:
+                        if not self.subcollection(self.latest_subcollection + 1).count():
+                            break
+                        self.latest_subcollection += 1
+                    self.log.info("Last subcollection with data is %d" % self.latest_subcollection)
+
                 check_collection = self.subcollection(self.latest_subcollection)
         else:
             check_collection = self.input_collection
