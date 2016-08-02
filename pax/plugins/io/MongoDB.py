@@ -255,11 +255,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     start = next_time_to_search + batch_i * self.batch_window
                     if self.split_collections:
                         subcol_i = self.subcollection_with_time(next_time_to_search) + batch_i
-                        # After a DAQ crash pulses may be inserted in collections which have already been deleted.
-                        # In a 'post-mortem run' on that data, the the event filler queries would be extremely slow.
-                        # Hence we issue a create_index here, which is just a NOP if the index already exists.
-                        self.log.info("Ensuring index for subcollection %d" % subcol_i)
-                        self.subcollection(subcol_i).create_index([('time', 1), ('module', 1), ('channel', 1)])
                         # Prep the query -- not a very difficult one :-)
                         query = {}
                         collection_name = self.subcollection_name(subcol_i)
@@ -508,6 +503,14 @@ def get_pulses(client_maker_config, input_info, collection_name, query, get_area
     The monary client is created inside this function, so we can run it with ThreadPoolExecutor or ProcessPoolExecutor.
     """
     client_maker = ClientMaker(client_maker_config)
+
+    # Start building the index we need in the filling step
+    # NOT QUITE...
+    pymongo_client = client_maker.get_client(database_name=input_info['database'],
+                                             uri=input_info['location'])
+    coll = pymongo_client[input_info['database']].get_collection(collection_name)
+    coll.create_index([('time', 1), ('module', 1), ('channel', 1)], background=True)
+
     monary_client = client_maker.get_client(database_name=input_info['database'],
                                             uri=input_info['location'],
                                             monary=True)
