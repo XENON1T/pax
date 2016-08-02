@@ -504,12 +504,20 @@ def get_pulses(client_maker_config, input_info, collection_name, query, get_area
     """
     client_maker = ClientMaker(client_maker_config)
 
-    # Start building the index we need in the filling step
-    # NOT QUITE...
+    # Start building the index. If we only did this query, we might not really need it, but since
+    # we need at least a timestamp index later anyway for the filler, might as well create it now.
     pymongo_client = client_maker.get_client(database_name=input_info['database'],
                                              uri=input_info['location'])
     coll = pymongo_client[input_info['database']].get_collection(collection_name)
-    coll.create_index([('time', 1), ('module', 1), ('channel', 1)])
+    coll.create_index([('time', 1), ('module', 1), ('channel', 1)], background=True)
+
+    # Sleep a bit to allow the background index creation to finish..
+    while True:
+        time.sleep(5)
+        indices = list(coll.list_indexes())
+        if len(indices):
+            print("Indices %s found in %s, submitting monary query" % (str(indices), collection_name))
+            break
 
     monary_client = client_maker.get_client(database_name=input_info['database'],
                                             uri=input_info['location'],
