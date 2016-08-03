@@ -58,7 +58,7 @@ class DeadTimeTally(TriggerPlugin):
 
         for t in special_times:
 
-            while t > self.next_save_time:
+            while t['time'] > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
 
