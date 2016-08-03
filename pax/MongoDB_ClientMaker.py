@@ -24,12 +24,13 @@ class ClientMaker:
         self.config = {k: config[k] for k in ('user', 'password', 'host', 'port')}
         self.log = logging.getLogger('Mongo client maker')
 
-    def get_client(self, database_name=None, uri=None, monary=False, **kwargs):
+    def get_client(self, database_name=None, uri=None, monary=False, host=None, **kwargs):
         """Get a Mongoclient. Returns Mongo database object.
         If you provide a mongodb connection string uri, we will insert user & password into it,
         otherwise one will be built from the configuration settings.
         If database_name=None, will connect to the default database of the uri. database=something
         overrides event the uri's specification of a database.
+        host is special magic for split_hosts
         """
         # Format of URI we should eventually send to mongo
         full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
@@ -38,12 +39,14 @@ class ClientMaker:
             # We must construct the entire URI from default settings
             uri = full_uri_format.format(database=database_name, **self.config)
         else:
-            # A URI was given. We expect it to NOT include user and password:
+            # A URI was NOT given. We expect it to NOT include user and password:
             uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
             m = re.match(uri_pattern, uri)
             if m:
                 # URI was provided, but without user & pass.
-                host, port, _database_name = m.groups()
+                _host, port, _database_name = m.groups()
+                if not host:
+                    host = _host
                 if database_name is None:
                     database_name = _database_name
                 uri = full_uri_format.format(database=database_name, host=host, port=port,
