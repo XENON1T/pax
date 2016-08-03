@@ -45,7 +45,7 @@ class DeadTimeTally(TriggerPlugin):
                 system['dead_time_tally'] += self.next_save_time - system['start_of_current_dead_time']
                 system['start_of_current_dead_time'] = self.next_save_time
 
-            dead_times[system_name] = system['dead_time_tally']
+            dead_times[system_name] = int(system['dead_time_tally'])   # numpy int crap
             system['dead_time_tally'] = 0
 
         self.trigger.save_monitor_data('dead_time_info', dead_times)
