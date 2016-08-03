@@ -53,7 +53,7 @@ class DeadTimeTally(TriggerPlugin):
     def process(self, data):
         self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
-        special_times = data.times[np.in1d(data.times['pmt'], self.special_channels.keys())]
+        special_times = data.times[np.in1d(data.times['pmt'], list(self.special_channels.keys()))]
         self.log.info("Found %d signal in on/off acquisition monitor channels" % len(special_times))
 
         for t in special_times:
