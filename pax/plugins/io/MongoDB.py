@@ -6,7 +6,7 @@ either be triggered or untriggered. In the case of untriggered, an event builder
 must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 import time
 
@@ -298,7 +298,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
             batches_to_search = min(batches_to_search, self.max_query_workers // len(self.hosts))
 
             # Start new queries in separate processes
-            with ProcessPoolExecutor(max_workers=self.max_query_workers) as executor:
+            with ThreadPoolExecutor(max_workers=self.max_query_workers) as executor:
                 futures = []
                 for batch_i in range(batches_to_search):
                     futures_per_host = []
@@ -528,7 +528,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def startup(self):
         MongoBase.startup(self)
-        self.executor = ProcessPoolExecutor(max_workers=self.config['max_query_workers'])
+        self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
 
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
@@ -593,7 +593,7 @@ def get_pulses(client_maker_config, input_info, collection_name, query, host, ge
     Returns four numpy arrays: times, modules, channels, areas.
     Areas consists of zeros unless get_area = True, in which we also fetch the 'integral' field.
 
-    The monary client is created inside this function, so we can run it with ProcessPoolExecutor.
+    The monary client is created inside this function, so we could run it with ProcessPoolExecutor.
     """
     client_maker = ClientMaker(client_maker_config)
 

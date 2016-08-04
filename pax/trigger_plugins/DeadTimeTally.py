@@ -67,8 +67,10 @@ class DeadTimeTally(TriggerPlugin):
             system = self.systems[system_name]
             if system['active']:
                 if ch_info['means_on']:
-                    self.log.warning("%s-on signal received while system was already active!\n"
-                                     "The signal has been ignored." % system_name)
+                    # Happens very often, not going to emit a warning all the time
+                    # TODO: emit it once, then shut up.
+                    self.log.debug("%s-on signal received while system was already active!\n"
+                                   "The signal has been ignored." % system_name)
                 else:
                     # System has turned off
                     system['active'] = False
@@ -81,8 +83,8 @@ class DeadTimeTally(TriggerPlugin):
                     system['start_of_current_dead_time'] = t['time']
                     pass
                 else:
-                    self.log.warning("%s-off signal received while system was not yet active!\n"
-                                     "The signal has been ignored." % system_name)
+                    self.log.info("%s-off signal received while system was not yet active!\n"
+                                  "The signal has been ignored." % system_name)
                     pass
 
         if data.last_data:
@@ -92,3 +94,5 @@ class DeadTimeTally(TriggerPlugin):
             while data.last_time_searched > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
+
+        self.log.info("Done calculating dead time for this batch")
