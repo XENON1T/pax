@@ -15,7 +15,7 @@ import numpy as np
 import pymongo
 import snappy
 
-from pax.MongoDB_ClientMaker import ClientMaker
+from pax.MongoDB_ClientMaker import ClientMaker, parse_passwordless_uri
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, trigger, units
 
@@ -72,7 +72,7 @@ class MongoBase:
         if self.split_hosts:
             self.hosts = ['eb0', 'eb1', 'eb2']   # TODO: don't hardcode
         else:
-            self.hosts = [self.input_info['host']]
+            self.hosts = [parse_passwordless_uri(self.input_info['location'])[0]]
 
         # Make pymongo db handles for all hosts. Double work if not split_hosts, but avoids double code later
         self.dbs = [self.cm.get_client(database_name=self.input_info['database'],

@@ -41,11 +41,9 @@ class ClientMaker:
             uri = full_uri_format.format(database=database_name, **self.config)
         else:
             # A URI was given. We expect it to NOT include user and password:
-            uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
-            m = re.match(uri_pattern, uri)
-            if m:
-                # URI was provided, but without user & pass.
-                _host, port, _database_name = m.groups()
+            result = parse_passwordless_uri(uri)
+            _host, port, _database_name = result
+            if result is not None:
                 if not host:
                     host = _host
                 if database_name is None:
@@ -54,7 +52,7 @@ class ClientMaker:
                                              user=self.config['user'], password=self.config['password'])
             else:
                 # Some other URI was provided. Just try it and hope for the best
-                self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
+                pass
 
         if monary:
             self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
@@ -68,3 +66,15 @@ class ClientMaker:
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
             self.log.debug("Successfully pinged client")
             return client
+
+def parse_passwordless_uri(uri):
+    """Return host, port, database_name"""
+    uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
+    m = re.match(uri_pattern, uri)
+    if m:
+        # URI was provided, but without user & pass.
+        return m.groups()
+    else:
+        # Some other URI was provided. Just try it and hope for the best
+        self.log.warning("Unexpected Mongo URI %s, expected format %s." % (uri, uri_pattern))
+        return None
