@@ -432,7 +432,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         Does NOT deal with time ranges split between subcollections, but does deal with split hosts.
         """
         cursors = []
-        for host_i, host in self.hosts:
+        for host_i, host in enumerate(self.hosts):
             if subcollection_number is None:
                 assert not self.split_collections
                 collection = self.input_collections[host_i]
