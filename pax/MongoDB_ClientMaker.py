@@ -67,6 +67,7 @@ class ClientMaker:
             self.log.debug("Successfully pinged client")
             return client
 
+
 def parse_passwordless_uri(uri):
     """Return host, port, database_name"""
     uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
@@ -76,5 +77,5 @@ def parse_passwordless_uri(uri):
         return m.groups()
     else:
         # Some other URI was provided. Just try it and hope for the best
-        self.log.warning("Unexpected Mongo URI %s, expected format %s." % (uri, uri_pattern))
+        print("Unexpected Mongo URI %s, expected format %s." % (uri, uri_pattern))
         return None

@@ -82,7 +82,6 @@ class MongoBase:
         if not self.split_collections:
             self.input_collections = [db.get_collection(self.input_info['collection']) for db in self.dbs]
 
-
     def refresh_run_doc(self):
         """Update the internal run doc within this class
         (does not change anything in the runs database)
