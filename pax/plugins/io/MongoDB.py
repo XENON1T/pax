@@ -50,6 +50,10 @@ class MongoBase:
                 break
         else:
             raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
+
+        if ';' in self.input_info['location']:
+            self.input_info['location'] = self.input_info['location'].split(';')[0]
+
         self.input_info['database'] = self.input_info['location'].split('/')[-1]
         if not self.input_info['database'] == 'untriggered' and self.config['detector'] == 'tpc':
             raise ValueError("TPC data is expected in the 'untriggered' database,"
