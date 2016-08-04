@@ -31,15 +31,16 @@ class ClientMaker:
         If database_name=None, will connect to the default database of the uri. database=something
         overrides event the uri's specification of a database.
         host is special magic for split_hosts
+        kwargs will be passed to pymongo.mongoclient/Monary
         """
         # Format of URI we should eventually send to mongo
         full_uri_format = 'mongodb://{user}:{password}@{host}:{port}/{database}'
 
         if uri is None:
-            # We must construct the entire URI from default settings
+            # We must construct the entire URI from the settings
             uri = full_uri_format.format(database=database_name, **self.config)
         else:
-            # A URI was NOT given. We expect it to NOT include user and password:
+            # A URI was given. We expect it to NOT include user and password:
             uri_pattern = r'mongodb://([^:]+):(\d+)/(\w+)'
             m = re.match(uri_pattern, uri)
             if m:
@@ -52,7 +53,7 @@ class ClientMaker:
                 uri = full_uri_format.format(database=database_name, host=host, port=port,
                                              user=self.config['user'], password=self.config['password'])
             else:
-                # Some other URI was provided. Maybe works...
+                # Some other URI was provided. Just try it and hope for the best
                 self.log.warning("Unexpected Mongo URI %s, expected format %s. Trying anyway..." % (uri, uri_pattern))
 
         if monary:
