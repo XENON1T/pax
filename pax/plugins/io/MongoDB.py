@@ -6,7 +6,7 @@ either be triggered or untriggered. In the case of untriggered, an event builder
 must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from itertools import chain
 import time
 
@@ -298,7 +298,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
             batches_to_search = min(batches_to_search, self.max_query_workers // len(self.hosts))
 
             # Start new queries in separate processes
-            with ThreadPoolExecutor(max_workers=self.max_query_workers) as executor:
+            with ProcessPoolExecutor(max_workers=self.max_query_workers) as executor:
                 futures = []
                 for batch_i in range(batches_to_search):
                     futures_per_host = []
@@ -528,7 +528,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def startup(self):
         MongoBase.startup(self)
-        self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
+        self.executor = ProcessPoolExecutor(max_workers=self.config['max_query_workers'])
 
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
