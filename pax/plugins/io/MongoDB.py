@@ -298,7 +298,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
             batches_to_search = min(batches_to_search, self.max_query_workers // len(self.hosts))
 
             # Start new queries in separate processes
-            with ThreadPoolExecutor(max_workers=batches_to_search) as executor:
+            with ThreadPoolExecutor(max_workers=self.max_query_workers) as executor:
                 futures = []
                 for batch_i in range(batches_to_search):
                     futures_per_host = []
