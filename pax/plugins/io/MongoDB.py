@@ -52,7 +52,10 @@ class MongoBase:
             raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
 
         if ';' in self.input_info['location']:
+            self.split_hosts = True
             self.input_info['location'] = self.input_info['location'].split(';')[0]
+        else:
+            self.split_hosts = False
 
         self.input_info['database'] = self.input_info['location'].split('/')[-1]
         if not self.input_info['database'] == 'untriggered' and self.config['detector'] == 'tpc':
@@ -72,7 +75,6 @@ class MongoBase:
             self.input_collection = self.input_db.get_collection(self.input_info['collection'])
         # In split collections mode, we use the subcollection methods (see below) to get the input collections
 
-        self.split_hosts = self.run_doc['reader']['ini'].get('split_hosts', 0)
         if self.split_hosts:
             self.hosts = ['eb0', 'eb1', 'eb2']   # TODO: don't hardcode
         else:
