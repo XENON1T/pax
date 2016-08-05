@@ -603,8 +603,12 @@ def get_pulses(client_maker_config, input_info, collection_name, query, host, ge
                                             monary=True)
     fields = ['time', 'module', 'channel'] + (['integral'] if get_area else [])
     types = ['int64', 'int32', 'int32'] + (['area'] if get_area else [])
+
+    # Somehow monary's block query fails when we have multiple blocks,
+    # we need to take care of copying out the data ourselves, but even if I use .copy it doesn't seem to work
+    # Never mind, just make a big block
     results = list(monary_client.block_query(input_info['database'], collection_name, query, fields, types,
-                                             block_size=int(1e7),
+                                             block_size=int(5e8),
                                              select_fields=True))
     monary_client.close()
 
