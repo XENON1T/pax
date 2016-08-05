@@ -392,7 +392,6 @@ def load_event_class_code(class_code, other_process_compiles=False):
     lockfile = get_libname(class_filename) + '.lock'
 
     if other_process_compiles:
-        # TODO: use file locks instead, timers are unreliable
         while not os.path.exists(libfile) or os.path.exists(lockfile):
             log.debug("Waiting for another process to compile the pax event class")
             time.sleep(5)
