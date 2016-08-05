@@ -211,7 +211,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                             safe_col = min(v, safe_col)
                     safe_col -= 1
                     if safe_col < 0 or safe_col == float('inf'):
-                        print("No subcollection is safe for triggering yet")
+                        self.log.info("No subcollection is safe for triggering yet")
                         self.last_pulse_time = 0
                         return
                     self.latest_subcollection = safe_col

@@ -56,6 +56,8 @@ class DeadTimeTally(TriggerPlugin):
         special_times = data.times[np.in1d(data.times['pmt'], list(self.special_channels.keys()))]
         self.log.info("Found %d signal in on/off acquisition monitor channels" % len(special_times))
 
+        invalid_state_message_to = self.log.warning
+
         for t in special_times:
 
             while t['time'] > self.next_save_time:
@@ -67,25 +69,24 @@ class DeadTimeTally(TriggerPlugin):
             system = self.systems[system_name]
             if system['active']:
                 if ch_info['means_on']:
-                    # Happens very often, not going to emit a warning all the time
-                    # TODO: emit it once, then shut up.
-                    self.log.warning("%s-on signal received while system was already active!\n"
-                                     "The signal has been ignored." % system_name)
+                    invalid_state_message_to("%s-on signal received while system was already active! The signal has"
+                                             " been ignored; similar invalid state messages have been suppressed "
+                                             "for this batch." % system_name)
+                    invalid_state_message_to = self.log.debug
                 else:
                     # System has turned off
                     system['active'] = False
                     system['dead_time_tally'] += t['time'] - system['start_of_current_dead_time']
-                    pass
             else:
                 if ch_info['means_on']:
                     # System has turned on
                     system['active'] = True
                     system['start_of_current_dead_time'] = t['time']
-                    pass
                 else:
-                    self.log.warning("%s-off signal received while system was not yet active!\n"
-                                     "The signal has been ignored." % system_name)
-                    pass
+                    invalid_state_message_to("%s-off signal received while system was not yet active! The signal has"
+                                             " been ignored; similar invalid state messages have been suppressed "
+                                             "for this batch." % system_name)
+                    invalid_state_message_to = self.log.debug
 
         if data.last_data:
             # Save the dead time info for the final part of the run
@@ -94,5 +95,3 @@ class DeadTimeTally(TriggerPlugin):
             while data.last_time_searched > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
-
-        self.log.info("Done calculating dead time for this batch")
