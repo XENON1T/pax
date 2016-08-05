@@ -45,7 +45,7 @@ class DeadTimeTally(TriggerPlugin):
                 system['dead_time_tally'] += self.next_save_time - system['start_of_current_dead_time']
                 system['start_of_current_dead_time'] = self.next_save_time
 
-            dead_times[system_name] = system['dead_time_tally']
+            dead_times[system_name] = int(system['dead_time_tally'])   # numpy int crap
             system['dead_time_tally'] = 0
 
         self.trigger.save_monitor_data('dead_time_info', dead_times)
@@ -53,12 +53,14 @@ class DeadTimeTally(TriggerPlugin):
     def process(self, data):
         self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
-        special_times = data.times[np.in1d(data.times['pmt'], self.special_channels.keys())]
+        special_times = data.times[np.in1d(data.times['pmt'], list(self.special_channels.keys()))]
         self.log.info("Found %d signal in on/off acquisition monitor channels" % len(special_times))
+
+        invalid_state_message_to = self.log.warning
 
         for t in special_times:
 
-            while t > self.next_save_time:
+            while t['time'] > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
 
@@ -67,23 +69,24 @@ class DeadTimeTally(TriggerPlugin):
             system = self.systems[system_name]
             if system['active']:
                 if ch_info['means_on']:
-                    self.log.warning("%s-on signal received while system was already active!\n"
-                                     "The signal has been ignored." % system_name)
+                    invalid_state_message_to("%s-on signal received while system was already active! The signal has"
+                                             " been ignored; similar invalid state messages have been suppressed "
+                                             "for this batch." % system_name)
+                    invalid_state_message_to = self.log.debug
                 else:
                     # System has turned off
                     system['active'] = False
                     system['dead_time_tally'] += t['time'] - system['start_of_current_dead_time']
-                    pass
             else:
                 if ch_info['means_on']:
                     # System has turned on
                     system['active'] = True
                     system['start_of_current_dead_time'] = t['time']
-                    pass
                 else:
-                    self.log.warning("%s-off signal received while system was not yet active!\n"
-                                     "The signal has been ignored." % system_name)
-                    pass
+                    invalid_state_message_to("%s-off signal received while system was not yet active! The signal has"
+                                             " been ignored; similar invalid state messages have been suppressed "
+                                             "for this batch." % system_name)
+                    invalid_state_message_to = self.log.debug
 
         if data.last_data:
             # Save the dead time info for the final part of the run
