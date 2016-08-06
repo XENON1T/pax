@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 5.3.5 documentation</title>
+    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.3.5',
+        VERSION:     '5.3.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.5 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -154,7 +154,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoBase.subcollection">
-<code class="descname">subcollection</code><span class="sig-paren">(</span><em>number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.subcollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.subcollection" title="Permalink to this definition">¶</a></dt>
+<code class="descname">subcollection</code><span class="sig-paren">(</span><em>number</em>, <em>host_i=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.subcollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.subcollection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return pymongo collection object for subcollection number in the run
 Caches subcollection handles for you, since it seems to take time to ask for the collection
 every event
@@ -300,11 +300,11 @@ This is a separate plugin, since reading the raw pulse data is the expensive ope
 
 <dl class="function">
 <dt id="pax.plugins.io.MongoDB.get_pulses">
-<code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">get_pulses</code><span class="sig-paren">(</span><em>client_maker_config</em>, <em>input_info</em>, <em>collection_name</em>, <em>query</em>, <em>get_area=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#get_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.get_pulses" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">get_pulses</code><span class="sig-paren">(</span><em>client_maker_config</em>, <em>input_info</em>, <em>collection_name</em>, <em>query</em>, <em>host</em>, <em>get_area=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#get_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.get_pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find pulse times according to query using monary.
 Returns four numpy arrays: times, modules, channels, areas.
 Areas consists of zeros unless get_area = True, in which we also fetch the &#8216;integral&#8217; field.</p>
-<p>The monary client is created inside this function, so we can run it with ThreadPoolExecutor or ProcessPoolExecutor.</p>
+<p>The monary client is created inside this function, so we could run it with ProcessPoolExecutor.</p>
 </dd></dl>
 
 <dl class="function">

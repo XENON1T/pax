@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 5.3.5 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.3.5',
+        VERSION:     '5.3.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.5 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -55,7 +55,7 @@
 <span class="kn">import</span> <span class="nn">pymongo</span>
 <span class="kn">import</span> <span class="nn">snappy</span>
 
-<span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="kn">import</span> <span class="n">ClientMaker</span>
+<span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="kn">import</span> <span class="n">ClientMaker</span><span class="p">,</span> <span class="n">parse_passwordless_uri</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span><span class="p">,</span> <span class="n">EventProxy</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">units</span>
 
@@ -75,6 +75,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh_run_doc</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;reader&#39;</span><span class="p">][</span><span class="s1">&#39;ini&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rotating_collections&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Split collection mode: batch window forced to </span><span class="si">%s</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">))</span>
@@ -89,21 +90,43 @@
                 <span class="k">break</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid run document: none of the &#39;data&#39; entries contain untriggered data!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;;&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_hosts</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_hosts</span> <span class="o">=</span> <span class="bp">False</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;untriggered&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;detector&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;tpc&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TPC data is expected in the &#39;untriggered&#39; database,&quot;</span>
                              <span class="s2">&quot; but this run is in </span><span class="si">%s</span><span class="s2">?!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span>
 
-        <span class="c1"># Connect to the input database</span>
+        <span class="n">start_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_of_run_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_datetime</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="c1"># Connect to the input database on the primary host</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
                                                <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
                                                <span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>         <span class="c1"># w=0 ensures fast deletes. We&#39;re not going to write.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_client</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span>
+        <span class="c1"># In split collections mode, we use the subcollection methods (see below) to get the input collections</span>
 
-        <span class="n">start_datetime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time_of_run_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_datetime</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_hosts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;eb0&#39;</span><span class="p">,</span> <span class="s1">&#39;eb1&#39;</span><span class="p">,</span> <span class="s1">&#39;eb2&#39;</span><span class="p">]</span>   <span class="c1"># TODO: don&#39;t hardcode</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="n">parse_passwordless_uri</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="c1"># Make pymongo db handles for all hosts. Double work if not split_hosts, but avoids double code later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
+                                       <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
+                                       <span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
+                                       <span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hosts</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_collections</span> <span class="o">=</span> <span class="p">[</span><span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;collection&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="MongoBase.refresh_run_doc"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.refresh_run_doc">[docs]</a>    <span class="k">def</span> <span class="nf">refresh_run_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Update the internal run doc within this class</span>
@@ -121,18 +144,23 @@
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">number</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="MongoBase.subcollection"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<div class="viewcode-block" id="MongoBase.subcollection"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">host_i</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return pymongo collection object for subcollection number in the run</span>
 <span class="sd">        Caches subcollection handles for you, since it seems to take time to ask for the collection</span>
 <span class="sd">        every event</span>
 <span class="sd">        Actually this turned out to be some other bug... probably we can remove collection caching now.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
-        <span class="k">if</span> <span class="n">number</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">number</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">host_i</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="n">number</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">number</span><span class="p">]</span> <span class="o">=</span> <span class="n">coll</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">[</span><span class="n">host_i</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">host_i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cache_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coll</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="n">number</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_subcollection_handles</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">coll</span>
             <span class="k">return</span> <span class="n">coll</span>
 </div>
 <div class="viewcode-block" id="MongoBase.subcollection_with_time"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase.subcollection_with_time">[docs]</a>    <span class="k">def</span> <span class="nf">subcollection_with_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
@@ -210,13 +238,34 @@
                 <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># While the DAQ is running, we can&#39;t use this method, as the reader creates empty collections</span>
-                <span class="c1"># ahead of the insertion point. Instead, move forward in subcollections until we find one without data.</span>
-                <span class="c1"># This means that if there is a large gap in the data, we won&#39;t progress beyond it! (until the run ends)</span>
-                <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
-                        <span class="k">break</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Last subcollection with data is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
+                <span class="c1"># ahead of the insertion point.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;use_run_status_doc&#39;</span><span class="p">):</span>
+                    <span class="c1"># Dan made a doc with the approximate insertion point of each digitizer: the min of these should</span>
+                    <span class="c1"># be safe to use (more or less.. a slight delay is still advisable. ask Dan for details)</span>
+                    <span class="n">status_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;collection&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]})</span>
+                    <span class="k">if</span> <span class="n">status_doc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Missing run status doc!&quot;</span><span class="p">)</span>
+                    <span class="n">safe_col</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">status_doc</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                            <span class="n">safe_col</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">safe_col</span><span class="p">)</span>
+                    <span class="n">safe_col</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">safe_col</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">safe_col</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No subcollection is safe for triggering yet&quot;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_pulse_time</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="k">return</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">=</span> <span class="n">safe_col</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;First safe subcollection is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Old method: find the last collection with some data, rely on large safety margin</span>
+                    <span class="c1"># Keep fingers crossed. Instead, move forward in subcollections until we find one without data.</span>
+                    <span class="c1"># If there is a large gap in the data, we won&#39;t progress beyond it until the run ends.</span>
+                    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
+                            <span class="k">break</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Last subcollection with data is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
+
                 <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_subcollection</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">check_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span>
@@ -286,20 +335,18 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DAQ has not taken sufficient data to continue. Sleeping 5 sec...&quot;</span><span class="p">)</span>
                     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
                     <span class="k">continue</span>
-            <span class="n">batches_to_search</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batches_to_search</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_query_workers</span><span class="p">)</span>
+            <span class="n">batches_to_search</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batches_to_search</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_query_workers</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hosts</span><span class="p">))</span>
 
             <span class="c1"># Start new queries in separate processes</span>
-            <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">batches_to_search</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_query_workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
                 <span class="n">futures</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">batch_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batches_to_search</span><span class="p">):</span>
+                    <span class="n">futures_per_host</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="c1"># Get the query, and collection name needed for it</span>
                     <span class="n">start</span> <span class="o">=</span> <span class="n">next_time_to_search</span> <span class="o">+</span> <span class="n">batch_i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span><span class="p">:</span>
                         <span class="n">subcol_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_with_time</span><span class="p">(</span><span class="n">next_time_to_search</span><span class="p">)</span> <span class="o">+</span> <span class="n">batch_i</span>
-                        <span class="c1"># After a DAQ crash pulses may be inserted in collections which have already been deleted.</span>
-                        <span class="c1"># In a &#39;post-mortem run&#39; on that data, the the event filler queries would be extremely slow.</span>
-                        <span class="c1"># Hence we issue a create_index here, which is just a NOP if the index already exists.</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Ensuring index for subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">subcol_i</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="n">subcol_i</span><span class="p">)</span><span class="o">.</span><span class="n">create_index</span><span class="p">([(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
                         <span class="c1"># Prep the query -- not a very difficult one :-)</span>
                         <span class="n">query</span> <span class="o">=</span> <span class="p">{}</span>
                         <span class="n">collection_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="n">subcol_i</span><span class="p">)</span>
@@ -310,18 +357,23 @@
                         <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_range_query</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting query for batch </span><span class="si">%d</span><span class="s2">, time range [</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
                             <span class="n">batch_i</span><span class="p">,</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">stop</span><span class="p">)))</span>
-                    <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_pulses</span><span class="p">,</span>
-                                             <span class="n">client_maker_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
-                                             <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
-                                             <span class="n">input_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">,</span>
-                                             <span class="n">collection_name</span><span class="o">=</span><span class="n">collection_name</span><span class="p">,</span>
-                                             <span class="n">get_area</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;can_get_area&#39;</span><span class="p">])</span>
-                    <span class="n">futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+
+                    <span class="c1"># Do the query on each host</span>
+                    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hosts</span><span class="p">:</span>
+                        <span class="n">future</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_pulses</span><span class="p">,</span>
+                                                 <span class="n">client_maker_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
+                                                 <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                                                 <span class="n">input_info</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_info</span><span class="p">,</span>
+                                                 <span class="n">collection_name</span><span class="o">=</span><span class="n">collection_name</span><span class="p">,</span>
+                                                 <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
+                                                 <span class="n">get_area</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;can_get_area&#39;</span><span class="p">])</span>
+                        <span class="n">futures_per_host</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+                    <span class="n">futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">futures_per_host</span><span class="p">)</span>
 
                 <span class="c1"># Record advancement of the batch window</span>
                 <span class="n">last_time_searched</span> <span class="o">=</span> <span class="n">next_time_to_search</span> <span class="o">+</span> <span class="n">batches_to_search</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_window</span>
 
-                <span class="c1"># Check if more data is coming</span>
+                <span class="c1"># Check if there is more data</span>
                 <span class="n">more_data_coming</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">last_time_searched</span> <span class="o">&lt;</span> <span class="n">end_of_search_for_this_run</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">more_data_coming</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Searched to </span><span class="si">%s</span><span class="s2">, which is beyond </span><span class="si">%s</span><span class="s2">. This is the last batch of data&quot;</span> <span class="o">%</span> <span class="p">(</span>
@@ -336,9 +388,35 @@
                                                                              <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;stop_after_sec&#39;</span><span class="p">]))</span>
                         <span class="n">more_data_coming</span> <span class="o">=</span> <span class="bp">False</span>
 
-                <span class="c1"># Retrieve results from the queries, then build events (which must happen serially).</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">future</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">futures</span><span class="p">):</span>
-                    <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                <span class="c1"># Retrieve results from the queries, then pass everything to the trigger</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">futures_per_host</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">futures</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">futures_per_host</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_hosts</span>
+                        <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span> <span class="o">=</span> <span class="n">futures_per_host</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_hosts</span>
+                        <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">channels</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">areas</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">futures_per_host</span><span class="p">:</span>
+                            <span class="n">ts</span><span class="p">,</span> <span class="n">ms</span><span class="p">,</span> <span class="n">chs</span><span class="p">,</span> <span class="n">ars</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                            <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+                            <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ms</span><span class="p">)</span>
+                            <span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chs</span><span class="p">)</span>
+                            <span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ars</span><span class="p">)</span>
+                        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+                        <span class="n">modules</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+                        <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
+                        <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">areas</span><span class="p">)</span>
+
+                    <span class="c1"># Sort the results</span>
+                    <span class="n">sort_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+                    <span class="n">times</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+                    <span class="n">modules</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+                    <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+                    <span class="n">areas</span> <span class="o">=</span> <span class="n">areas</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
+
                     <span class="n">times</span> <span class="o">=</span> <span class="n">times</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span>
 
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
@@ -394,17 +472,23 @@
                               <span class="n">x</span><span class="p">[</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;channel&#39;</span><span class="p">]):</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;pmt_position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">}</span>
 </div>
     <span class="k">def</span> <span class="nf">_get_cursor_between_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">subcollection_number</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run),</span>
-<span class="sd">        sorted by start time.</span>
-<span class="sd">        Does NOT deal with time ranges split between subcollections!!</span>
+        <span class="sd">&quot;&quot;&quot;Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run).</span>
+<span class="sd">        Order of pulses is not defined.</span>
+<span class="sd">        Does NOT deal with time ranges split between subcollections, but does deal with split hosts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">subcollection_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
-            <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span>
+        <span class="n">cursors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">host_i</span><span class="p">,</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hosts</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">subcollection_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+                <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collections</span><span class="p">[</span><span class="n">host_i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
+                <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="n">subcollection_number</span><span class="p">,</span> <span class="n">host_i</span><span class="p">)</span>
+            <span class="n">cursors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_range_query</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hosts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cursors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_collections</span>
-            <span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subcollection</span><span class="p">(</span><span class="n">subcollection_number</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_range_query</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">),</span> <span class="n">sort</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+            <span class="k">return</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">cursors</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MongoDBReadUntriggeredFiller.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
         <span class="c1"># t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run</span>
@@ -464,7 +548,6 @@
 
 </div></div>
 <div class="viewcode-block" id="MongoDBClearUntriggered"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered">[docs]</a><span class="k">class</span> <span class="nc">MongoDBClearUntriggered</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">,</span> <span class="n">MongoBase</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Clears data whose events have been built from MongoDB&gt;</span>
 <span class="sd">    Will do NOTHING unless delete_data = True in config.</span>
 <span class="sd">    This must run as part of the output group, so it gets the events in order.</span>
@@ -497,17 +580,19 @@
             <span class="k">while</span> <span class="n">coll_number</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seen event at subcollection </span><span class="si">%d</span><span class="s2">, clearing subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">coll_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">,</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">time_since_start</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;batch_window&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seen event at </span><span class="si">%s</span><span class="s2">, clearing &quot;</span>
                               <span class="s2">&quot;all data until then.&quot;</span> <span class="o">%</span> <span class="n">pax_to_human_time</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">delete_pulses</span><span class="p">,</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">input_collection</span><span class="p">,</span>
-                                     <span class="n">start_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span><span class="p">),</span>
-                                     <span class="n">stop_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">coll</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_collections</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">delete_pulses</span><span class="p">,</span>
+                                         <span class="n">coll</span><span class="p">,</span>
+                                         <span class="n">start_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span><span class="p">),</span>
+                                         <span class="n">stop_mongo_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_mt</span><span class="p">(</span><span class="n">time_since_start</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span> <span class="o">=</span> <span class="n">time_since_start</span>
 
         <span class="k">return</span> <span class="n">event_proxy</span>
@@ -517,11 +602,14 @@
             <span class="k">return</span>
 
         <span class="c1"># Clear all (sub)collections for this run</span>
+        <span class="c1"># TODO: should we scan remaining collections on all hosts?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dropping all remaining collections&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">coll_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">coll_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]):</span>
-                <span class="k">continue</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">coll_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">coll_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">coll_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">coll_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Completed.&quot;</span><span class="p">)</span>
 
         <span class="c1"># Update the run doc to remove the &#39;untriggered&#39; entry</span>
@@ -540,21 +628,27 @@
     <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%3.1f</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="get_pulses"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.get_pulses">[docs]</a><span class="k">def</span> <span class="nf">get_pulses</span><span class="p">(</span><span class="n">client_maker_config</span><span class="p">,</span> <span class="n">input_info</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">get_area</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="get_pulses"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.get_pulses">[docs]</a><span class="k">def</span> <span class="nf">get_pulses</span><span class="p">(</span><span class="n">client_maker_config</span><span class="p">,</span> <span class="n">input_info</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">get_area</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Find pulse times according to query using monary.</span>
 <span class="sd">    Returns four numpy arrays: times, modules, channels, areas.</span>
 <span class="sd">    Areas consists of zeros unless get_area = True, in which we also fetch the &#39;integral&#39; field.</span>
 
-<span class="sd">    The monary client is created inside this function, so we can run it with ThreadPoolExecutor or ProcessPoolExecutor.</span>
+<span class="sd">    The monary client is created inside this function, so we could run it with ProcessPoolExecutor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">client_maker</span> <span class="o">=</span> <span class="n">ClientMaker</span><span class="p">(</span><span class="n">client_maker_config</span><span class="p">)</span>
+
     <span class="n">monary_client</span> <span class="o">=</span> <span class="n">client_maker</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="n">database_name</span><span class="o">=</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span>
                                             <span class="n">uri</span><span class="o">=</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">],</span>
+                                            <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
                                             <span class="n">monary</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;integral&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
     <span class="n">types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">get_area</span> <span class="k">else</span> <span class="p">[])</span>
+
+    <span class="c1"># Somehow monary&#39;s block query fails when we have multiple blocks,</span>
+    <span class="c1"># we need to take care of copying out the data ourselves, but even if I use .copy it doesn&#39;t seem to work</span>
+    <span class="c1"># Never mind, just make a big block</span>
     <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">monary_client</span><span class="o">.</span><span class="n">block_query</span><span class="p">(</span><span class="n">input_info</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">],</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">types</span><span class="p">,</span>
-                                             <span class="n">block_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e7</span><span class="p">),</span>
+                                             <span class="n">block_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">5e8</span><span class="p">),</span>
                                              <span class="n">select_fields</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
     <span class="n">monary_client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -575,13 +669,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span> <span class="o">=</span> <span class="n">results</span>
             <span class="n">areas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-
-        <span class="c1"># Sort ourselves, to spare Mongo the trouble</span>
-        <span class="n">sort_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
-        <span class="n">times</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
-        <span class="n">modules</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
-        <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
-        <span class="n">areas</span> <span class="o">=</span> <span class="n">areas</span><span class="p">[</span><span class="n">sort_order</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">times</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">areas</span>
 
