@@ -67,4 +67,5 @@ class AnyPulseFromDetectorTrigger(TriggerPlugin):
             new_sigs['n_pulses'] = 1
             new_sigs['n_contributing_channels'] = 1
 
-            data.signals = np.concatenate((data.signals, new_sigs)).sort(order='left_time')
+            data.signals = np.concatenate((data.signals, new_sigs))
+            data.signals.sort(order='left_time')
