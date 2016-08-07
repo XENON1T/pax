@@ -164,10 +164,10 @@ def main():
         # Apply command-line override settings for trigger probability
         if args.force_multiplicity_trigger is not None:
             str_level = str(args.force_multiplicity_trigger)
-            config_dict = combine_configs(config_dict, {'Trigger.DecideTriggers': {
+            config_dict = combine_configs(config_dict, {'Trigger.DecideTriggers': {'trigger_probability': {
                 '0': {str_level: 1},
                 '1': {str_level: 1},
-                '2': {str_level: 1}}})
+                '2': {str_level: 1}}}})
 
         log.info("Building events for %s", run_doc['name'])
         log.info("Config override is: %s" % config_dict)
