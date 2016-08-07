@@ -56,7 +56,7 @@ class AnyPulseFromDetectorTrigger(TriggerPlugin):
             if not len(pulses):
                 continue
             self.log.debug("Triggering on every individual %d pulses from detector %s" % (len(pulses), detector))
-            
+
             new_sigs = np.zeros(len(pulses), dtype=TriggerSignal.get_dtype())
 
             new_sigs['trigger'] = True
