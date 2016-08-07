@@ -53,7 +53,7 @@ class AnyPulseFromDetectorTrigger(TriggerPlugin):
         for detector, typecode in self.config['typecodes_for_detector'].items():
             if detector not in data.pulses_per_detector:
                 continue
-            pulses = data.pulses_per_detector['detector']
+            pulses = data.pulses_per_detector[detector]
             if not len(pulses):
                 continue
             self.log.debug("Triggering on every individual %d pulses from detector %s" % (len(pulses), detector))
