@@ -17,7 +17,7 @@ class TestSignalFinder(unittest.TestCase):
         numba_signals_buffer = np.zeros(100, dtype=TriggerSignal.get_dtype())
 
         def get_signals(start_times, separation):
-            times = np.zeros(len(start_times), dtype=trigger.times_dtype)
+            times = np.zeros(len(start_times), dtype=trigger.pulse_dtype)
             times['time'] = start_times
             times['area'] = 10
 

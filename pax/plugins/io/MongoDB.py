@@ -370,13 +370,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                         channels = np.concatenate(channels)
                         areas = np.concatenate(areas)
 
-                    # Sort the results
-                    sort_order = np.argsort(times)
-                    times = times[sort_order]
-                    modules = modules[sort_order]
-                    channels = channels[sort_order]
-                    areas = areas[sort_order]
-
                     times = times * self.sample_duration
 
                     if len(times):
@@ -388,6 +381,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                         self.log.info("Batch %d: No pulse data found." % i)
 
                     # Send the new data to the trigger, which will build events from it
+                    # Note the data is still unsorted: the trigger will take care of sorting it.
                     for data in self.trigger.run(last_time_searched=next_time_to_search + (i + 1) * self.batch_window,
                                                  start_times=times,
                                                  channels=channels,

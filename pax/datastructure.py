@@ -137,7 +137,11 @@ class TriggerSignal(StrictModel):
     MongoDB.ReadUntriggeredFiller.
     """
 
-    #: "Type" of the signal. 1 for S1 candidates, 2 for S2 candidates
+    #: "Type" of the signal.
+    #:   0: unknown TPC
+    #:   1: TPC S1 candidates
+    #:   2: TPC S2 candidates
+    #:   106: muon veto
     type = 0
 
     #: Did this signal cause a trigger?
