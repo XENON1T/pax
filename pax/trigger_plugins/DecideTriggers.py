@@ -51,9 +51,8 @@ class AnyPulseFromDetectorTrigger(TriggerPlugin):
 
     def process(self, data):
         for detector, typecode in self.config['typecodes_for_detector'].items():
-            if detector not in data.pulses_per_detector:
-                continue
-            pulses = data.pulses_per_detector[detector]
+            channels = self.trigger.pax_config['DEFAULT']['channels_in_detector'][detector]
+            pulses = data.pulses[np.in1d(data.pulses['pmt'], channels)]
             if not len(pulses):
                 continue
             self.log.debug("Triggering on every individual %d pulses from detector %s" % (len(pulses), detector))

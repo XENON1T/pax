@@ -1,11 +1,10 @@
 import numpy as np
 import numba
 
-from pax.recarray_tools import dict_group_by
 from pax.trigger import TriggerPlugin, pulse_dtype
 
 
-class MakePulsesArray(TriggerPlugin):
+class SortData(TriggerPlugin):
     """Converts the raw data given to trigger.run into a nice numpy array,
     looking up PMT numbers for module/channel pairs, and sorting the array by time.
     """
@@ -30,7 +29,11 @@ class MakePulsesArray(TriggerPlugin):
 
     def process(self, data):
         ind = data.input_data
-        # Enter the times into data
+
+        # Find the sort order of the data.
+        sort_order = np.argsort(ind['start_times'])
+
+        # Build the structured array with the data
         pulses = np.zeros(len(ind['start_times']), dtype=pulse_dtype)
         pulses['time'] = ind['start_times']
         if ind['channels'] is not None and ind['modules'] is not None:
@@ -41,31 +44,13 @@ class MakePulsesArray(TriggerPlugin):
             pulses['pmt'] = self.n_channels
         if ind['areas'] is not None:
             pulses['area'] = ind['areas']
+
+        # Perform the sort with the order determined previously.
+        # See http://stackoverflow.com/questions/19682521/sorting-numpy-structured-and-reco
+        # Especially the comment on the answer on why the mode should always be 'raise'!
+        np.take(pulses, sort_order, out=pulses, mode='raise')
         data.pulses = pulses
-        data.pulses.sort(order='time')
         del data.input_data
-
-
-class SortByDetectorAndTime(TriggerPlugin):
-    """Sort pulses by detector (in data.pulses_per_detector), and for each detector by time"""
-
-    def startup(self):
-        # Build a channel -> detector lookup list
-        self.detectors = []    # List of detectors in some order (arbitrary since channels_in_detector is a dict field)
-        detector_lookup = {}   # dict mapping ch -> detector index in self.detectors
-        for i, (detector, chs) in enumerate(self.trigger.pax_config['DEFAULT']['channels_in_detector'].items()):
-            self.detectors.append(detector)
-            for ch in chs:
-                detector_lookup[ch] = i
-        self.detector_lookup = np.array([detector_lookup[ch] for ch in range(len(detector_lookup))])
-
-    def process(self, data):
-        pulses = data.pulses
-        get_detector_numbers(pulses['pmt'], pulses['_detector'], self.detector_lookup)
-        data.pulses.sort(order=['_detector', 'time'])
-        for detector_number, ts in dict_group_by(pulses, '_detector').items():
-            data.pulses_per_detector[self.detectors[detector_number]] = ts
-        del data.pulses
 
 
 @numba.jit(nopython=True)
@@ -76,12 +61,3 @@ def get_pmt_numbers(channels, modules, pmts_buffer, pmt_lookup):
     """
     for i in range(len(channels)):
         pmts_buffer[i] = pmt_lookup[modules[i], channels[i]]
-
-
-@numba.jit(nopython=True)
-def get_detector_numbers(pmt_numbers, detectors_buffer, detector_lookup):
-    """Fills detectors_buffer with detector numbers corresponding to pmt_numbers according to detector_lookup array.
-    Modifies detectors_buffer in-place.
-    """
-    for i in range(len(pmt_numbers)):
-        detectors_buffer[i] = detector_lookup[pmt_numbers[i]]

@@ -15,10 +15,8 @@ class DeadTimeTally(TriggerPlugin):
         # Read the on/off status channels from the configuration
         self.systems = OrderedDict()
         self.special_channels = {}
-        self.special_detectors = []
         for detector, channels in self.trigger.pax_config['DEFAULT']['channels_in_detector'].items():
             if detector.endswith('_on') or detector.endswith('_off'):
-                self.special_detectors.append(detector)
                 assert len(channels) == 1
                 channel = channels[0]
                 system, status = detector.split('_')
@@ -55,14 +53,10 @@ class DeadTimeTally(TriggerPlugin):
     def process(self, data):
         self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
+        special_pulses = data.pulses[np.in1d(data.pulses['pmt'], list(self.special_channels.keys()))]
+        self.log.info("Found %d signals in on/off acquisition monitor channels" % len(special_pulses))
 
         invalid_state_message_to = self.log.warning
-
-        special_pulses = [ps for detector, ps in data.pulses_per_detector.items()
-                          if detector in self.special_detectors]
-        if special_pulses:
-            special_pulses = np.concatenate(special_pulses).sort(order='time')
-            self.log.info("Found %d pulses in on/off acquisition monitor channels" % len(special_pulses))
 
         for p in special_pulses:
 
