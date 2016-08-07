@@ -74,7 +74,10 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
         c['pmt_circuit_load_resistor'] *
         c['external_amplification'] *
         units.electron_charge)
-    pmt_gain = c['gains'][channel]
+    try:
+        pmt_gain = c['gains'][channel]
+    except IndexError:
+        raise IndexError("Attempt to request gain for channel %d, only %d channels known." % channel, (len(c['gains'])))
     if use_reference_gain_if_zero and pmt_gain == 0 or use_reference_gain:
         pmt_gain = c.get('pmt_reference_gain', 2e6)
     if pmt_gain == 0:
