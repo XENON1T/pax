@@ -7,9 +7,8 @@ from copy import deepcopy
 from collections import defaultdict
 import zipfile
 import zlib
-import bson
 
-import numba
+import bson
 import numpy as np
 
 import pax          # For version number
@@ -17,20 +16,33 @@ from pax.utils import PAX_DIR
 from pax.datastructure import TriggerSignal
 from pax.exceptions import InvalidConfigurationError
 
-times_dtype = np.dtype([('time', np.int64),
+
+pulse_dtype = np.dtype([('time', np.int64),
                         ('pmt', np.int32),
-                        ('area', np.float64)
+                        ('area', np.float64),
+                        ('_detector', np.int16),   # Temporary marker for detector... no meaning outside
                         ])
 
 
 class TriggerData(object):
     """Carries all data from one "batch" between trigger modules"""
-    times = np.array([], dtype=times_dtype)
-    signals = np.array([], dtype=TriggerSignal.get_dtype())
-    event_ranges = np.zeros((0, 2), dtype=np.int64)
-    signals_by_event = []
-    last_data = False
-    last_time_searched = 0
+
+    def __init__(self, **kwargs):
+        # Deleted in early stages
+        self.pulses = None              # Pulses array, but not yet sorted by detector and time
+        self.input_data = dict()        # times, modules, channels, etc. raw from input
+
+        # Kept until the end
+        self.last_data = False                                      # Is this the last batch of data?
+        self.last_time_searched = 0                                 # Last time searched while querying this batch
+        self.pulses_per_detector = dict()                           # Dict mapping detector name -> pulses
+        self.signals = np.array([], dtype=TriggerSignal.get_dtype())
+        self.event_ranges = np.zeros((0, 2), dtype=np.int64)        # Event (left, right) ranges
+        self.signals_by_event = []                                  # Signals to save with each event
+        self.batch_info_doc = dict()                                # Status info about batch, saved by monitor
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 class TriggerPlugin(object):
@@ -39,7 +51,6 @@ class TriggerPlugin(object):
     def __init__(self, trigger, config):
         self.trigger = trigger
         self.config = config
-        self.pmt_data = self.trigger.pmt_data
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
         self.log.debug("Logging started for %s" % self.name)
@@ -56,10 +67,10 @@ class TriggerPlugin(object):
 class Trigger(object):
     """XENON1T trigger main class
     This is responsible for
-        * constructing a TriggerData object from a batch of pulse start times / areas / etc.
+        * constructing a TriggerData object from a batch of pulse start times, their module/channel info, etc.
         * running this by each of the trigger modules
         * collecting the end-of-run info from all plugins into one dictionary
-        * managing the trigger data stream (insert docs to MongoDB, dump to file in the end)
+        * managing the trigger monitor stream (insert docs to MongoDB, dump to file, ...)
     """
 
     def __init__(self, pax_config, trigger_monitor_collection=None):
@@ -69,34 +80,20 @@ class Trigger(object):
         self.log = logging.getLogger('Trigger')
         self.pax_config = pax_config
         self.config = pax_config['Trigger']
-        self.pmt_data = pax_config['DEFAULT']['pmts']
-        self.trigger_monitor_collection = trigger_monitor_collection
-        if trigger_monitor_collection is None:
-            self.log.info("No trigger monitor collection provided: won't write trigger monitor data to MongoDB")
-        self.monitor_cache = []         # Cache of (data_type, doc), with doc document to insert into db / write to zip.
-        self.data_type_counter = defaultdict(float)    # Counts how often a document of each data type has been inserted
 
         # Configuration sanity check
         if self.config['event_separation'] < self.config['left_extension'] + self.config['right_extension']:
             raise InvalidConfigurationError("event_separation must not be smaller "
                                             "than left_extension + right_extension")
 
-        # Build a (module, channel) ->  lookup matrix
-        # I whish numba had some kind of dictionary / hashtable support...
-        # but this will work as long as the module serial numbers are small :-)
-        # I will asssume always and everywhere the pmt position numbers start at 0 and increase by 1 continuously!
-        # Initialize the matrix to n_channels, which is one above the last PMT
-        # This will ensure we do not crash on data in 'ghost' channels (not plugged in,
-        # do report data in self-triggered mode)
-        pmt_data = self.pmt_data
-        n_channels = len(pmt_data)
-        max_module = max([q['digitizer']['module'] for q in pmt_data])
-        max_channel = max([q['digitizer']['channel'] for q in pmt_data])
-        self.pmt_lookup = n_channels * np.ones((max_module + 1, max_channel + 1), dtype=np.int)
-        for q in pmt_data:
-            module = q['digitizer']['module']
-            channel = q['digitizer']['channel']
-            self.pmt_lookup[module][channel] = q['pmt_position']
+        ##
+        # Initialize trigger monitor stuff
+        ##
+        self.trigger_monitor_collection = trigger_monitor_collection
+        if trigger_monitor_collection is None:
+            self.log.info("No trigger monitor collection provided: won't write trigger monitor data to MongoDB")
+        self.monitor_cache = []         # Cache of (data_type, doc), with doc document to insert into db / write to zip.
+        self.data_type_counter = defaultdict(float)    # Counts how often a document of each data type has been inserted
 
         # Create a zipfile to store the trigger monitor data, if config says so
         # (the data is additionaly stored in a MongoDB, if trigger_monitor_collection was passed)
@@ -110,13 +107,16 @@ class Trigger(object):
             self.log.info("Not trigger monitor file path provided: won't write trigger monitor data to Zipfile")
             self.trigger_monitor_file = None
 
-        self.end_of_run_info = dict(times_read=0,
+        self.end_of_run_info = dict(pulses_read=0,
                                     signals_found=0,
                                     events_built=0,
                                     start_timestamp=time.time(),
                                     pax_version=pax.__version__,
                                     config=self.config)
 
+        ##
+        # Load the trigger plugins
+        ##
         # Build a dictionary mapping trigger plugin names to classes
         tm_classes = {}
         for module_filename in glob(os.path.join(PAX_DIR + '/trigger_plugins/*.py')):
@@ -162,34 +162,23 @@ class Trigger(object):
     def run(self, last_time_searched, start_times=tuple(), channels=None, modules=None, areas=None, last_data=False):
         """Run on the specified data, yields ((start time, stop time), signals in event, event type identifier)
         """
-        data = TriggerData()
-        data.last_time_searched = last_time_searched
-        data.last_data = last_data
-
-        # Enter the times into data
-        data.times = np.zeros(len(start_times), dtype=times_dtype)
-        data.times['time'] = start_times
-        if channels is not None and modules is not None:
-            # Convert the channel/module specs into pmt numbers.
-            get_pmt_numbers(channels, modules, pmts_buffer=data.times['pmt'], pmt_lookup=self.pmt_lookup)
-        else:
-            # If PMT numbers are not specified, pretend everything is from a 'ghost' pmt at # = n_channels
-            data.times['pmt'] = len(self.pmt_data)
-        if areas is not None:
-            data.times['area'] = areas
+        data = TriggerData(last_time_searched=last_time_searched, last_data=last_data)
+        data.input_data = dict(start_times=start_times, channels=channels, modules=modules, areas=areas)
 
         # Hand over to each of the trigger plugins in turn.
-        # The batch_info_doc can be filled with batch-specific information by the plugins
-        self.batch_info_doc = dict(last_time_searched=last_time_searched)
         for plugin in self.plugins:
             self.log.debug("Passing data to plugin %s" % plugin.name)
             plugin.process(data)
-        self.log.info("Trigger found %d event ranges, %d signals in %d pulse times." % (
-            len(data.event_ranges), len(data.signals), len(data.times)))
-        self.save_monitor_data('batch_info', self.batch_info_doc)
+        self.log.info("Trigger found %d event ranges, %d signals in %d pulses." % (
+            len(data.event_ranges), len(data.signals), len(start_times)))
+
+        # Update and save the batch info doc
+        data.batch_info_doc.update(dict(last_time_searched=data.last_time_searched,
+                                        is_last_data=data.last_data))
+        self.save_monitor_data('batch_info', data.batch_info_doc)
 
         # Update the end of run info
-        self.end_of_run_info['times_read'] += len(data.times)
+        self.end_of_run_info['pulses_read'] += len(start_times)
         self.end_of_run_info['signals_found'] += len(data.signals)
         self.end_of_run_info['events_built'] += len(data.event_ranges)
 
@@ -247,13 +236,3 @@ class Trigger(object):
         if metadata is not None:
             data.update(metadata)
         self.monitor_cache.append((data_type, data))
-
-
-@numba.jit(nopython=True)
-def get_pmt_numbers(channels, modules, pmts_buffer, pmt_lookup):
-    """Fills pmts_buffer with pmt numbers corresponding to channels, modules according to pmt_lookup matrix:
-     - pmt_lookup: lookup matrix for pmt numbers. First index is digitizer module, second is digitizer channel.
-    Modifies pmts_buffer in-place.
-    """
-    for i in range(len(channels)):
-        pmts_buffer[i] = pmt_lookup[modules[i], channels[i]]

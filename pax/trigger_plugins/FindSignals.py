@@ -23,7 +23,8 @@ class FindSignals(TriggerPlugin):
                                              dtype=TriggerSignal.get_dtype())
 
         # Initialize buffers for tallying pulses / coincidences
-        n_channels = len(self.pmt_data) + 1     # Reason for +1 is again 'ghost' channels, see trigger.py
+        # Reason for +1 is again 'ghost' channels, see trigger.py
+        n_channels = self.trigger.pax_config['DEFAULT']['n_channels'] + 1
         self.all_pulses_tally = np.zeros(n_channels, dtype=np.int)
         self.lone_pulses_tally = np.zeros(n_channels, dtype=np.int)
         self.coincidence_tally = np.zeros((n_channels, n_channels), dtype=np.int)
@@ -41,10 +42,10 @@ class FindSignals(TriggerPlugin):
     def process(self, data):
         if self.next_save_time is None:
             self.next_save_time = self.config['dark_rate_save_interval']
-            if len(data.times):
-                self.next_save_time += data.times['time'][0]
+            if len(data.pulses):
+                self.next_save_time += data.pulses['time'][0]
 
-        sigf = signal_finder(times=data.times,
+        sigf = signal_finder(times=data.pulses,
                              signal_separation=self.config['signal_separation'],
 
                              signal_buffer=self.numba_signals_buffer,

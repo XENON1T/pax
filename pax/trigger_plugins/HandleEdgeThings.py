@@ -1,34 +1,33 @@
 import numpy as np
 import numba
 
-from pax.trigger import TriggerPlugin, times_dtype
+from pax.trigger import TriggerPlugin, pulse_dtype
 from pax.datastructure import TriggerSignal
 
 
-class HandleEdgeTimes(TriggerPlugin):
+class HandleEdgePulses(TriggerPlugin):
 
-    saved_times = np.array([], dtype=times_dtype)
+    saved_pulses = np.array([], dtype=pulse_dtype)
 
     def process(self, data):
-        if len(self.saved_times):
-            self.log.debug("Injecting %d saved times" % len(self.saved_times))
-            data.times = np.concatenate((self.saved_times, data.times))
-            data.times.sort(order='time')       # Just to be safe, in live-mode batch edge may be ragged
-            self.saved_times = self.saved_times[:0]
+        if len(self.saved_pulses):
+            self.log.debug("Injecting %d saved pulses" % len(self.saved_pulses))
+            data.pulses = np.concatenate((self.saved_pulses, data.pulses))
+            self.saved_pulses = self.saved_pulses[:0]
 
         if not data.last_data:
-            # We may not be able to look at all the added times yet, since the next data batch of data
+            # We may not be able to look at all the added pulses yet, since the next data batch of data
             # could change their interpretation. Find the last index that is safe too look at.
-            last_i = find_last_break(times=data.times['time'],
+            last_i = find_last_break(times=data.pulses['time'],
                                      last_time=data.last_time_searched,
                                      break_time=self.config['signal_separation'])
 
-            # Keep the times we can work with, save the rest in self.times for the next time we are called.
-            self.saved_times = data.times[last_i + 1:]
-            data.times = data.times[:last_i + 1]
+            # Keep the pulses we can work with, save the rest in for the next time we are called.
+            self.saved_pulses = data.pulses[last_i + 1:]
+            data.pulses = data.pulses[:last_i + 1]
 
-        self.log.debug("Saved %d times for later" % len(self.saved_times))
-        self.trigger.batch_info_doc['times_saved_for_next_batch'] = len(self.saved_times)
+        self.log.debug("Saved %d pulses for later" % len(self.saved_pulses))
+        data.batch_info_doc['pulses_saved_for_next_batch'] = len(self.saved_pulses)
 
 
 class HandleEdgeSignals(TriggerPlugin):
@@ -39,7 +38,6 @@ class HandleEdgeSignals(TriggerPlugin):
         if len(self.saved_signals):
             self.log.debug("Injecting %d saved signals" % len(self.saved_signals))
             data.signals = np.concatenate((self.saved_signals, data.signals))
-            data.signals.sort(order='left_time')        # Just to be safe, in live-mode batch edge may be ragged
             self.saved_signals = self.saved_signals[:0]
 
         if not data.last_data:
@@ -66,7 +64,7 @@ class HandleEdgeSignals(TriggerPlugin):
             data.signals = data.signals[:last_ok_index + 1]
 
         self.log.debug("Saved %d signals for next batch" % len(self.saved_signals))
-        self.trigger.batch_info_doc['signals_saved_for_next_batch'] = len(self.saved_signals)
+        data.batch_info_doc['signals_saved_for_next_batch'] = len(self.saved_signals)
 
 
 @numba.jit(nopython=True)

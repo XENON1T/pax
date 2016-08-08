@@ -53,18 +53,18 @@ class DeadTimeTally(TriggerPlugin):
     def process(self, data):
         self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
-        special_times = data.times[np.in1d(data.times['pmt'], list(self.special_channels.keys()))]
-        self.log.info("Found %d signal in on/off acquisition monitor channels" % len(special_times))
+        special_pulses = data.pulses[np.in1d(data.pulses['pmt'], list(self.special_channels.keys()))]
+        self.log.info("Found %d signals in on/off acquisition monitor channels" % len(special_pulses))
 
         invalid_state_message_to = self.log.warning
 
-        for t in special_times:
+        for p in special_pulses:
 
-            while t['time'] > self.next_save_time:
+            while p['time'] > self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
 
-            ch_info = self.special_channels[t['pmt']]
+            ch_info = self.special_channels[p['pmt']]
             system_name = ch_info['system']
             system = self.systems[system_name]
             if system['active']:
@@ -76,12 +76,12 @@ class DeadTimeTally(TriggerPlugin):
                 else:
                     # System has turned off
                     system['active'] = False
-                    system['dead_time_tally'] += t['time'] - system['start_of_current_dead_time']
+                    system['dead_time_tally'] += p['time'] - system['start_of_current_dead_time']
             else:
                 if ch_info['means_on']:
                     # System has turned on
                     system['active'] = True
-                    system['start_of_current_dead_time'] = t['time']
+                    system['start_of_current_dead_time'] = p['time']
                 else:
                     invalid_state_message_to("%s-off signal received while system was not yet active! The signal has"
                                              " been ignored; similar invalid state messages have been suppressed "
