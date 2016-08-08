@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
+    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 5.4.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.3.6',
+        VERSION:     '5.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -114,7 +114,12 @@
         <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span> <span class="o">*</span>
         <span class="n">c</span><span class="p">[</span><span class="s1">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span>
         <span class="n">units</span><span class="o">.</span><span class="n">electron_charge</span><span class="p">)</span>
-    <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Attempt to request gain for channel </span><span class="si">%d</span><span class="s2">, only </span><span class="si">%d</span><span class="s2"> channels known. &quot;</span>
+              <span class="s2">&quot;Returning reference gain instead.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">])))</span>
+        <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">use_reference_gain_if_zero</span> <span class="ow">and</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">use_reference_gain</span><span class="p">:</span>
         <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>

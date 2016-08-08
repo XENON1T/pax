@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins package &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
+    <title>pax.trigger_plugins package &mdash; Processor for Analyzing XENON1T 5.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.3.6',
+        VERSION:     '5.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.4.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -63,6 +63,18 @@
 </div>
 <div class="section" id="module-pax.trigger_plugins.DecideTriggers">
 <span id="pax-trigger-plugins-decidetriggers-module"></span><h2>pax.trigger_plugins.DecideTriggers module<a class="headerlink" href="#module-pax.trigger_plugins.DecideTriggers" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger">
+<em class="property">class </em><code class="descclassname">pax.trigger_plugins.DecideTriggers.</code><code class="descname">AnyPulseFromDetectorTrigger</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#AnyPulseFromDetectorTrigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
+<p>Make a triggering signal for EVERY individual pulse in a particular detector</p>
+<dl class="method">
+<dt id="pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#AnyPulseFromDetectorTrigger.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="pax.trigger_plugins.DecideTriggers.DecideTriggers">
 <em class="property">class </em><code class="descclassname">pax.trigger_plugins.DecideTriggers.</code><code class="descname">DecideTriggers</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#DecideTriggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.DecideTriggers" title="Permalink to this definition">¶</a></dt>
@@ -160,6 +172,22 @@ grouping nearby triggers and applying left and right extension</p>
 <div class="section" id="module-pax.trigger_plugins.HandleEdgeThings">
 <span id="pax-trigger-plugins-handleedgethings-module"></span><h2>pax.trigger_plugins.HandleEdgeThings module<a class="headerlink" href="#module-pax.trigger_plugins.HandleEdgeThings" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
+<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses">
+<em class="property">class </em><code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">HandleEdgePulses</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgePulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
+<dl class="method">
+<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgePulses.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.saved_pulses">
+<code class="descname">saved_pulses</code><em class="property"> = array([],        dtype=[('time', '&lt;i8'), ('pmt', '&lt;i4'), ('area', '&lt;f8'), ('_detector', '&lt;i2')])</em><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.saved_pulses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals">
 <em class="property">class </em><code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">HandleEdgeSignals</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgeSignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
@@ -171,22 +199,6 @@ grouping nearby triggers and applying left and right extension</p>
 <dl class="attribute">
 <dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.saved_signals">
 <code class="descname">saved_signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.saved_signals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">HandleEdgeTimes</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgeTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgeTimes.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes.saved_times">
-<code class="descname">saved_times</code><em class="property"> = array([],        dtype=[('time', '&lt;i8'), ('pmt', '&lt;i4'), ('area', '&lt;f8')])</em><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeTimes.saved_times" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

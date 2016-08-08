@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.DecideTriggers &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
+    <title>pax.trigger_plugins.DecideTriggers &mdash; Processor for Analyzing XENON1T 5.4.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '5.3.6',
+        VERSION:     '5.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.4.0 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -42,6 +42,7 @@
 <span class="kn">import</span> <span class="nn">numba</span>
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">pax.trigger</span> <span class="kn">import</span> <span class="n">TriggerPlugin</span>
+<span class="kn">from</span> <span class="nn">pax.trigger</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
 
 
 <div class="viewcode-block" id="DecideTriggers"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.DecideTriggers.DecideTriggers">[docs]</a><span class="k">class</span> <span class="nc">DecideTriggers</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
@@ -53,6 +54,7 @@
             <span class="n">trig_prob</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">k2</span><span class="p">,</span> <span class="n">v2</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">trig_prob</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)][</span><span class="nb">int</span><span class="p">(</span><span class="n">k2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v2</span>
+
         <span class="c1"># Convert trigger_probability dictionary of dictionaries to 2d array, with intermediate values filled in</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Trigger probabilities: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">trig_prob</span><span class="p">))</span>
         <span class="n">p_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">trig_prob</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span> <span class="o">+</span> <span class="mi">1</span>
@@ -81,7 +83,33 @@
         <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">s</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">s</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p</span></div>
+            <span class="n">s</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p</span>
+
+</div>
+<div class="viewcode-block" id="AnyPulseFromDetectorTrigger"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger">[docs]</a><span class="k">class</span> <span class="nc">AnyPulseFromDetectorTrigger</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a triggering signal for EVERY individual pulse in a particular detector&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AnyPulseFromDetectorTrigger.process"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">detector</span><span class="p">,</span> <span class="n">typecode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;typecodes_for_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="n">detector</span><span class="p">]</span>
+            <span class="n">pulses</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="s1">&#39;pmt&#39;</span><span class="p">],</span> <span class="n">channels</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">pulses</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Triggering on every individual </span><span class="si">%d</span><span class="s2"> pulses from detector </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pulses</span><span class="p">),</span> <span class="n">detector</span><span class="p">))</span>
+
+            <span class="n">new_sigs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pulses</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
+
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;trigger&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">typecode</span>
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;left_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;right_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;time_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pulses</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pulses</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span>
+
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;time_rms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;n_pulses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">new_sigs</span><span class="p">[</span><span class="s1">&#39;n_contributing_channels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">,</span> <span class="n">new_sigs</span><span class="p">))</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;left_time&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 5.3.6 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 5.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.3.6',
+        VERSION:     '5.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.3.6 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.4.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -1747,7 +1747,13 @@ MongoDB.ReadUntriggeredFiller.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.TriggerSignal.type">
 <code class="descname">type</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.type" title="Permalink to this definition">¶</a></dt>
-<dd><p>&#8220;Type&#8221; of the signal. 1 for S1 candidates, 2 for S2 candidates</p>
+<dd><dl class="docutils">
+<dt>&#8220;Type&#8221; of the signal.</dt>
+<dd>0: unknown TPC
+1: TPC S1 candidates
+2: TPC S2 candidates
+106: muon veto</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -2146,7 +2152,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'O': &lt;class 'bool'&gt;, 'C': dtype('O'), 'F': &lt;class 'numpy.float32'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'D': &lt;class 'numpy.float64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2161,7 +2167,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int16': '/S', 'int64': '/L', 'float64': '/D', 'float32': '/F', 'bool': '/O', 'S': '/C', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'int32': '/I', 'float64': '/D', 'S': '/C', 'int64': '/L', 'bool': '/O', 'int16': '/S'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2617,10 +2623,10 @@ See <a class="reference external" href="http://docs.scipy.org/doc/scipy-0.14.0/r
 This is responsible for</p>
 <blockquote>
 <div><ul class="simple">
-<li>constructing a TriggerData object from a batch of pulse start times / areas / etc.</li>
+<li>constructing a TriggerData object from a batch of pulse start times, their module/channel info, etc.</li>
 <li>running this by each of the trigger modules</li>
 <li>collecting the end-of-run info from all plugins into one dictionary</li>
-<li>managing the trigger data stream (insert docs to MongoDB, dump to file in the end)</li>
+<li>managing the trigger monitor stream (insert docs to MongoDB, dump to file, ...)</li>
 </ul>
 </div></blockquote>
 <dl class="method">
@@ -2651,39 +2657,9 @@ a numpy array. I&#8217;ll convert it to bytes on the fly because I am just a nic
 
 <dl class="class">
 <dt id="pax.trigger.TriggerData">
-<em class="property">class </em><code class="descclassname">pax.trigger.</code><code class="descname">TriggerData</code><a class="reference internal" href="_modules/pax/trigger.html#TriggerData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerData" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.trigger.</code><code class="descname">TriggerData</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#TriggerData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Carries all data from one &#8220;batch&#8221; between trigger modules</p>
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.event_ranges">
-<code class="descname">event_ranges</code><em class="property"> = array([], shape=(0, 2), dtype=int64)</em><a class="headerlink" href="#pax.trigger.TriggerData.event_ranges" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.last_data">
-<code class="descname">last_data</code><em class="property"> = False</em><a class="headerlink" href="#pax.trigger.TriggerData.last_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.last_time_searched">
-<code class="descname">last_time_searched</code><em class="property"> = 0</em><a class="headerlink" href="#pax.trigger.TriggerData.last_time_searched" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.signals">
-<code class="descname">signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.trigger.TriggerData.signals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.signals_by_event">
-<code class="descname">signals_by_event</code><em class="property"> = []</em><a class="headerlink" href="#pax.trigger.TriggerData.signals_by_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.TriggerData.times">
-<code class="descname">times</code><em class="property"> = array([],        dtype=[('time', '&lt;i8'), ('pmt', '&lt;i4'), ('area', '&lt;f8')])</em><a class="headerlink" href="#pax.trigger.TriggerData.times" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -2701,19 +2677,6 @@ a numpy array. I&#8217;ll convert it to bytes on the fly because I am just a nic
 <code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#TriggerPlugin.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerPlugin.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger.get_pmt_numbers">
-<code class="descclassname">pax.trigger.</code><code class="descname">get_pmt_numbers</code><a class="reference internal" href="_modules/pax/trigger.html#get_pmt_numbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.get_pmt_numbers" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Fills pmts_buffer with pmt numbers corresponding to channels, modules according to pmt_lookup matrix:</dt>
-<dd><ul class="first last simple">
-<li>pmt_lookup: lookup matrix for pmt numbers. First index is digitizer module, second is digitizer channel.</li>
-</ul>
-</dd>
-</dl>
-<p>Modifies pmts_buffer in-place.</p>
 </dd></dl>
 
 </div>
