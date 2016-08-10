@@ -227,7 +227,12 @@ class WriteToFolder(plugin.OutputPlugin):
                         self.output_dir, self.file_extension))
         else:
             self.log.info("Creating output directory %s" % self.output_dir)
-            os.mkdir(self.output_dir)
+            try:
+                os.mkdir(self.output_dir)
+            except FileExistsError:
+                # Rare race condition when the trigger creates the dir just after the os.path.exists check
+                # The trigger creates the dir for the trigger monitor data file.
+                pass
 
         # Write the metadata to JSON
         with open(os.path.join(self.output_dir, 'pax_info.json'), 'w') as outfile:

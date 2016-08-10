@@ -100,8 +100,10 @@ class Trigger(object):
         trigger_monitor_file_path = self.config.get('trigger_monitor_file_path', None)
         if trigger_monitor_file_path is not None:
             base_dir = os.path.dirname(trigger_monitor_file_path)
-            if not os.path.exists(base_dir):
+            try:
                 os.makedirs(base_dir)
+            except FileExistsError:
+                pass
             self.trigger_monitor_file = zipfile.ZipFile(trigger_monitor_file_path, mode='w')
         else:
             self.log.info("Not trigger monitor file path provided: won't write trigger monitor data to Zipfile")
