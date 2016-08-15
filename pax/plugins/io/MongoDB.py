@@ -555,15 +555,12 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if not self.config['delete_data']:
             return
 
-        # Clear all (sub)collections for this run
-        # TODO: should we scan remaining collections on all hosts?
-        self.log.info("Dropping all remaining collections")
+        self.log.info("Dropping all remaining collections from this run")
         for db in self.dbs:
-            for coll_name in self.input_db.collection_names():
+            for coll_name in db.collection_names():
                 if not coll_name.startswith(self.run_doc['name']):
                     continue
-                for db in self.dbs:
-                    db.drop_collection(coll_name)
+                db.drop_collection(coll_name)
         self.log.info("Completed.")
 
         # Update the run doc to remove the 'untriggered' entry
