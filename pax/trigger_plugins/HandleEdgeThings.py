@@ -40,7 +40,7 @@ class HandleEdgeSignals(TriggerPlugin):
             data.signals = np.concatenate((self.saved_signals, data.signals))
             # Somehow we really need to re-sort here, or we get in big trouble (TriggerGroupSignals exceptions)
             # TODO: Why?? This probably indicates a problem somewhere else...
-            data.signals.sort(order='lef_time')
+            data.signals.sort(order='left_time')
             self.saved_signals = self.saved_signals[:0]
 
         if not data.last_data:
