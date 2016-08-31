@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 5.4.0 documentation</title>
+    <title>pax.trigger_plugins.HandleEdgeThings &mdash; Processor for Analyzing XENON1T 5.5.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '5.4.0',
+        VERSION:     '5.5.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.4.0 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.5.1 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -78,6 +78,9 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Injecting </span><span class="si">%d</span><span class="s2"> saved signals&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">))</span>
             <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">))</span>
+            <span class="c1"># Somehow we really need to re-sort here, or we get in big trouble (TriggerGroupSignals exceptions)</span>
+            <span class="c1"># TODO: Why?? This probably indicates a problem somewhere else...</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;left_time&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_signals</span><span class="p">[:</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">last_data</span><span class="p">:</span>
