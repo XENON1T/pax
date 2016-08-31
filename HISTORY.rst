@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+5.6.0 (2016-08-31)
+------------------
+
+* Deal correctly with gains almost zero but see hit (#415)
+* LCE map from Kr83m (#413)
+* Raw data from MV had suffix (#411)
+
+------------------
 5.5.1 (2016-08-15)
 ------------------
 
