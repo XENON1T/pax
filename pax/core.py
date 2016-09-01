@@ -89,8 +89,15 @@ class Processor:
                     raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
 
             elif 'input_name' in self.config['pax']:
+                detector = 'tpc'
                 run_name = os.path.basename(self.config['pax']['input_name'])
-                run_doc = run_collection.find_one({'name': run_name})
+
+                if run_name.endswith("_MV"):
+                    run_name = run_name[:-3]
+                    detector = 'muon_veto'
+
+                run_doc = run_collection.find_one({'name': run_name,
+                                                   'detector' : detector})
                 if not run_doc:
                     raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
 
