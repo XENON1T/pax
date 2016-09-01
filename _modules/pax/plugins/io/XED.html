@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.XED &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
+    <title>pax.plugins.io.XED &mdash; Processor for Analyzing XENON1T 5.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.6.0',
+        VERSION:     '5.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -72,43 +72,43 @@
 
 
 <span class="n">xed_file_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
-    <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;creation_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;first_event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;events_in_file&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;event_index_size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="s2">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s2">&quot;S64&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;creation_time&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;first_event_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;events_in_file&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;event_index_size&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">)</span>
 <span class="p">])</span>
 
 <span class="n">xed_event_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
-    <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;utc_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;utc_time_usec&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;chunks&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="c"># This is where the &#39;chunk layer&#39; starts... but there always seems to be one chunk per event</span>
-    <span class="c"># I&#39;ll always assume this is true and raise an exception otherwise</span>
-    <span class="p">(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;S4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;sample_precision&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;i2&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;flags&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u2&quot;</span><span class="p">),</span>               <span class="c"># indicating compression type.. I&#39;ll assume bzip2 always</span>
-    <span class="p">(</span><span class="s">&quot;samples_in_event&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;voltage_range&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;sampling_frequency&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&quot;channels&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s2">&quot;S64&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;utc_time&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;utc_time_usec&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;event_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;chunks&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="c1"># This is where the &#39;chunk layer&#39; starts... but there always seems to be one chunk per event</span>
+    <span class="c1"># I&#39;ll always assume this is true and raise an exception otherwise</span>
+    <span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;S4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;sample_precision&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;i2&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;flags&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u2&quot;</span><span class="p">),</span>               <span class="c1"># indicating compression type.. I&#39;ll assume bzip2 always</span>
+    <span class="p">(</span><span class="s2">&quot;samples_in_event&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;voltage_range&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;f4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;sampling_frequency&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;f4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;channels&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
 <span class="p">])</span>
 
 
 <div class="viewcode-block" id="ReadXED"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED">[docs]</a><span class="k">class</span> <span class="nc">ReadXED</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
 
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;xed&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;xed&#39;</span>
 
 <div class="viewcode-block" id="ReadXED.get_event_number_info"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.get_event_number_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_number_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the first, last and total event numbers in file specified by filename&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">xedfile</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">xedfile</span><span class="p">:</span>
             <span class="n">fmd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">xedfile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">],</span>
-                    <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-                    <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;first_event_number&#39;</span><span class="p">],</span>
+                    <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">])</span>
 </div>
 <div class="viewcode-block" id="ReadXED.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
@@ -116,115 +116,115 @@
 </div>
 <div class="viewcode-block" id="ReadXED.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens an XED file so we can start reading events&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
 
-        <span class="c"># Read in the file metadata</span>
+        <span class="c1"># Read in the file metadata</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
                                          <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">,</span>
                                          <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
-                                           <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-                                           <span class="n">count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">])</span>
+                                           <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;&lt;u4&quot;</span><span class="p">),</span>
+                                           <span class="n">count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;event_index_size&#39;</span><span class="p">])</span>
 
-        <span class="c"># Handle for special case of last XED file</span>
-        <span class="c"># Index size is larger than the actual number of events written:</span>
-        <span class="c"># The writer didn&#39;t know how many events there were left when it started reserving space for index</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">]:</span>
+        <span class="c1"># Handle for special case of last XED file</span>
+        <span class="c1"># Index size is larger than the actual number of events written:</span>
+        <span class="c1"># The writer didn&#39;t know how many events there were left when it started reserving space for index</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;event_index_size&#39;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="p">(</span><span class="s">&quot;The XED file claims there are </span><span class="si">%d</span><span class="s"> events in the file, &quot;</span>
-                 <span class="s">&quot;while the event position index has </span><span class="si">%d</span><span class="s"> entries. </span><span class="se">\n</span><span class="s">&quot;</span>
-                 <span class="s">&quot;Is this the last XED file of a dataset?&quot;</span><span class="p">)</span> <span class="o">%</span>
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">])</span>
+                <span class="p">(</span><span class="s2">&quot;The XED file claims there are </span><span class="si">%d</span><span class="s2"> events in the file, &quot;</span>
+                 <span class="s2">&quot;while the event position index has </span><span class="si">%d</span><span class="s2"> entries. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                 <span class="s2">&quot;Is this the last XED file of a dataset?&quot;</span><span class="p">)</span> <span class="o">%</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;event_index_size&#39;</span><span class="p">])</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]]</span>
 </div>
 <div class="viewcode-block" id="ReadXED.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
-        <span class="n">dataset_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;dataset_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">))</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;dataset_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
 
-        <span class="c"># Determine event&#39;s index in the file. Assumes event numbers are continuous!!</span>
-        <span class="n">event_position</span> <span class="o">=</span> <span class="n">event_number</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span>
+        <span class="c1"># Determine event&#39;s index in the file. Assumes event numbers are continuous!!</span>
+        <span class="n">event_position</span> <span class="o">=</span> <span class="n">event_number</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;first_event_number&#39;</span><span class="p">]</span>
 
-        <span class="c"># Seek to the requested event</span>
+        <span class="c1"># Seek to the requested event</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[</span><span class="n">event_position</span><span class="p">])</span>
 
-        <span class="c"># Read event metadata, check if we can read this event type.</span>
+        <span class="c1"># Read event metadata, check if we can read this event type.</span>
         <span class="n">event_layer_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
                                            <span class="n">dtype</span><span class="o">=</span><span class="n">xed_event_header</span><span class="p">,</span>
                                            <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;chunks&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Can&#39;t read this XED file: event with </span><span class="si">%s</span><span class="s"> chunks found!&quot;</span>
-                                      <span class="o">%</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;chunks&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t read this XED file: event with </span><span class="si">%s</span><span class="s2"> chunks found!&quot;</span>
+                                      <span class="o">%</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">])</span>
 
-        <span class="c"># Check if voltage range and digitizer dt are the same as in the settings</span>
-        <span class="c"># If not, raise error. Would be simple matter to change settings dynamically, but that&#39;s weird.</span>
+        <span class="c1"># Check if voltage range and digitizer dt are the same as in the settings</span>
+        <span class="c1"># If not, raise error. Would be simple matter to change settings dynamically, but that&#39;s weird.</span>
         <span class="n">values_to_check</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="s">&#39;Voltage range&#39;</span><span class="p">,</span>   <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">],</span>
-             <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;voltage_range&#39;</span><span class="p">]),</span>
-            <span class="p">(</span><span class="s">&#39;Digitizer dt&#39;</span><span class="p">,</span>    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span>
-             <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;sampling_frequency&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">Hz</span><span class="p">)),</span>
+            <span class="p">(</span><span class="s1">&#39;Voltage range&#39;</span><span class="p">,</span>   <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_voltage_range&#39;</span><span class="p">],</span>
+             <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;voltage_range&#39;</span><span class="p">]),</span>
+            <span class="p">(</span><span class="s1">&#39;Digitizer dt&#39;</span><span class="p">,</span>    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">],</span>
+             <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;sampling_frequency&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">Hz</span><span class="p">)),</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ini_value</span><span class="p">,</span> <span class="n">xed_value</span> <span class="ow">in</span> <span class="n">values_to_check</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ini_value</span> <span class="o">!=</span> <span class="n">xed_value</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                    <span class="s">&#39;</span><span class="si">%s</span><span class="s"> from XED event metadata (</span><span class="si">%s</span><span class="s">) is different from ini file setting (</span><span class="si">%s</span><span class="s">)!&#39;</span>
+                    <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> from XED event metadata (</span><span class="si">%s</span><span class="s1">) is different from ini file setting (</span><span class="si">%s</span><span class="s1">)!&#39;</span>
                     <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">xed_value</span><span class="p">,</span> <span class="n">ini_value</span><span class="p">)</span>
                 <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;raw0&#39;</span><span class="p">:</span>
-            <span class="c"># Grok &#39;raw&#39; XEDs - these probably come from the LED calibration</span>
+        <span class="k">if</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s1">&#39;raw0&#39;</span><span class="p">:</span>
+            <span class="c1"># Grok &#39;raw&#39; XEDs - these probably come from the LED calibration</span>
 
-            <span class="c"># 4 unused bytes at start (part of &#39;chunk header&#39;)</span>
+            <span class="c1"># 4 unused bytes at start (part of &#39;chunk header&#39;)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-            <span class="c"># Data is just a big bunch of samples from one channel, then next channel, etc</span>
-            <span class="c"># Each channel has an equal number of samples.</span>
+            <span class="c1"># Data is just a big bunch of samples from one channel, then next channel, etc</span>
+            <span class="c1"># Each channel has an equal number of samples.</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
-                               <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;i2&#39;</span><span class="p">,</span>
-                               <span class="n">count</span><span class="o">=</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;channels&#39;</span><span class="p">]</span> <span class="o">*</span>
-                                     <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;samples_in_event&#39;</span><span class="p">])</span>
+                               <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;i2&#39;</span><span class="p">,</span>
+                               <span class="n">count</span><span class="o">=</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span> <span class="o">*</span>
+                                     <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;samples_in_event&#39;</span><span class="p">])</span>
 
-            <span class="n">result</span> <span class="o">=</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">]),</span>
-                                <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">xed_type</span><span class="o">=</span><span class="s">&#39;raw&#39;</span><span class="p">,</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;event_number&#39;</span><span class="p">]),</span>
+                                <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">xed_type</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span>
                                           <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
                                           <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
                                           <span class="n">metadata</span><span class="o">=</span><span class="n">event_layer_metadata</span><span class="p">))</span>
 
-        <span class="k">elif</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;zle0&#39;</span><span class="p">:</span>
-            <span class="c"># Read the channel bitmask to find out which channels are included in this event.</span>
-            <span class="c"># Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...</span>
-            <span class="c"># Checked (for 14 events); agrees with channels from</span>
-            <span class="c"># LibXDIO-&gt;Moxie-&gt;MongoDB-&gt;MongoDBInput plugin</span>
-            <span class="n">mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;channels&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">32</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s1">&#39;zle0&#39;</span><span class="p">:</span>
+            <span class="c1"># Read the channel bitmask to find out which channels are included in this event.</span>
+            <span class="c1"># Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...</span>
+            <span class="c1"># Checked (for 14 events); agrees with channels from</span>
+            <span class="c1"># LibXDIO-&gt;Moxie-&gt;MongoDB-&gt;MongoDBInput plugin</span>
+            <span class="n">mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">32</span><span class="p">))</span>
             <span class="n">mask_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unpackbits</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
-                                                  <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;uint8&#39;</span><span class="p">,</span>
+                                                  <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">,</span>
                                                   <span class="n">count</span><span class="o">=</span><span class="n">mask_bytes</span><span class="p">))</span>
 
-            <span class="c"># +1 as first pmt is 1 in Xenon100</span>
+            <span class="c1"># +1 as first pmt is 1 in Xenon100</span>
             <span class="n">channels_included</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask_bits</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
 
-            <span class="c"># Read the event data (actually, the data from a single &#39;chunk&#39;)</span>
-            <span class="c"># 28 is the chunk header size.</span>
-            <span class="n">data_to_decompress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">28</span> <span class="o">-</span> <span class="n">mask_bytes</span><span class="p">)</span>
+            <span class="c1"># Read the event data (actually, the data from a single &#39;chunk&#39;)</span>
+            <span class="c1"># 28 is the chunk header size.</span>
+            <span class="n">data_to_decompress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">28</span> <span class="o">-</span> <span class="n">mask_bytes</span><span class="p">)</span>
 
-            <span class="n">result</span> <span class="o">=</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">]),</span>
-                                <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">xed_type</span><span class="o">=</span><span class="s">&#39;zle&#39;</span><span class="p">,</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;event_number&#39;</span><span class="p">]),</span>
+                                <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">xed_type</span><span class="o">=</span><span class="s1">&#39;zle&#39;</span><span class="p">,</span>
                                           <span class="n">data</span><span class="o">=</span><span class="n">data_to_decompress</span><span class="p">,</span>
                                           <span class="n">dataset_name</span><span class="o">=</span><span class="n">dataset_name</span><span class="p">,</span>
                                           <span class="n">metadata</span><span class="o">=</span><span class="n">event_layer_metadata</span><span class="p">,</span>
                                           <span class="n">channels_included</span><span class="o">=</span><span class="n">channels_included</span><span class="p">))</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;XED type </span><span class="si">%s</span><span class="s"> not supported&quot;</span> <span class="o">%</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;XED type </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
 
-        <span class="c"># Check we have read all data for this event</span>
+        <span class="c1"># Check we have read all data for this event</span>
 
         <span class="k">if</span> <span class="n">event_position</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">current_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
             <span class="n">should_be_at_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[</span><span class="n">event_position</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">current_pos</span> <span class="o">!=</span> <span class="n">should_be_at_pos</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Error during XED reading: after reading event </span><span class="si">%d</span><span class="s"> from file &quot;</span>
-                                   <span class="s">&quot;(event number </span><span class="si">%d</span><span class="s">) we should be at position </span><span class="si">%d</span><span class="s">, but we are at position </span><span class="si">%d</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Error during XED reading: after reading event </span><span class="si">%d</span><span class="s2"> from file &quot;</span>
+                                   <span class="s2">&quot;(event number </span><span class="si">%d</span><span class="s2">) we should be at position </span><span class="si">%d</span><span class="s2">, but we are at position </span><span class="si">%d</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="p">(</span>
                                        <span class="n">event_position</span><span class="p">,</span>
-                                       <span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">]),</span>
+                                       <span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;event_number&#39;</span><span class="p">]),</span>
                                        <span class="n">should_be_at_pos</span><span class="p">,</span> <span class="n">current_pos</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">result</span>
@@ -235,70 +235,70 @@
 
 <div class="viewcode-block" id="DecodeXED.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.DecodeXED.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
         <span class="n">event_number</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">event_number</span>
-        <span class="n">metadata</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;metadata&#39;</span><span class="p">]</span>
-        <span class="n">xed_type</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;xed_type&#39;</span><span class="p">]</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;data&#39;</span><span class="p">]</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span>
+        <span class="n">xed_type</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;xed_type&#39;</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
 
-        <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span>
-                      <span class="n">dataset_name</span><span class="o">=</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;dataset_name&#39;</span><span class="p">],</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span>
+                      <span class="n">dataset_name</span><span class="o">=</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;dataset_name&#39;</span><span class="p">],</span>
                       <span class="n">event_number</span><span class="o">=</span><span class="n">event_number</span><span class="p">,</span>
-                      <span class="n">start_time</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;utc_time&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span> <span class="o">+</span> <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;utc_time_usec&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">),</span>
-                      <span class="n">sample_duration</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]),</span>
-                      <span class="n">length</span><span class="o">=</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;samples_in_event&#39;</span><span class="p">])</span>
+                      <span class="n">start_time</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;utc_time&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span> <span class="o">+</span> <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;utc_time_usec&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">),</span>
+                      <span class="n">sample_duration</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]),</span>
+                      <span class="n">length</span><span class="o">=</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;samples_in_event&#39;</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s">&#39;raw&#39;</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;channels&#39;</span><span class="p">],</span> <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;samples_in_event&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">],</span> <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;samples_in_event&#39;</span><span class="p">]))</span>
             <span class="k">for</span> <span class="n">ch_i</span><span class="p">,</span> <span class="n">chdata</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span>
-                    <span class="n">channel</span><span class="o">=</span><span class="n">ch_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>       <span class="c"># +1 as first channel is 1 in Xenon100</span>
+                    <span class="n">channel</span><span class="o">=</span><span class="n">ch_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>       <span class="c1"># +1 as first channel is 1 in Xenon100</span>
                     <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">raw_data</span><span class="o">=</span><span class="n">chdata</span>
                 <span class="p">))</span>
 
-        <span class="k">elif</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s">&#39;zle&#39;</span><span class="p">:</span>
-            <span class="c"># Decompress event data into fake binary file (io.BytesIO)</span>
+        <span class="k">elif</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s1">&#39;zle&#39;</span><span class="p">:</span>
+            <span class="c1"># Decompress event data into fake binary file (io.BytesIO)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
-                <span class="c"># Maybe it wasn&#39;t compressed after all? We can at least try</span>
-                <span class="c"># TODO: figure this out from flags</span>
+                <span class="c1"># Maybe it wasn&#39;t compressed after all? We can at least try</span>
+                <span class="c1"># TODO: figure this out from flags</span>
                 <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-            <span class="c"># Loop over all channels in the event to get the pulses</span>
-            <span class="k">for</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;channels_included&#39;</span><span class="p">]:</span>
-                <span class="c"># Read channel size (in 4bit words), subtract header size, convert</span>
-                <span class="c"># from 4-byte words to bytes</span>
+            <span class="c1"># Loop over all channels in the event to get the pulses</span>
+            <span class="k">for</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;channels_included&#39;</span><span class="p">]:</span>
+                <span class="c1"># Read channel size (in 4bit words), subtract header size, convert</span>
+                <span class="c1"># from 4-byte words to bytes</span>
                 <span class="n">channel_data_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">chunk_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span>
-                                                           <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                                                           <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
-                <span class="c"># Read the channel data into another fake binary file</span>
+                <span class="c1"># Read the channel data into another fake binary file</span>
                 <span class="n">channel_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">chunk_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">channel_data_size</span><span class="p">))</span>
 
-                <span class="c"># Read the channel data control word by control word.</span>
-                <span class="c"># sample_position keeps track of where in the waveform a new</span>
-                <span class="c"># pulse should be placed.</span>
+                <span class="c1"># Read the channel data control word by control word.</span>
+                <span class="c1"># sample_position keeps track of where in the waveform a new</span>
+                <span class="c1"># pulse should be placed.</span>
                 <span class="n">sample_position</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c"># Is there a new control word?</span>
+                    <span class="c1"># Is there a new control word?</span>
                     <span class="n">control_word_string</span> <span class="o">=</span> <span class="n">channel_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">control_word_string</span><span class="p">:</span>
                         <span class="k">break</span>
 
-                    <span class="c"># Control words starting with zero indicate a number of sample PAIRS to skip</span>
+                    <span class="c1"># Control words starting with zero indicate a number of sample PAIRS to skip</span>
                     <span class="n">control_word</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">control_word_string</span><span class="p">,</span>
-                                                     <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+                                                     <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="k">if</span> <span class="n">control_word</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span><span class="p">:</span>
                         <span class="n">sample_position</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">control_word</span>
                         <span class="k">continue</span>
 
-                    <span class="c"># Control words starting with one indicate a number of sample PAIRS follow</span>
+                    <span class="c1"># Control words starting with one indicate a number of sample PAIRS follow</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="c"># Subtract the control word flag</span>
+                        <span class="c1"># Subtract the control word flag</span>
                         <span class="n">data_samples</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">control_word</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span><span class="p">))</span>
 
-                        <span class="c"># Note endianness</span>
+                        <span class="c1"># Note endianness</span>
                         <span class="n">samples_pulse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">channel_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">data_samples</span><span class="p">),</span>
-                                                      <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;&lt;i2&quot;</span><span class="p">)</span>
+                                                      <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;&lt;i2&quot;</span><span class="p">)</span>
 
                         <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span>
                             <span class="n">channel</span><span class="o">=</span><span class="n">channel_id</span><span class="p">,</span>
@@ -317,45 +317,45 @@
 <span class="sd">    This way we don&#39;t have to update size fields in headers.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;xed&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;xed&#39;</span>
 
 <div class="viewcode-block" id="WriteXED.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span>
 </div>
 <div class="viewcode-block" id="WriteXED.skip_control_word"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.skip_control_word">[docs]</a>    <span class="k">def</span> <span class="nf">skip_control_word</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_skip</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">to_skip</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;to_skip must be even, you gave </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">to_skip</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;to_skip must be even, you gave </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">to_skip</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">to_skip</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;to_skip cannot be 0&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;skip2_bug&#39;</span><span class="p">]:</span>
-            <span class="c"># Write a series of skip 2 control words rather than one skip control word</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;to_skip cannot be 0&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;skip2_bug&#39;</span><span class="p">]:</span>
+            <span class="c1"># Write a series of skip 2 control words rather than one skip control word</span>
             <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
-            <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="WriteXED.data_control_word"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.data_control_word">[docs]</a>    <span class="k">def</span> <span class="nf">data_control_word</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_length</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data_length</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Data length must be even, you gave </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">data_length</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data length must be even, you gave </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">data_length</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">data_length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Data length cannot be 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">+</span> <span class="n">data_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data length cannot be 0&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">+</span> <span class="n">data_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="WriteXED.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
-        <span class="n">event_data</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+        <span class="n">event_data</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span>
 
-        <span class="c"># First write the pulse data</span>
+        <span class="c1"># First write the pulse data</span>
         <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">pulses_in_channel</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">channel</span><span class="p">):</span>
             <span class="n">pulses_in_channel</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pulses_in_channel</span><span class="p">)</span>
-            <span class="n">channel_data</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+            <span class="n">channel_data</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span>
             <span class="n">prevpulse</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pulses_in_channel</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">left</span><span class="p">):</span>
-                <span class="c"># Write skip control word, unless we&#39;re at the very start</span>
+                <span class="c1"># Write skip control word, unless we&#39;re at the very start</span>
                 <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">prevpulse</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                         <span class="n">skip</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">prevpulse</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="mi">1</span>
@@ -363,56 +363,56 @@
                         <span class="n">skip</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
                     <span class="k">if</span> <span class="n">skip</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">channel_data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_control_word</span><span class="p">(</span><span class="n">to_skip</span><span class="o">=</span><span class="n">skip</span><span class="p">)</span>
-                <span class="c"># Write data control word, then data</span>
+                <span class="c1"># Write data control word, then data</span>
                 <span class="n">channel_data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_control_word</span><span class="p">(</span><span class="n">data_length</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
                 <span class="n">channel_data</span> <span class="o">+=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
                 <span class="n">prevpulse</span> <span class="o">=</span> <span class="n">pulse</span>
             <span class="n">remaining</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="n">prevpulse</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="c"># Write final skip control word</span>
+            <span class="c1"># Write final skip control word</span>
             <span class="k">if</span> <span class="n">remaining</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">channel_data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_control_word</span><span class="p">(</span><span class="n">to_skip</span><span class="o">=</span><span class="n">remaining</span><span class="p">)</span>
 
-            <span class="c"># Add the channel size to the start</span>
-            <span class="n">channel_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel_data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">channel_data</span>
-            <span class="c"># Add this to the event_data</span>
+            <span class="c1"># Add the channel size to the start</span>
+            <span class="n">channel_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel_data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">channel_data</span>
+            <span class="c1"># Add this to the event_data</span>
             <span class="n">event_data</span> <span class="o">+=</span> <span class="n">channel_data</span>
 
-        <span class="c"># Compress the event data so far</span>
-        <span class="n">event_data</span> <span class="o">=</span> <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">event_data</span><span class="p">,</span> <span class="n">compresslevel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;compresslevel&#39;</span><span class="p">])</span>
+        <span class="c1"># Compress the event data so far</span>
+        <span class="n">event_data</span> <span class="o">=</span> <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">event_data</span><span class="p">,</span> <span class="n">compresslevel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;compresslevel&#39;</span><span class="p">])</span>
 
         <span class="n">channels_included</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">channel</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
-            <span class="c"># Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks</span>
-            <span class="n">n_mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
+            <span class="c1"># Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks</span>
+            <span class="n">n_mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
             <span class="n">is_channel_included</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_mask_bytes</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">is_channel_included</span><span class="p">[</span><span class="n">ch</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_included</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">n_mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
+            <span class="n">n_mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
             <span class="n">is_channel_included</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_mask_bytes</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]):</span>
                 <span class="n">is_channel_included</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_included</span>
 
-        <span class="c"># Reverse channel included bits... for some reason?</span>
+        <span class="c1"># Reverse channel included bits... for some reason?</span>
         <span class="n">is_channel_included</span> <span class="o">=</span> <span class="n">is_channel_included</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="n">channel_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">packbits</span><span class="p">(</span><span class="n">is_channel_included</span><span class="p">)</span>
 
-        <span class="c"># Add event header and channel mask to event data</span>
-        <span class="n">event_data_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;generated_by_pax&#39;</span><span class="p">,</span>
+        <span class="c1"># Add event header and channel mask to event data</span>
+        <span class="n">event_data_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="n">b</span><span class="s1">&#39;generated_by_pax&#39;</span><span class="p">,</span>
                                <span class="n">utc_time</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">),</span>
                                <span class="n">utc_time_usec</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span> <span class="o">%</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">),</span>
                                <span class="n">event_number</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span>
                                <span class="n">chunks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                               <span class="nb">type</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;zle0&#39;</span><span class="p">,</span>     <span class="c"># ??</span>
-                               <span class="n">size</span><span class="o">=</span><span class="mi">28</span> <span class="o">+</span> <span class="n">n_mask_bytes</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_data</span><span class="p">),</span>    <span class="c"># 28 is the size of the chunk header</span>
-                               <span class="n">sample_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">],</span>
-                               <span class="n">flags</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>    <span class="c"># Stolen from X100 files, probably</span>
+                               <span class="nb">type</span><span class="o">=</span><span class="n">b</span><span class="s1">&#39;zle0&#39;</span><span class="p">,</span>     <span class="c1"># ??</span>
+                               <span class="n">size</span><span class="o">=</span><span class="mi">28</span> <span class="o">+</span> <span class="n">n_mask_bytes</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_data</span><span class="p">),</span>    <span class="c1"># 28 is the size of the chunk header</span>
+                               <span class="n">sample_precision</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_bits&#39;</span><span class="p">],</span>
+                               <span class="n">flags</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>    <span class="c1"># Stolen from X100 files, probably</span>
                                <span class="n">samples_in_event</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span>
-                               <span class="n">voltage_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">],</span>
-                               <span class="n">sampling_frequency</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Hz</span><span class="p">,</span>
-                               <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">))</span>
+                               <span class="n">voltage_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_voltage_range&#39;</span><span class="p">],</span>
+                               <span class="n">sampling_frequency</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Hz</span><span class="p">,</span>
+                               <span class="n">channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">event_header_arr</span> <span class="o">=</span> <span class="n">_dict_to_numpy_recarray</span><span class="p">(</span><span class="n">event_data_dict</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_event_header</span><span class="p">)</span>
         <span class="n">event_data</span> <span class="o">=</span> <span class="n">event_header_arr</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">channel_mask</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">event_data</span>
 
@@ -420,23 +420,23 @@
 </div>
 <div class="viewcode-block" id="WriteXED.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="c"># Write file header</span>
-        <span class="n">file_header_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;generated_by_pax&#39;</span><span class="p">,</span>
+        <span class="c1"># Write file header</span>
+        <span class="n">file_header_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dataset_name</span><span class="o">=</span><span class="n">b</span><span class="s1">&#39;generated_by_pax&#39;</span><span class="p">,</span>
                                 <span class="n">creation_time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
                                 <span class="n">first_event_number</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span><span class="p">,</span>
                                 <span class="n">events_in_file</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">),</span>
                                 <span class="n">event_index_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">))</span>
         <span class="n">_dict_to_numpy_recarray</span><span class="p">(</span><span class="n">file_header_dict</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="p">)</span>
 
-        <span class="c"># Write event index. 80 is the event header size.</span>
-        <span class="n">event_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">),</span>
-                                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+        <span class="c1"># Write event index. 80 is the event header size.</span>
+        <span class="n">event_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">),</span>
+                                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
         <span class="n">event_index</span> <span class="o">+=</span> <span class="mi">80</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_index</span><span class="p">)</span>
-        <span class="c"># Arcane windows / linux difference here: on linux this gets converted to a 64-bit array???</span>
-        <span class="c"># astype(&#39;&lt;u4&#39;) fixes it</span>
-        <span class="n">event_index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="p">)</span>
+        <span class="c1"># Arcane windows / linux difference here: on linux this gets converted to a 64-bit array???</span>
+        <span class="c1"># astype(&#39;&lt;u4&#39;) fixes it</span>
+        <span class="n">event_index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="p">)</span>
 
-        <span class="c"># Write event data</span>
+        <span class="c1"># Write event data</span>
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
@@ -489,7 +489,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

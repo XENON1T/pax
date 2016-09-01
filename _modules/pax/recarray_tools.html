@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.recarray_tools &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
+    <title>pax.recarray_tools &mdash; Processor for Analyzing XENON1T 5.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.0',
+        VERSION:     '5.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -50,34 +50,34 @@
 
 
 <div class="viewcode-block" id="append_fields"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.append_fields">[docs]</a><span class="k">def</span> <span class="nf">append_fields</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dtypes</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                  <span class="n">usemask</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>   <span class="c"># Different from recfunctions default</span>
+                  <span class="n">usemask</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>   <span class="c1"># Different from recfunctions default</span>
                   <span class="n">asrecarray</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Append fields to numpy structured array</span>
 <span class="sd">    If fields already exists in data, will overwrite</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
-        <span class="c"># Add multiple fields at once</span>
+        <span class="c1"># Add multiple fields at once</span>
         <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">dtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">dtype</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
-        <span class="c"># Convert to numpy arrays so we can use boolean index arrays</span>
+        <span class="c1"># Convert to numpy arrays so we can use boolean index arrays</span>
         <span class="n">names</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">dtypes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dtypes</span><span class="p">)</span>
         <span class="n">not_yet_in_data</span> <span class="o">=</span> <span class="bp">True</span> <span class="o">^</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
-        <span class="c"># Append the fields that were not in the data</span>
+        <span class="c1"># Append the fields that were not in the data</span>
         <span class="n">base</span> <span class="o">=</span> <span class="n">recfunctions</span><span class="o">.</span><span class="n">append_fields</span><span class="p">(</span><span class="n">base</span><span class="p">,</span>
                                           <span class="n">names</span><span class="p">[</span><span class="n">not_yet_in_data</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                                           <span class="n">data</span><span class="p">[</span><span class="n">not_yet_in_data</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                                           <span class="n">dtypes</span><span class="p">[</span><span class="n">not_yet_in_data</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
                                           <span class="n">fill_value</span><span class="p">,</span> <span class="n">usemask</span><span class="p">,</span> <span class="n">asrecarray</span><span class="p">)</span>
-        <span class="c"># Overwrite the fields that are already in the data</span>
+        <span class="c1"># Overwrite the fields that are already in the data</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">True</span> <span class="o">^</span> <span class="n">not_yet_in_data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="n">base</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">base</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c"># Add single field</span>
+        <span class="c1"># Add single field</span>
         <span class="k">if</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">base</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-            <span class="c"># Field already exists: overwrite data</span>
+            <span class="c1"># Field already exists: overwrite data</span>
             <span class="n">base</span><span class="p">[</span><span class="n">names</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
             <span class="k">return</span> <span class="n">base</span>
         <span class="k">else</span><span class="p">:</span>
@@ -98,19 +98,19 @@
 </div>
 <div class="viewcode-block" id="fields_view"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.fields_view">[docs]</a><span class="k">def</span> <span class="nf">fields_view</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;View one or several columns from a numpy record array&quot;&quot;&quot;</span>
-    <span class="c"># Single field is easy:</span>
+    <span class="c1"># Single field is easy:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">arr</span><span class="p">[</span><span class="n">fields</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Field </span><span class="si">%s</span><span class="s"> is not in the array...&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">)</span>
-    <span class="c"># Don&#39;t know how to do it for multiple fields, make a copy for now... (probably?)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Field </span><span class="si">%s</span><span class="s2"> is not in the array...&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">)</span>
+    <span class="c1"># Don&#39;t know how to do it for multiple fields, make a copy for now... (probably?)</span>
     <span class="k">return</span> <span class="n">drop_fields</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">])</span>
-    <span class="c"># The solution in</span>
-    <span class="c"># http://stackoverflow.com/questions/15182381/how-to-return-a-view-of-several-columns-in-numpy-structured-array</span>
-    <span class="c"># doesn&#39;t work in combination with filter_on_fields...</span>
-    <span class="c"># dtype2 = np.dtype({name:arr.dtype.fields[name] for name in columns})</span>
-    <span class="c"># return np.ndarray(arr.shape, dtype2, arr, 0, arr.strides)</span>
+    <span class="c1"># The solution in</span>
+    <span class="c1"># http://stackoverflow.com/questions/15182381/how-to-return-a-view-of-several-columns-in-numpy-structured-array</span>
+    <span class="c1"># doesn&#39;t work in combination with filter_on_fields...</span>
+    <span class="c1"># dtype2 = np.dtype({name:arr.dtype.fields[name] for name in columns})</span>
+    <span class="c1"># return np.ndarray(arr.shape, dtype2, arr, 0, arr.strides)</span>
 
 </div>
 <div class="viewcode-block" id="filter_on_fields"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.filter_on_fields">[docs]</a><span class="k">def</span> <span class="nf">filter_on_fields</span><span class="p">(</span><span class="n">to_filter</span><span class="p">,</span> <span class="n">for_filter</span><span class="p">,</span> <span class="n">filter_fields</span><span class="p">,</span> <span class="n">filter_fields_2</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">return_selection</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -122,8 +122,8 @@
     <span class="k">if</span> <span class="n">filter_fields_2</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">filter_fields_2</span> <span class="o">=</span> <span class="n">filter_fields</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fields_view</span><span class="p">(</span><span class="n">for_filter</span><span class="p">,</span> <span class="n">filter_fields_2</span><span class="p">))</span>
-    <span class="c"># Rename the fields, if needed</span>
-    <span class="c"># If only one field is selected, this won&#39;t be needed (and would return None instead of working)</span>
+    <span class="c1"># Rename the fields, if needed</span>
+    <span class="c1"># If only one field is selected, this won&#39;t be needed (and would return None instead of working)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_fields</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">filter_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">recfunctions</span><span class="o">.</span><span class="n">rename_fields</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">filter_fields_2</span><span class="p">,</span> <span class="n">filter_fields</span><span class="p">)))</span>
     <span class="n">selection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
@@ -133,7 +133,7 @@
         <span class="k">return</span> <span class="n">to_filter</span><span class="p">[</span><span class="n">selection</span><span class="p">]</span>
 
 </div>
-<div class="viewcode-block" id="group_by"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.group_by">[docs]</a><span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">group_by_fields</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span> <span class="n">return_group_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="group_by"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.group_by">[docs]</a><span class="k">def</span> <span class="nf">group_by</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">group_by_fields</span><span class="o">=</span><span class="s1">&#39;Event&#39;</span><span class="p">,</span> <span class="n">return_group_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Splits x into LIST of arrays, each array with rows that have same group_by_fields values.</span>
 <span class="sd">    Gotchas:</span>
 <span class="sd">        Assumes x is sorted by group_by_fields (works in either order, reversed or not)</span>
@@ -141,13 +141,13 @@
 <span class="sd">    If return_indices=True, returns list of arrays with indices of group elements in x instead</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c"># Support single index and list of indices</span>
+    <span class="c1"># Support single index and list of indices</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">group_by_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
         <span class="n">group_by_fields</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">group_by_fields</span><span class="p">)</span>
 
-    <span class="c"># Define array we&#39;ll split</span>
+    <span class="c1"># Define array we&#39;ll split</span>
     <span class="k">if</span> <span class="n">return_group_indices</span><span class="p">:</span>
         <span class="n">to_return</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
@@ -156,21 +156,21 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[]</span>
 
-    <span class="c"># Indices to determine split points from</span>
+    <span class="c1"># Indices to determine split points from</span>
     <span class="n">indices</span> <span class="o">=</span> <span class="n">fields_view</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">group_by_fields</span><span class="p">)</span>
 
-    <span class="c"># Should we split at all?</span>
+    <span class="c1"># Should we split at all?</span>
     <span class="k">if</span> <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">to_return</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c"># Split where indices change value</span>
+        <span class="c1"># Split where indices change value</span>
         <span class="n">split_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">indices</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c"># 0 shouldn&#39;t be a split_point, will be in it due to roll (and indices[0] != indices[-1]), so remove it</span>
+        <span class="c1"># 0 shouldn&#39;t be a split_point, will be in it due to roll (and indices[0] != indices[-1]), so remove it</span>
         <span class="n">split_points</span> <span class="o">=</span> <span class="n">split_points</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">to_return</span><span class="p">,</span> <span class="n">split_points</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="dict_group_by"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.dict_group_by">[docs]</a><span class="k">def</span> <span class="nf">dict_group_by</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">group_by_fields</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span> <span class="n">return_group_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="dict_group_by"><a class="viewcode-back" href="../../pax.html#pax.recarray_tools.dict_group_by">[docs]</a><span class="k">def</span> <span class="nf">dict_group_by</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">group_by_fields</span><span class="o">=</span><span class="s1">&#39;Event&#39;</span><span class="p">,</span> <span class="n">return_group_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Same as group_by, but returns OrderedDict of value -&gt; group,</span>
 <span class="sd">    where value is the value (or tuple of values) of group_by_fields in each subgroup</span>
 <span class="sd">    Gotcha: assumes x is sorted by group_by_fields (works in either order, reversed or not)</span>
@@ -222,7 +222,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

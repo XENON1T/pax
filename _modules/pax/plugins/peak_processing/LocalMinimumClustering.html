@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.LocalMinimumClustering &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
+    <title>pax.plugins.peak_processing.LocalMinimumClustering &mdash; Processor for Analyzing XENON1T 5.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.6.0',
+        VERSION:     '5.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -39,106 +39,106 @@
             
   <h1>Source code for pax.plugins.peak_processing.LocalMinimumClustering</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
-<span class="c"># import numba</span>
+<span class="c1"># import numba</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">pax.plugins.signal_processing.HitFinder</span> <span class="kn">import</span> <span class="n">build_hits</span>
-<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;LocalMinimumClusteringHelpers&#39;</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;LocalMinimumClusteringHelpers&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="LocalMinimumClustering"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering">[docs]</a><span class="k">class</span> <span class="nc">LocalMinimumClustering</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">ClusteringPlugin</span><span class="p">):</span>
 
 <div class="viewcode-block" id="LocalMinimumClustering.cluster_peak"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.cluster_peak">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
-        <span class="c"># Unfortunate code duplication with BasicProperties...</span>
-        <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-        <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="c1"># Unfortunate code duplication with BasicProperties...</span>
+        <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;lone_hit&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">split_points</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">find_split_points</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
-                                              <span class="n">min_height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;min_height&#39;</span><span class="p">],</span>
-                                              <span class="n">min_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_ratio&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+                                              <span class="n">min_height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;min_height&#39;</span><span class="p">],</span>
+                                              <span class="n">min_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_ratio&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_points</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Splitting </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> into </span><span class="si">%d</span><span class="s"> peaks&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_points</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Splitting </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> into </span><span class="si">%d</span><span class="s2"> peaks&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_points</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_peak</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">split_points</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="LocalMinimumClustering.finalize_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.finalize_event">[docs]</a>    <span class="k">def</span> <span class="nf">finalize_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># Update the event.all_hits field (for plotting), since new hits were created</span>
-        <span class="c"># Note we must separately get out the rejected hits, they are not in any peak...</span>
+        <span class="c1"># Update the event.all_hits field (for plotting), since new hits were created</span>
+        <span class="c1"># Note we must separately get out the rejected hits, they are not in any peak...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">hits</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">]</span> <span class="o">+</span>
-                                             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="s">&#39;is_rejected&#39;</span><span class="p">]]])</span>
+                                             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="s1">&#39;is_rejected&#39;</span><span class="p">]]])</span>
 </div>
 <div class="viewcode-block" id="LocalMinimumClustering.split_peak"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.LocalMinimumClustering.split_peak">[docs]</a>    <span class="k">def</span> <span class="nf">split_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">split_points</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Yields new peaks split from peak at split_points = sample indices within peak</span>
 <span class="sd">        Samples at the split points will fall to the right (so if we split [0, 5] on 2, you get [0, 1] and [2, 5]).</span>
 <span class="sd">        Hits that straddle a split point are themselves split into two hits: peak.hits is updated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># First, split hits that straddle the split points</span>
-        <span class="c"># Hits may have to be split several times; for each split point we remake</span>
+        <span class="c1"># First, split hits that straddle the split points</span>
+        <span class="c1"># Hits may have to be split several times; for each split point we remake</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">split_points</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span>   <span class="c"># Convert to index in event</span>
-            <span class="n">selection</span> <span class="o">=</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span>   <span class="c1"># Convert to index in event</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">x</span><span class="p">)</span>
             <span class="n">hits_to_split</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">selection</span><span class="p">]</span>
-            <span class="n">new_hits</span> <span class="o">=</span> <span class="p">[</span><span class="n">hits</span><span class="p">[</span><span class="bp">True</span> <span class="o">^</span> <span class="n">selection</span><span class="p">]]</span>    <span class="c"># Will contain list of arraylikes for later concatenation</span>
+            <span class="n">new_hits</span> <span class="o">=</span> <span class="p">[</span><span class="n">hits</span><span class="p">[</span><span class="bp">True</span> <span class="o">^</span> <span class="n">selection</span><span class="p">]]</span>    <span class="c1"># Will contain list of arraylikes for later concatenation</span>
 
             <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hits_to_split</span><span class="p">:</span>
-                <span class="c"># Use the hitfinder&#39;s build_hits to compute the properties of these hits</span>
-                <span class="c"># Damn this is ugly... but at least we don&#39;t have duplicate property computation code</span>
-                <span class="n">pulse_i</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="s">&#39;found_in_pulse&#39;</span><span class="p">]</span>
+                <span class="c1"># Use the hitfinder&#39;s build_hits to compute the properties of these hits</span>
+                <span class="c1"># Damn this is ugly... but at least we don&#39;t have duplicate property computation code</span>
+                <span class="n">pulse_i</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;found_in_pulse&#39;</span><span class="p">]</span>
                 <span class="n">pulse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">pulse_i</span><span class="p">]</span>
 
-                <span class="c"># Get the pulse waveform in ADC counts above baseline (because it&#39;s what build_hits expect)</span>
-                <span class="n">baseline_to_subtract</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
+                <span class="c1"># Get the pulse waveform in ADC counts above baseline (because it&#39;s what build_hits expect)</span>
+                <span class="n">baseline_to_subtract</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
                 <span class="n">w</span> <span class="o">=</span> <span class="n">baseline_to_subtract</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
                 <span class="n">hits_buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
-                <span class="n">adc_to_pe</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">h</span><span class="p">[</span><span class="s">&#39;channel&#39;</span><span class="p">])</span>
-                <span class="n">hit_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">h</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-                <span class="n">hit_bounds</span> <span class="o">-=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>   <span class="c"># build_hits expects hit bounds relative to pulse start</span>
+                <span class="n">adc_to_pe</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">])</span>
+                <span class="n">hit_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+                <span class="n">hit_bounds</span> <span class="o">-=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>   <span class="c1"># build_hits expects hit bounds relative to pulse start</span>
                 <span class="n">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
                            <span class="n">hit_bounds</span><span class="o">=</span><span class="n">hit_bounds</span><span class="p">,</span>
                            <span class="n">hits_buffer</span><span class="o">=</span><span class="n">hits_buffer</span><span class="p">,</span>
                            <span class="n">adc_to_pe</span><span class="o">=</span><span class="n">adc_to_pe</span><span class="p">,</span>
-                           <span class="n">channel</span><span class="o">=</span><span class="n">h</span><span class="p">[</span><span class="s">&#39;channel&#39;</span><span class="p">],</span>
+                           <span class="n">channel</span><span class="o">=</span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">],</span>
                            <span class="n">noise_sigma_pe</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">,</span>
-                           <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span>
+                           <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">],</span>
                            <span class="n">start</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
                            <span class="n">pulse_i</span><span class="o">=</span><span class="n">pulse_i</span><span class="p">,</span>
-                           <span class="n">saturation_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+                           <span class="n">saturation_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
 
                 <span class="n">new_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hits_buffer</span><span class="p">)</span>
 
             <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">new_hits</span><span class="p">)</span>
 
-        <span class="c"># Next, split the peaks, sorting hits to the right peak by their maximum index.</span>
-        <span class="c"># Iterate over left, right bounds of the new peaks</span>
-        <span class="n">boundaries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">split_points</span><span class="p">],</span> <span class="n">split_points</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)]))</span>
+        <span class="c1"># Next, split the peaks, sorting hits to the right peak by their maximum index.</span>
+        <span class="c1"># Iterate over left, right bounds of the new peaks</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">split_points</span><span class="p">],</span> <span class="n">split_points</span> <span class="o">+</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)]))</span>
         <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">boundaries</span><span class="p">:</span>
-            <span class="c"># Convert to index in event</span>
+            <span class="c1"># Convert to index in event</span>
             <span class="n">l</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span>
             <span class="n">r</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span>
 
-            <span class="c"># Select hits which have their maximum within this peak bounds</span>
-            <span class="c"># The last new peak must also contain hits at the right bound (though this is unlikely to happen)</span>
-            <span class="n">hs</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;index_of_maximum&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">l</span><span class="p">)</span> <span class="o">&amp;</span>
-                      <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;index_of_maximum&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">)]</span>
+            <span class="c1"># Select hits which have their maximum within this peak bounds</span>
+            <span class="c1"># The last new peak must also contain hits at the right bound (though this is unlikely to happen)</span>
+            <span class="n">hs</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;index_of_maximum&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">l</span><span class="p">)</span> <span class="o">&amp;</span>
+                      <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;index_of_maximum&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">)]</span>
 
-            <span class="n">r</span> <span class="o">=</span> <span class="n">r</span> <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">r</span> <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hs</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to create a peak without hits in LocalMinimumClustering!&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Attempt to create a peak without hits in LocalMinimumClustering!&quot;</span><span class="p">)</span>
 
             <span class="k">yield</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">l</span><span class="p">,</span>
                                      <span class="n">right</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
                                      <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span> <span class="n">hits</span><span class="o">=</span><span class="n">hs</span><span class="p">)</span>
 
 
-<span class="c">#  @numba.jit(numba.float64[:])</span>
-<span class="c"># TODO: TESTS!</span></div></div>
+<span class="c1">#  @numba.jit(numba.float64[:])</span>
+<span class="c1"># TODO: TESTS!</span></div></div>
 <div class="viewcode-block" id="find_split_points"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.find_split_points">[docs]</a><span class="k">def</span> <span class="nf">find_split_points</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">min_height</span><span class="p">,</span> <span class="n">min_ratio</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;Finds local minima in w,</span>
 <span class="sd">    whose peaks to the left and right both satisfy:</span>
@@ -146,28 +146,28 @@
 <span class="sd">      - larger than minimum * min_ratio</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">last_max</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
     <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">min_since_max</span><span class="p">:</span>
-            <span class="c"># New minimum since last max</span>
+            <span class="c1"># New minimum since last max</span>
             <span class="n">min_since_max</span> <span class="o">=</span> <span class="n">x</span>
             <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">last_max</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_since_max</span> <span class="o">+</span> <span class="n">min_height</span><span class="p">,</span>
                                   <span class="n">min_since_max</span> <span class="o">*</span> <span class="n">min_ratio</span><span class="p">):</span>
-            <span class="c"># Significant local minimum: tell caller, reset both max and min finder</span>
+            <span class="c1"># Significant local minimum: tell caller, reset both max and min finder</span>
             <span class="k">yield</span> <span class="n">min_since_max_i</span>
             <span class="n">last_max</span> <span class="o">=</span> <span class="n">x</span>
-            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
             <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">last_max</span><span class="p">:</span>
-            <span class="c"># New max, reset minimum finder state</span>
-            <span class="c"># Notice this is AFTER the split check, to accomodate very fast rising second peaks</span>
+            <span class="c1"># New max, reset minimum finder state</span>
+            <span class="c1"># Notice this is AFTER the split check, to accomodate very fast rising second peaks</span>
             <span class="n">last_max</span> <span class="o">=</span> <span class="n">x</span>
-            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
             <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="n">i</span></div>
 </pre></div>
 
@@ -206,7 +206,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

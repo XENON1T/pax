@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
+    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 5.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.6.0',
+        VERSION:     '5.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -41,7 +41,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numba</span>
 
-<span class="c"># For diagnostic plotting:</span>
+<span class="c1"># For diagnostic plotting:</span>
 <span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -108,24 +108,24 @@
 <div class="viewcode-block" id="FindHits.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;initial_baseline_samples&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;max_hits_per_pulse&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;initial_baseline_samples&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;max_hits_per_pulse&#39;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;make_diagnostic_plots&#39;</span><span class="p">,</span> <span class="s">&#39;never&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;make_diagnostic_plots_in&#39;</span><span class="p">,</span> <span class="s">&#39;small_pf_diagnostic_plots&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;make_diagnostic_plots&#39;</span><span class="p">,</span> <span class="s1">&#39;never&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;make_diagnostic_plots_in&#39;</span><span class="p">,</span> <span class="s1">&#39;small_pf_diagnostic_plots&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s">&#39;never&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">):</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="FindHits.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
         <span class="n">hits_per_pulse</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">reference_baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span>
-        <span class="n">dynamic_low_threshold_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dynamic_low_threshold_coeff&#39;</span><span class="p">]</span>
+        <span class="n">reference_baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span>
+        <span class="n">dynamic_low_threshold_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dynamic_low_threshold_coeff&#39;</span><span class="p">]</span>
 
-        <span class="c"># Allocate numpy arrays to hold numba hitfinder results</span>
-        <span class="c"># -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)</span>
+        <span class="c1"># Allocate numpy arrays to hold numba hitfinder results</span>
+        <span class="c1"># -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)</span>
         <span class="n">hit_bounds_buffer</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
         <span class="n">hits_buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
@@ -133,13 +133,13 @@
             <span class="n">start</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
             <span class="n">stop</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">right</span>
             <span class="n">channel</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">channel</span>
-            <span class="n">pmt_gain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+            <span class="n">pmt_gain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
 
-            <span class="c"># Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)</span>
+            <span class="c1"># Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
-            <span class="c"># Subtract reference baseline, invert (so hits point up from baseline)</span>
-            <span class="c"># This is convenient so we don&#39;t have to reinterpret min, max, etc</span>
+            <span class="c1"># Subtract reference baseline, invert (so hits point up from baseline)</span>
+            <span class="c1"># This is convenient so we don&#39;t have to reinterpret min, max, etc</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">w</span>
 
             <span class="n">_results</span> <span class="o">=</span> <span class="n">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span><span class="p">)</span>
@@ -147,158 +147,158 @@
 
             <span class="n">w</span> <span class="o">-=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
 
-            <span class="c"># Don&#39;t do hitfinding in dead channels, pulse property computation was enough</span>
-            <span class="c"># Could refactor pulse property computation to separate plugin,</span>
-            <span class="c"># but that would mean waveform has to be converted to floats twice</span>
+            <span class="c1"># Don&#39;t do hitfinding in dead channels, pulse property computation was enough</span>
+            <span class="c1"># Could refactor pulse property computation to separate plugin,</span>
+            <span class="c1"># but that would mean waveform has to be converted to floats twice</span>
             <span class="k">if</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="c"># Check if the DAQ pulse was ADC-saturated (clipped)</span>
-            <span class="c"># This means the raw waveform dropped to 0,</span>
-            <span class="c"># i.e. we went digitizer_reference_baseline above the reference baseline</span>
-            <span class="c"># i.e. we went digitizer_reference_baseline - pulse.baseline above baseline</span>
-            <span class="c"># 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported</span>
-            <span class="c"># Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different</span>
+            <span class="c1"># Check if the DAQ pulse was ADC-saturated (clipped)</span>
+            <span class="c1"># This means the raw waveform dropped to 0,</span>
+            <span class="c1"># i.e. we went digitizer_reference_baseline above the reference baseline</span>
+            <span class="c1"># i.e. we went digitizer_reference_baseline - pulse.baseline above baseline</span>
+            <span class="c1"># 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported</span>
+            <span class="c1"># Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different</span>
             <span class="n">is_saturated</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span>
 
-            <span class="c"># Compute thresholds based on noise level</span>
-            <span class="n">high_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_noise_high_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span>
-                                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;absolute_adc_counts_high_threshold&#39;</span><span class="p">],</span>
-                                 <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_min_high_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
-            <span class="n">low_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_noise_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;absolute_adc_counts_low_threshold&#39;</span><span class="p">],</span>
-                                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_min_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
+            <span class="c1"># Compute thresholds based on noise level</span>
+            <span class="n">high_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;height_over_noise_high_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;absolute_adc_counts_high_threshold&#39;</span><span class="p">],</span>
+                                 <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;height_over_min_high_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
+            <span class="n">low_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;height_over_noise_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;absolute_adc_counts_low_threshold&#39;</span><span class="p">],</span>
+                                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;height_over_min_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
 
-            <span class="c"># Call the numba hit finder -- see its docstring for description</span>
+            <span class="c1"># Call the numba hit finder -- see its docstring for description</span>
             <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
                                                                                <span class="n">high_threshold</span><span class="p">,</span>
                                                                                <span class="n">low_threshold</span><span class="p">,</span>
                                                                                <span class="n">hit_bounds_buffer</span><span class="p">,</span>
                                                                                <span class="n">dynamic_low_threshold_coeff</span><span class="p">)</span>
 
-            <span class="c"># Only view the part of hit_bounds_buffer that contains hits found in this event</span>
-            <span class="c"># The rest of hit_bounds_buffer contains -1&#39;s or stuff from previous pulses</span>
+            <span class="c1"># Only view the part of hit_bounds_buffer that contains hits found in this event</span>
+            <span class="c1"># The rest of hit_bounds_buffer contains -1&#39;s or stuff from previous pulses</span>
             <span class="n">hit_bounds_found</span> <span class="o">=</span> <span class="n">hit_bounds_buffer</span><span class="p">[:</span><span class="n">n_hits_found</span><span class="p">]</span>
 
-            <span class="c"># If no hits were found, this is a noise pulse: update the noise pulse count</span>
+            <span class="c1"># If no hits were found, this is a noise pulse: update the noise pulse count</span>
             <span class="k">if</span> <span class="n">n_hits_found</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">noise_pulses_in</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="c"># Don&#39;t &#39;continue&#39; to the next pulse! There&#39;s stuff left to do!</span>
+                <span class="c1"># Don&#39;t &#39;continue&#39; to the next pulse! There&#39;s stuff left to do!</span>
             <span class="k">elif</span> <span class="n">n_hits_found</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Pulse </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> has more than </span><span class="si">%s</span><span class="s"> hits. &quot;</span>
-                               <span class="s">&quot;This usually indicates a zero-length encoding breakdown after a very large S2. &quot;</span>
-                               <span class="s">&quot;Further hits in this pulse have been ignored.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Pulse </span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2"> in channel </span><span class="si">%s</span><span class="s2"> has more than </span><span class="si">%s</span><span class="s2"> hits. &quot;</span>
+                               <span class="s2">&quot;This usually indicates a zero-length encoding breakdown after a very large S2. &quot;</span>
+                               <span class="s2">&quot;Further hits in this pulse have been ignored.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
                                                                                   <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">))</span>
 
-            <span class="c"># Store the found hits in the datastructure</span>
-            <span class="c"># Convert area, noise_sigma and height from adc counts -&gt; pe</span>
+            <span class="c1"># Store the found hits in the datastructure</span>
+            <span class="c1"># Convert area, noise_sigma and height from adc counts -&gt; pe</span>
             <span class="n">adc_to_pe</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
             <span class="n">noise_sigma_pe</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
 
             <span class="n">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds_found</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span>
                        <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span>
-                       <span class="n">saturation_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+                       <span class="n">saturation_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
             <span class="n">hits</span> <span class="o">=</span> <span class="n">hits_buffer</span><span class="p">[:</span><span class="n">n_hits_found</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">hits_per_pulse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
-            <span class="c"># Diagnostic plotting</span>
-            <span class="c"># TODO: Move to separate plugin, we have dict_group_by now</span>
+            <span class="c1"># Diagnostic plotting</span>
+            <span class="c1"># TODO: Move to separate plugin, we have dict_group_by now</span>
 
-            <span class="c"># Do we need to show this pulse? If not: continue</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;never&#39;</span><span class="p">:</span>
+            <span class="c1"># Do we need to show this pulse? If not: continue</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;tricky cases&#39;</span><span class="p">:</span>
-                <span class="c"># Always show pulse if noise level is very high</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;tricky cases&#39;</span><span class="p">:</span>
+                <span class="c1"># Always show pulse if noise level is very high</span>
                 <span class="k">if</span> <span class="n">noise_sigma_pe</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="c"># Show pulse if it nearly went over threshold</span>
+                        <span class="c1"># Show pulse if it nearly went over threshold</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">high_threshold</span><span class="p">:</span>
                             <span class="k">continue</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="c"># Show pulse if any of its hit nearly didn&#39;t go over threshold</span>
+                        <span class="c1"># Show pulse if any of its hit nearly didn&#39;t go over threshold</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">height</span> <span class="o">&lt;</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">high_threshold</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
                                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">))]):</span>
                             <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;no hits&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;no hits&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;baseline shifts&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;baseline shifts&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">baseline_increase</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
                     <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;hits only&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;hits only&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;saturated&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;saturated&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">is_saturated</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s">&#39;always&#39;</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid make_diagnostic_plots option: </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s1">&#39;always&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid make_diagnostic_plots option: </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span><span class="p">)</span>
 
             <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
             <span class="n">data_for_title</span> <span class="o">=</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Event </span><span class="si">%s</span><span class="s">, pulse </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">, Channel </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Event </span><span class="si">%s</span><span class="s1">, pulse </span><span class="si">%d</span><span class="s1">-</span><span class="si">%d</span><span class="s1">, Channel </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">)</span>
             <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
             <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
             <span class="n">ax1</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span> <span class="o">.</span><span class="mi">85</span><span class="p">))</span>
             <span class="n">ax2</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span> <span class="o">.</span><span class="mi">85</span><span class="p">))</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&quot;Sample number (</span><span class="si">%s</span><span class="s"> ns)&quot;</span> <span class="o">%</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&quot;ADC counts above baseline&quot;</span><span class="p">)</span>
-            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&quot;pe / sample&quot;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Sample number (</span><span class="si">%s</span><span class="s2"> ns)&quot;</span> <span class="o">%</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;ADC counts above baseline&quot;</span><span class="p">)</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;pe / sample&quot;</span><span class="p">)</span>
 
-            <span class="c"># Plot the signal and noise levels</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Data&#39;</span><span class="p">)</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">)</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="s">&#39;:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Noise level&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;gray&#39;</span><span class="p">)</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Minimum&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;orange&#39;</span><span class="p">)</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Boundary threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;green&#39;</span><span class="p">)</span>
+            <span class="c1"># Plot the signal and noise levels</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s1">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Noise level&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Minimum&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Boundary threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">)</span>
 
-            <span class="c"># Mark the hit ranges &amp; center of gravity point</span>
+            <span class="c1"># Mark the hit ranges &amp; center of gravity point</span>
             <span class="k">for</span> <span class="n">hit_i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">):</span>
-                <span class="n">ax1</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+                <span class="n">ax1</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
 
-            <span class="c"># Make sure the y-scales match</span>
+            <span class="c1"># Make sure the y-scales match</span>
             <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">)</span>
 
-            <span class="c"># Add pulse / hit information</span>
+            <span class="c1"># Add pulse / hit information</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">largest_hit</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">])]</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">dedent</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">                            Pulse maximum: {pulse.maximum:.5g}</span>
-<span class="s">                            Pulse minimum: {pulse.minimum:.5g}</span>
-<span class="s">                              (both in ADCc above baseline)</span>
-<span class="s">                            Pulse baseline: {pulse.baseline}</span>
-<span class="s">                              (ADCc above reference baseline)</span>
-<span class="s">                            Baseline increase: {pulse.baseline_increase:.2f}</span>
+                <span class="n">largest_hit</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])]</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            Pulse maximum: {pulse.maximum:.5g}</span>
+<span class="s2">                            Pulse minimum: {pulse.minimum:.5g}</span>
+<span class="s2">                              (both in ADCc above baseline)</span>
+<span class="s2">                            Pulse baseline: {pulse.baseline}</span>
+<span class="s2">                              (ADCc above reference baseline)</span>
+<span class="s2">                            Baseline increase: {pulse.baseline_increase:.2f}</span>
 
-<span class="s">                            Gain in this PMT: {gain:.3g}</span>
+<span class="s2">                            Gain in this PMT: {gain:.3g}</span>
 
-<span class="s">                            Largest hit info ({left}-{right}):</span>
-<span class="s">                            Area: {hit_area:.5g} pe</span>
-<span class="s">                            Height: {hit_height:.4g} pe</span>
-<span class="s">                            Saturated samples: {hit_n_saturated}</span>
-<span class="s">                            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pulse</span><span class="o">=</span><span class="n">pulse</span><span class="p">,</span>
-                                       <span class="n">gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">],</span>
-                                       <span class="n">left</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
-                                       <span class="n">right</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
-                                       <span class="n">hit_area</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">],</span>
-                                       <span class="n">hit_height</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">],</span>
-                                       <span class="n">hit_n_saturated</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s">&#39;n_saturated&#39;</span><span class="p">])),</span>
-                            <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">verticalalignment</span><span class="o">=</span><span class="s">&#39;top&#39;</span><span class="p">)</span>
+<span class="s2">                            Largest hit info ({left}-{right}):</span>
+<span class="s2">                            Area: {hit_area:.5g} pe</span>
+<span class="s2">                            Height: {hit_height:.4g} pe</span>
+<span class="s2">                            Saturated samples: {hit_n_saturated}</span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pulse</span><span class="o">=</span><span class="n">pulse</span><span class="p">,</span>
+                                       <span class="n">gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">],</span>
+                                       <span class="n">left</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                       <span class="n">right</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                       <span class="n">hit_area</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">],</span>
+                                       <span class="n">hit_height</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">],</span>
+                                       <span class="n">hit_n_saturated</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;n_saturated&#39;</span><span class="p">])),</span>
+                            <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
 
-            <span class="c"># Finish the plot, save, close</span>
+            <span class="c1"># Finish the plot, save, close</span>
             <span class="n">leg</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
             <span class="n">leg</span><span class="o">.</span><span class="n">get_frame</span><span class="p">()</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">,</span>
-                                     <span class="s">&#39;event</span><span class="si">%04d</span><span class="s">_pulse</span><span class="si">%05d</span><span class="s">-</span><span class="si">%05d</span><span class="s">_ch</span><span class="si">%03d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">))</span>
+                                     <span class="s1">&#39;event</span><span class="si">%04d</span><span class="s1">_pulse</span><span class="si">%05d</span><span class="s1">-</span><span class="si">%05d</span><span class="s1">_ch</span><span class="si">%03d</span><span class="s1">.png&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">))</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="p">))</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits_per_pulse</span><span class="p">):</span>
             <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">hits_per_pulse</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> hits in </span><span class="si">%d</span><span class="s"> pulses&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found </span><span class="si">%d</span><span class="s2"> hits in </span><span class="si">%d</span><span class="s2"> pulses&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Event has no pulses??!&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Event has no pulses??!&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">event</span>
 
@@ -336,7 +336,7 @@
             <span class="n">deviation</span> <span class="o">+=</span> <span class="n">x</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span>
         <span class="n">deviation</span> <span class="o">/=</span> <span class="n">area</span>
 
-        <span class="c"># Store the hit properties</span>
+        <span class="c1"># Store the hit properties</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">channel</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">found_in_pulse</span> <span class="o">=</span> <span class="n">pulse_i</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">=</span> <span class="n">noise_sigma_pe</span>
@@ -363,7 +363,7 @@
 <span class="sd">      noise_sigma is the std of samples below baseline</span>
 <span class="sd">    Does not modify w. Does not assume anything about inversion of w!!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># Compute the baseline before and after the self-trigger</span>
+    <span class="c1"># Compute the baseline before and after the self-trigger</span>
     <span class="n">baseline_before</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">baseline_samples</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">baseline_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">w</span><span class="p">[:</span><span class="n">baseline_samples</span><span class="p">]:</span>
@@ -378,11 +378,11 @@
     <span class="n">baseline</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">baseline_before</span><span class="p">,</span> <span class="n">baseline_after</span><span class="p">)</span>
     <span class="n">baseline_increase</span> <span class="o">=</span> <span class="n">baseline_after</span> <span class="o">-</span> <span class="n">baseline_before</span>
 
-    <span class="c"># Now compute mean, noise, and min</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>           <span class="c"># Running count of samples included in noise sample</span>
-    <span class="n">m2</span> <span class="o">=</span> <span class="mi">0</span>          <span class="c"># Running sum of squares of differences from the baseline</span>
-    <span class="n">max_a</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0e6</span>  <span class="c"># Running max amplitude</span>
-    <span class="n">min_a</span> <span class="o">=</span> <span class="mf">1.0e6</span>   <span class="c"># Running min amplitude</span>
+    <span class="c1"># Now compute mean, noise, and min</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>           <span class="c1"># Running count of samples included in noise sample</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="mi">0</span>          <span class="c1"># Running sum of squares of differences from the baseline</span>
+    <span class="n">max_a</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0e6</span>  <span class="c1"># Running max amplitude</span>
+    <span class="n">min_a</span> <span class="o">=</span> <span class="mf">1.0e6</span>   <span class="c1"># Running min amplitude</span>
 
     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">w</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">max_a</span><span class="p">:</span>
@@ -395,7 +395,7 @@
             <span class="n">m2</span> <span class="o">+=</span> <span class="n">delta</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">baseline</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c"># Should only happen if w = baseline everywhere</span>
+        <span class="c1"># Should only happen if w = baseline everywhere</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">m2</span><span class="o">/</span><span class="n">n</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
@@ -438,7 +438,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.FindSignals &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
+    <title>pax.trigger_plugins.FindSignals &mdash; Processor for Analyzing XENON1T 5.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '5.6.0',
+        VERSION:     '5.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.1 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -44,54 +44,54 @@
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
 <span class="kn">from</span> <span class="nn">pax.dsputils</span> <span class="kn">import</span> <span class="n">adc_to_pe</span>
 
-<span class="c"># Interrupts thrown by the signal finder</span>
-<span class="c"># Negative, since positive numbers indicate number of signals found during normal operation</span>
+<span class="c1"># Interrupts thrown by the signal finder</span>
+<span class="c1"># Negative, since positive numbers indicate number of signals found during normal operation</span>
 <span class="n">SIGNAL_BUFFER_FULL</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 <span class="n">SAVE_DARK_MONITOR_DATA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
 
 
 <div class="viewcode-block" id="FindSignals"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.FindSignals.FindSignals">[docs]</a><span class="k">class</span> <span class="nc">FindSignals</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
 
-    <span class="c"># How often did we save the dark rate since the last full (coincidence matrix) save?</span>
+    <span class="c1"># How often did we save the dark rate since the last full (coincidence matrix) save?</span>
     <span class="n">dark_monitor_saves</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="FindSignals.startup"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.FindSignals.FindSignals.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># Initialize buffer for numba signal finding routine.</span>
-        <span class="c"># Although we&#39;re able to extend this buffer as needed, we must do so outside numba</span>
-        <span class="c"># and it involves copyping data, so if you pick too small a buffer size you will hurt performance.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">numba_signals_buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;numba_signal_buffer_size&#39;</span><span class="p">],</span>
+        <span class="c1"># Initialize buffer for numba signal finding routine.</span>
+        <span class="c1"># Although we&#39;re able to extend this buffer as needed, we must do so outside numba</span>
+        <span class="c1"># and it involves copyping data, so if you pick too small a buffer size you will hurt performance.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numba_signals_buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;numba_signal_buffer_size&#39;</span><span class="p">],</span>
                                              <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
-        <span class="c"># Initialize buffers for tallying pulses / coincidences</span>
-        <span class="c"># Reason for +1 is again &#39;ghost&#39; channels, see trigger.py</span>
-        <span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="c1"># Initialize buffers for tallying pulses / coincidences</span>
+        <span class="c1"># Reason for +1 is again &#39;ghost&#39; channels, see trigger.py</span>
+        <span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
-        <span class="c"># Get conversion factor from ADC counts to pe for each pmt</span>
-        <span class="c"># The &#39;ghost&#39; PMT will have gain 1 always</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gain_conversion_factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">],</span> <span class="n">ch</span><span class="p">)</span>
+        <span class="c1"># Get conversion factor from ADC counts to pe for each pmt</span>
+        <span class="c1"># The &#39;ghost&#39; PMT will have gain 1 always</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gain_conversion_factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pax_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">],</span> <span class="n">ch</span><span class="p">)</span>
                                                  <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">+</span>
                                                 <span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-        <span class="c"># We must keep track of the next time to save the dark rate between batches, since a batch usually does not</span>
-        <span class="c"># end exactly at a save time.</span>
+        <span class="c1"># We must keep track of the next time to save the dark rate between batches, since a batch usually does not</span>
+        <span class="c1"># end exactly at a save time.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">=</span> <span class="bp">None</span>
 </div>
 <div class="viewcode-block" id="FindSignals.process"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.FindSignals.FindSignals.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="n">sigf</span> <span class="o">=</span> <span class="n">signal_finder</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pulses</span><span class="p">,</span>
-                             <span class="n">signal_separation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;signal_separation&#39;</span><span class="p">],</span>
+                             <span class="n">signal_separation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;signal_separation&#39;</span><span class="p">],</span>
 
                              <span class="n">signal_buffer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numba_signals_buffer</span><span class="p">,</span>
 
                              <span class="n">next_save_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span><span class="p">,</span>
-                             <span class="n">dark_rate_save_interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dark_rate_save_interval&#39;</span><span class="p">],</span>
+                             <span class="n">dark_rate_save_interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">],</span>
 
                              <span class="n">all_pulses_tally</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="p">,</span>
                              <span class="n">lone_pulses_tally</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="p">,</span>
@@ -105,7 +105,7 @@
             <span class="k">if</span> <span class="n">result</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">n_signals_found</span> <span class="o">=</span> <span class="n">result</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">saved_buffers</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%d</span><span class="s"> previous signal buffers were saved, concatenating and returning them.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> previous signal buffers were saved, concatenating and returning them.&quot;</span> <span class="o">%</span> <span class="p">(</span>
                         <span class="nb">len</span><span class="p">(</span><span class="n">saved_buffers</span><span class="p">)))</span>
                     <span class="n">saved_buffers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numba_signals_buffer</span><span class="p">[:</span><span class="n">n_signals_found</span><span class="p">])</span>
                     <span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">saved_buffers</span><span class="p">)</span>
@@ -114,37 +114,37 @@
                 <span class="k">break</span>
 
             <span class="k">elif</span> <span class="n">result</span> <span class="o">==</span> <span class="n">SIGNAL_BUFFER_FULL</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Signal buffer is full, copying it out.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Signal buffer is full, copying it out.&quot;</span><span class="p">)</span>
                 <span class="n">saved_buffers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numba_signals_buffer</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
 
             <span class="k">elif</span> <span class="n">result</span> <span class="o">==</span> <span class="n">SAVE_DARK_MONITOR_DATA</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">save_dark_monitor_data</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">next_save_time</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_rate_save_interval&#39;</span><span class="p">]</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown signal finder interrupt </span><span class="si">%d</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown signal finder interrupt </span><span class="si">%d</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">last_data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">save_dark_monitor_data</span><span class="p">(</span><span class="n">last_time</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Signal finder finished on this data increment, found </span><span class="si">%d</span><span class="s"> signals.&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">signals</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Signal finder finished on this data increment, found </span><span class="si">%d</span><span class="s2"> signals.&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">signals</span><span class="p">))</span>
         <span class="n">data</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">signals</span>
 </div>
 <div class="viewcode-block" id="FindSignals.save_dark_monitor_data"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.FindSignals.FindSignals.save_dark_monitor_data">[docs]</a>    <span class="k">def</span> <span class="nf">save_dark_monitor_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_time</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="c"># Save the PMT dark rate</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Saving pulse rate: </span><span class="si">%d</span><span class="s"> pulses (of which </span><span class="si">%d</span><span class="s"> lone pulses)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="c1"># Save the PMT dark rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving pulse rate: </span><span class="si">%d</span><span class="s2"> pulses (of which </span><span class="si">%d</span><span class="s2"> lone pulses)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s">&#39;count_of_all_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_all_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_pulses_tally</span> <span class="o">*=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s">&#39;count_of_lone_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_lone_pulses&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lone_pulses_tally</span> <span class="o">*=</span> <span class="mi">0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="n">last_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dark_monitor_full_save_every&#39;</span><span class="p">]:</span>
-            <span class="c"># Save the full coincidence rate</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Saving coincidence tally matrix, total </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s">&#39;count_of_2pmt_coincidences&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">last_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dark_monitor_full_save_every&#39;</span><span class="p">]:</span>
+            <span class="c1"># Save the full coincidence rate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Saving coincidence tally matrix, total </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;count_of_2pmt_coincidences&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_saves</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">coincidence_tally</span> <span class="o">*=</span> <span class="mi">0</span>
 
@@ -163,9 +163,9 @@
 <span class="sd">    Raises &quot;interrupts&quot; (yield numbers) to communicate with caller.</span>
 <span class="sd">    Online RMS algorithm is Knuth/Welford: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># Allocate memory for some internal buffers (which we can&#39;t do in numba) we don&#39;t need outside the signal finder</span>
-    <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_pulses_tally</span><span class="p">)</span>   <span class="c"># Actually this is 1 more than the number of connected channels, see above</span>
-    <span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>   <span class="c"># Bool gives weird errors</span>
+    <span class="c1"># Allocate memory for some internal buffers (which we can&#39;t do in numba) we don&#39;t need outside the signal finder</span>
+    <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_pulses_tally</span><span class="p">)</span>   <span class="c1"># Actually this is 1 more than the number of connected channels, see above</span>
+    <span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>   <span class="c1"># Bool gives weird errors</span>
     <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_signal_finder</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">signal_separation</span><span class="p">,</span>
                           <span class="n">signal_buffer</span><span class="p">,</span>
@@ -184,11 +184,11 @@
                    <span class="n">area_per_channel</span><span class="p">,</span> <span class="n">does_channel_contribute</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Numba backend for signal_finder: please see its docstring instead.&quot;&quot;&quot;</span>
     <span class="n">in_signal</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">passes_test</span> <span class="o">=</span> <span class="bp">False</span>     <span class="c"># Does the current time pass the signal inclusion test?</span>
-    <span class="n">current_signal</span> <span class="o">=</span> <span class="mi">0</span>      <span class="c"># Index of the current signal in the signal buffer</span>
-    <span class="n">m2</span> <span class="o">=</span> <span class="mf">0.0</span>                <span class="c"># Temporary variable for online RMS computation</span>
+    <span class="n">passes_test</span> <span class="o">=</span> <span class="bp">False</span>     <span class="c1"># Does the current time pass the signal inclusion test?</span>
+    <span class="n">current_signal</span> <span class="o">=</span> <span class="mi">0</span>      <span class="c1"># Index of the current signal in the signal buffer</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="mf">0.0</span>                <span class="c1"># Temporary variable for online RMS computation</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
-        <span class="k">yield</span> <span class="mi">0</span>             <span class="c"># no point looking for events. Communicate no events found, then exit.</span>
+        <span class="k">yield</span> <span class="mi">0</span>             <span class="c1"># no point looking for events. Communicate no events found, then exit.</span>
         <span class="k">return</span>
 
     <span class="k">for</span> <span class="n">time_index</span><span class="p">,</span> <span class="n">_time</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
@@ -196,19 +196,19 @@
         <span class="n">pmt</span> <span class="o">=</span> <span class="n">_time</span><span class="o">.</span><span class="n">pmt</span>
         <span class="n">area</span> <span class="o">=</span> <span class="n">_time</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="n">gain_conversion_factors</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
 
-        <span class="c"># Save the dark rate. Notice it&#39;s WHILE t &gt;= next_save_time, which ensures we save a lot of zeroes when there is</span>
-        <span class="c"># a large gap in the data. Let&#39;s hope nobody tries to pass t = float(&#39;inf&#39;)...</span>
+        <span class="c1"># Save the dark rate. Notice it&#39;s WHILE t &gt;= next_save_time, which ensures we save a lot of zeroes when there is</span>
+        <span class="c1"># a large gap in the data. Let&#39;s hope nobody tries to pass t = float(&#39;inf&#39;)...</span>
         <span class="k">while</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">next_save_time</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">SAVE_DARK_MONITOR_DATA</span>
             <span class="n">next_save_time</span> <span class="o">+=</span> <span class="n">dark_rate_save_interval</span>
 
         <span class="n">is_last_time</span> <span class="o">=</span> <span class="n">time_index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_last_time</span><span class="p">:</span>
-            <span class="c"># Should this time be in a signal? === Is the next time close enough?</span>
+            <span class="c1"># Should this time be in a signal? === Is the next time close enough?</span>
             <span class="n">passes_test</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">time_index</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">-</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">signal_separation</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_signal</span> <span class="ow">and</span> <span class="n">passes_test</span><span class="p">:</span>
-            <span class="c"># Start a signal. We must clear all attributes first to remove (potential) old stuff from the buffer.</span>
+            <span class="c1"># Start a signal. We must clear all attributes first to remove (potential) old stuff from the buffer.</span>
             <span class="n">in_signal</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">signal_buffer</span><span class="p">[</span><span class="n">current_signal</span><span class="p">]</span>
             <span class="n">s</span><span class="o">.</span><span class="n">left_time</span> <span class="o">=</span> <span class="n">t</span>
@@ -221,18 +221,18 @@
             <span class="n">area_per_channel</span> <span class="o">*=</span> <span class="mi">0</span>
             <span class="n">does_channel_contribute</span> <span class="o">*=</span> <span class="mi">0</span>
 
-        <span class="k">if</span> <span class="n">in_signal</span><span class="p">:</span>                           <span class="c"># Notice if, not elif. Work on first time in signal too.</span>
-            <span class="c"># Update signal quantities</span>
+        <span class="k">if</span> <span class="n">in_signal</span><span class="p">:</span>                           <span class="c1"># Notice if, not elif. Work on first time in signal too.</span>
+            <span class="c1"># Update signal quantities</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">signal_buffer</span><span class="p">[</span><span class="n">current_signal</span><span class="p">]</span>
             <span class="n">area_per_channel</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">+=</span> <span class="n">area</span>
             <span class="n">does_channel_contribute</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="n">s</span><span class="o">.</span><span class="n">n_pulses</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">time_mean</span>
             <span class="n">s</span><span class="o">.</span><span class="n">time_mean</span> <span class="o">+=</span> <span class="n">delta</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">n_pulses</span>
-            <span class="n">m2</span> <span class="o">+=</span> <span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">time_mean</span><span class="p">)</span>     <span class="c"># Notice this isn&#39;t delta**2: time_mean changed on the previous line!</span>
+            <span class="n">m2</span> <span class="o">+=</span> <span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">time_mean</span><span class="p">)</span>     <span class="c1"># Notice this isn&#39;t delta**2: time_mean changed on the previous line!</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">passes_test</span> <span class="ow">or</span> <span class="n">is_last_time</span><span class="p">:</span>
-                <span class="c"># Signal has ended: store its quantities and move on</span>
+                <span class="c1"># Signal has ended: store its quantities and move on</span>
                 <span class="n">s</span><span class="o">.</span><span class="n">right_time</span> <span class="o">=</span> <span class="n">t</span>
                 <span class="n">s</span><span class="o">.</span><span class="n">time_rms</span> <span class="o">=</span> <span class="p">(</span><span class="n">m2</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">n_pulses</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
                 <span class="n">s</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="n">does_channel_contribute</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -247,7 +247,7 @@
 
                 <span class="k">if</span> <span class="n">current_signal</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal_buffer</span><span class="p">):</span>
                     <span class="k">yield</span> <span class="n">SIGNAL_BUFFER_FULL</span>
-                    <span class="c"># Caller will have copied out the signal buffer, we can start from 0 again</span>
+                    <span class="c1"># Caller will have copied out the signal buffer, we can start from 0 again</span>
                     <span class="n">current_signal</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">else</span><span class="p">:</span>
@@ -255,7 +255,7 @@
 
         <span class="n">all_pulses_tally</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="c"># Let caller know number of signals found, then raise StopIteration</span>
+    <span class="c1"># Let caller know number of signals found, then raise StopIteration</span>
     <span class="k">yield</span> <span class="n">current_signal</span>
 </pre></div>
 
@@ -294,7 +294,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 
