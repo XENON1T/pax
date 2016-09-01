@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+5.6.1 (2016-09-01)
+------------------
+
+* Muon veto processing support using run database information
+
+------------------
 5.6.0 (2016-08-31)
 ------------------
 
