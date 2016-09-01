@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.BSON &mdash; Processor for Analyzing XENON1T 5.5.1 documentation</title>
+    <title>pax.plugins.io.BSON &mdash; Processor for Analyzing XENON1T 5.6.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.5.1',
+        VERSION:     '5.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.5.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 5.6.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
   <body role="document">  
@@ -46,18 +46,18 @@
 <span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span><span class="p">,</span> <span class="n">WriteZippedEncoder</span><span class="p">,</span> <span class="n">ReadZippedDecoder</span>
 
 
-<span class="c1">##</span>
-<span class="c1"># JSON</span>
-<span class="c1">##</span>
+<span class="c">##</span>
+<span class="c"># JSON</span>
+<span class="c">##</span>
 
 <div class="viewcode-block" id="ReadJSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadJSON">[docs]</a><span class="k">class</span> <span class="nc">ReadJSON</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Read raw data from a folder of newline-separated-JSON files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;json&#39;</span>
 
 <div class="viewcode-block" id="ReadJSON.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadJSON.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="ReadJSON.get_all_events_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadJSON.get_all_events_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_events_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="p">:</span>
@@ -71,27 +71,27 @@
 
     <span class="sd">&quot;&quot;&quot;Write raw data to a folder of newline-separated-JSON files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;json&#39;</span>
 
 <div class="viewcode-block" id="WriteJSON.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteJSON.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteJSON.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteJSON.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;fields_to_ignore&#39;</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteJSON.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteJSON.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
 
-<span class="c1">##</span>
-<span class="c1"># Zipped BSON</span>
-<span class="c1">##</span>
+<span class="c">##</span>
+<span class="c"># Zipped BSON</span>
+<span class="c">##</span>
 </div></div>
 <div class="viewcode-block" id="EncodeZBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.EncodeZBSON">[docs]</a><span class="k">class</span> <span class="nc">EncodeZBSON</span><span class="p">(</span><span class="n">WriteZippedEncoder</span><span class="p">):</span>
 
 <div class="viewcode-block" id="EncodeZBSON.encode_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.EncodeZBSON.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">to_bson</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;fields_to_ignore&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">to_bson</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">])</span>
 
 </div></div>
 <div class="viewcode-block" id="DecodeZBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.DecodeZBSON">[docs]</a><span class="k">class</span> <span class="nc">DecodeZBSON</span><span class="p">(</span><span class="n">ReadZippedDecoder</span><span class="p">):</span>
@@ -136,7 +136,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 
