@@ -212,7 +212,7 @@ def main():
 
         else:
             # Things went fine, tell the runs DB
-            if not args.secret_mode and args.detector == 'tpc':
+            if not args.secret_mode:
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host': data_info_entry['host']},
