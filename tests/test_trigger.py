@@ -203,6 +203,7 @@ class TestTriggerIntegration(unittest.TestCase):
 
         print("Trigger finished. Event ranges received: %s" % event_ranges)
 
+        self.assertEqual(len(should_get), len(event_ranges))
         for i in range(len(should_get)):
             self.assertEqual(should_get[i], event_ranges[i])
 

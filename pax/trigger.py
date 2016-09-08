@@ -182,7 +182,10 @@ class Trigger(object):
         pulses_read = len(start_times)
         signals_found = len(data.signals)
         events_built = len(data.event_ranges)
-        total_event_duration = np.sum(data.event_ranges[:, 1] - data.event_ranges[:, 0])
+        if events_built:
+            total_event_duration = np.sum(data.event_ranges[:, 1] - data.event_ranges[:, 0])
+        else:
+            total_event_duration = 0
         data.batch_info_doc.update(dict(last_time_searched=data.last_time_searched,
                                         timestamp=time.time(),
                                         pulses_read=pulses_read,

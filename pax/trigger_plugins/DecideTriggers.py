@@ -25,7 +25,7 @@ class DecideTriggers(TriggerPlugin):
         self.p_matrix = p_matrix
 
     def process(self, data):
-        if self.config.get('do_not_trigger', True):
+        if self.config.get('do_not_trigger', False):
             return
         flag_triggers(data.signals, p_matrix=self.p_matrix)
 
