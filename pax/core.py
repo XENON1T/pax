@@ -90,7 +90,14 @@ class Processor:
 
             elif 'input_name' in self.config['pax']:
                 run_name = os.path.basename(self.config['pax']['input_name'])
-                run_doc = run_collection.find_one({'name': run_name})
+
+                if run_name.endswith("_MV"):
+                    run_doc = run_collection.find_one({'name': run_name[:-3],
+                                                   'detector' : 'muon_veto'})
+                else:
+                    run_doc = run_collection.find_one({'name': run_name,
+                                                   'detector' : 'tpc'})
+
                 if not run_doc:
                     raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
 

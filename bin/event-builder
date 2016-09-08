@@ -67,6 +67,12 @@ def main():
     run_query['detector'] = args.detector
     log.info("Starting run search with query %s" % run_query)
 
+    # Define the suffix for the produced folder
+    if args.detector == "muon_veto":
+        detector_suffix = "_MV"
+    else:
+        detector_suffix = ""
+
     while 1:
         if not args.secret_mode:
             run_doc = runs.find_one_and_update(run_query, {'$set': {STATUS_FIELD_NAME: 'staging'}})
@@ -76,7 +82,7 @@ def main():
                                    'host': TRIGGERED_DATA_HOSTNAME,
                                    'status': 'transferring',
                                    'location': os.path.join('/data/xenon/raw',
-                                                            run_doc['name']),
+                                                            run_doc['name']+detector_suffix),
                                    'creation_time': datetime.datetime.utcnow(),
                                    'checksum': None}
                 runs.update({'_id': run_doc['_id']},
@@ -86,7 +92,7 @@ def main():
             if run_doc is None:
                 raise ValueError("Mongodb returned None instead of run document!")
             data_info_entry = dict(location=os.path.join('.',
-                                                         run_doc['name']))
+                                                         run_doc['name']+detector_suffix))
 
         if run_doc is None:
             if args.wait <= 0:
@@ -207,7 +213,7 @@ def main():
 
         else:
             # Things went fine, tell the runs DB
-            if not args.secret_mode and args.detector == 'tpc':
+            if not args.secret_mode:
                 data_info_entry['status'] = 'verifying'
                 runs.update({'_id': run_doc['_id'],
                              'data.host': data_info_entry['host']},
