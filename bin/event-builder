@@ -28,6 +28,7 @@ from pax.MongoDB_ClientMaker import ClientMaker
 
 # Name of the field in the run doc which holds the trigger status
 STATUS_FIELD_NAME = 'trigger.status'
+TRIGGERED_DATA_HOSTNAME = 'xe1t-datamanager'
 
 def get_hostname():
     return socket.gethostname().split('.')[0]
@@ -72,7 +73,7 @@ def main():
 
             if run_doc is not None:
                 data_info_entry = {'type': 'raw',
-                                   'host': 'xe1t-datamanager',
+                                   'host': TRIGGERED_DATA_HOSTNAME,
                                    'status': 'transferring',
                                    'location': os.path.join('/data/xenon/raw',
                                                             run_doc['name']),
@@ -184,7 +185,7 @@ def main():
             log.fatal(str(type(e)) + ": " + str(e))
 
             if not args.secret_mode:
-                mark_run_errored(args, run_doc, runs)
+                mark_run_errored(run_doc, runs)
                 stop_acquisition(clientmaker)
                 communicate_alert(clientmaker, e, log, run_doc, priority=1)
 
@@ -197,7 +198,7 @@ def main():
 
             if not args.secret_mode and args.detector == 'tpc':
                 clear_run_queue(clientmaker)
-                mark_run_errored(args, run_doc, runs)
+                mark_run_errored(run_doc, runs)
                 stop_acquisition(clientmaker)
                 communicate_alert(clientmaker, e, log, run_doc, priority=3)
 
@@ -260,10 +261,19 @@ def communicate_alert(clientmaker, e, log, run_doc, priority=3):
     alerts.insert(alert_doc)
 
 
-def mark_run_errored(args, run_doc, runs_collection):
+def mark_run_errored(run_doc, runs_collection):
     """Sets the current run's trigger status as 'error'"""
-    runs_collection.update({'name': run_doc['name'], 'detector': args.detector},
-                           {'$set': {STATUS_FIELD_NAME: 'error'}})
+    query_this_run = {'name': run_doc['name'], 'detector': run_doc['detector']}
+    runs_collection.update_one(query_this_run,
+                               {'$set': {STATUS_FIELD_NAME: 'error'}})
+
+    # Find the data entry for the triggered data we were making, and set it to 'error' instead of transferring
+    # We need to start by re-fetching the run doc, as the data entries will have changed since we first queried it
+    run_doc = runs_collection.find_one(query_this_run)
+    for i, d in enumerate(run_doc['data']):
+        if d['host'] == TRIGGERED_DATA_HOSTNAME and d['type'] == 'raw':
+            run_doc['data'][i]['status'] = 'error'
+    runs_collection.update_one(query_this_run, {'$set': {'data': run_doc['data']}})
 
 
 def setup_logging(loglevel='DEBUG'):
