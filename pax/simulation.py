@@ -7,10 +7,12 @@ from __future__ import division
 import logging
 import math
 import time
+import pickle
 
 import numpy as np
-
+import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
 from scipy import stats
+from scipy.interpolate import interp1d
 
 from pax import units, utils, datastructure
 from pax.PatternFitter import PatternFitter
@@ -44,21 +46,6 @@ class Simulator(object):
         efield = (c['drift_field'] / (units.V / units.cm))
         c['s1_ER_recombination_time'] = 3.5 / 0.18 * (1 / 20 + 0.41) * math.exp(-0.009 * efield)
         log.debug('Inferred s1_ER_recombination_time %s ns' % c['s1_ER_recombination_time'])
-
-        # Calculate particle number density in the gas (ideal gas law)
-        number_density_gas = c['pressure'] / (units.boltzmannConstant * c['temperature'])
-
-        # electric field in the gas
-        # Formula from xenon:xenon100:analysis:jacob:s2gain_v2
-        e_in_gas = c['lxe_dielectric_constant'] * c['anode_voltage'] / (
-            c['lxe_dielectric_constant'] * c['elr_gas_gap_length'] +
-            (c['gate_to_anode_distance'] - c['elr_gas_gap_length'])
-        )
-
-        # Reduced electric field in the gas
-        c['reduced_e_in_gas'] = e_in_gas / number_density_gas
-        log.debug("Inferred a reduced electric field of %s Td in the gas" % (
-            c['reduced_e_in_gas'] / units.Td))
 
         # Which channels stand to receive any photons?
         channels_for_photons = c['channels_in_detector']['tpc']
@@ -113,6 +100,71 @@ class Simulator(object):
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s1_patterns = None
+
+        ##
+        # Luminescence time distribution precomputation
+        ##
+
+        # For which gas gaps do we have to compute the luminescence time distribution?
+        gas_gap_warping_map = c.get('gas_gap_warping_map', None)
+        base_dg = c['elr_gas_gap_length']
+        if gas_gap_warping_map is not None:
+            mh = pickle.load(gas_gap_warping_map)
+            self.gas_gap_length = lambda x,y: base_dg + mh.lookup(x, y)
+            self.luminescence_converters_dgs = np.linspace(mh.histogram.min(), mh.histogram.max(),
+                                                                c.get('n_luminescence_time_converters', 20))
+        else:
+            self.gas_gap_length = lambda x,y: base_dg
+            self.luminescence_converters_dgs = np.array([base_dg])
+
+        self.luminescence_converters = []
+
+        # Calculate particle number density in the gas (ideal gas law)
+        number_density_gas = c['pressure'] / (units.boltzmannConstant * c['temperature'])
+
+        # Slope of the drift velocity vs field relation
+        alpha = c['gas_drift_velocity_slope'] / number_density_gas
+
+        @np.vectorize
+        def yield_per_dr(E):
+            # Gives something proportional to the yield, not the yield itself!
+            y = E / (units.kV / units.cm) - 0.8 * c['pressure'] / units.bar
+            return max(y, 0)
+
+        rA = c['anode_field_domination_distance']
+        rW = c['anode_wire_radius']
+
+        for dg in self.luminescence_converters_dgs:
+            dl = c['gate_to_anode_distance'] - dg
+            rL = dg
+
+            # Voltage over the gas gap
+            V = c['anode_voltage'] / (1 + dl/dg/c['lxe_dielectric_constant'])  # From eq1 in se note, * dg
+
+            # Field in the gas gap. r is distance from anode center: start at r=rL
+            E0 = V/(rL - rA + rA * (np.log(rA) - np.log(rW)))
+            @np.vectorize
+            def Er(r):
+                if r < rW:
+                    return 0
+                elif rW <= r < rA:
+                    return E0 * rA / r
+                else:
+                    return E0
+
+            # Small numeric calculation to get emission time cdf
+            R = np.linspace(rL, rW, 1000)
+            E = Er(R)
+            RDOT = alpha * E
+            T = np.cumsum(- np.diff(R)[0] / RDOT)     # dt = dx / v
+            yield_density = yield_per_dr(E) * RDOT    # density/dt = density/dx * dx/dt
+            yield_density /= yield_density.sum()
+
+            # Invert CDF using interpolator
+            uniform_to_emission_time = interp1d(np.cumsum(yield_density), T,
+                                                fill_value=0, bounds_error=False)
+
+            self.luminescence_converters.append(uniform_to_emission_time)
 
         self.clear_signals_queue()
 
@@ -445,7 +497,7 @@ class Simulator(object):
         # How many photons does each electron make?
         c = self.config
         photons_produced = np.random.poisson(
-            c['s2_secondary_sc_gain_density'] * c['elr_gas_gap_length'] * self.s2_light_yield_map.get_value(x, y),
+            c['s2_secondary_sc_gain'] * self.s2_light_yield_map.get_value(x, y),
             len(electron_arrival_times)
         )
         total_photons = np.sum(photons_produced)
@@ -456,7 +508,7 @@ class Simulator(object):
         # Find the photon production times
         # Assume luminescence probability ~ electric field
         s2_pe_times = np.concatenate([
-            t0 + self.get_luminescence_times(photons_produced[i])
+            t0 + self.get_luminescence_times(photons_produced[i], x, y)
             for i, t0 in enumerate(electron_arrival_times)
         ])
 
@@ -482,38 +534,15 @@ class Simulator(object):
             np.random.exponential(t3, len(times) - n_singlets)
         ])
 
-    def get_luminescence_times(self, n):
+    def get_luminescence_times(self, n, x, y):
+        # Get the gas gap width at this point
+        dg = self.config['elr_gas_gap_length'] + self.gas_gap_length(x, y)
 
-        dg = self.config['elr_gas_gap_length']
+        # Retrieve the closest uniform -> luminescence time converter we precomputed, then use it
+        conv_i = np.argmin(np.abs(self.luminescence_converters_dgs - dg))
+        uniform_to_luminescence_time = self.luminescence_converters[conv_i]
 
-        # Distance between liquid level and uniform -> line field crossover point
-        du = dg - self.config['anode_field_domination_distance']
-
-        # Distance between liquid level and anode wire
-        dw = dg - self.config['anode_wire_radius']
-
-        # How many photons are produced in the uniform part?
-        n_uniform = np.random.binomial(n, 1 / (1 + (dg - du) / du *
-                                               math.log((dg - du) / (dg - dw))))
-
-        # Sample the luminescence times in the uniform part
-        pos_uniform = np.random.uniform(0, du, n_uniform)
-
-        # Sample the luminescence positions in the non-uniform part
-        FTilde = np.random.uniform(0, 1, n - n_uniform)
-        pos_non_uniform = dg - (dg - du) ** (1 - FTilde) * (dg - dw) ** FTilde
-
-        # Convert to luminescence times
-        result = np.concatenate((
-            pos_uniform,
-            pos_non_uniform
-            # To take electron speedup near anode into account, replace line above with:
-            # (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))
-            # NB: does not take electron bending towards anode into account, so probably worse!
-        ))
-        result *= 1/(self.config['gas_drift_velocity_slope'] * self.config['reduced_e_in_gas'])
-
-        return result
+        return uniform_to_luminescence_time(np.random.rand(n))
 
     def pmt_pulse_current(self, gain, offset=0):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
