@@ -109,12 +109,14 @@ class Simulator(object):
         gas_gap_warping_map = c.get('gas_gap_warping_map', None)
         base_dg = c['elr_gas_gap_length']
         if gas_gap_warping_map is not None:
-            mh = pickle.load(gas_gap_warping_map)
-            self.gas_gap_length = lambda x,y: base_dg + mh.lookup(x, y)
-            self.luminescence_converters_dgs = np.linspace(mh.histogram.min(), mh.histogram.max(),
-                                                                c.get('n_luminescence_time_converters', 20))
+            with open(utils.data_file_name(gas_gap_warping_map), mode='rb') as infile:
+                mh = pickle.load(infile)
+            self.gas_gap_length = lambda x, y: base_dg + mh.lookup([x], [y]).item()
+            self.luminescence_converters_dgs = np.linspace(mh.histogram.min(),
+                                                           mh.histogram.max(),
+                                                           c.get('n_luminescence_time_converters', 20)) + base_dg
         else:
-            self.gas_gap_length = lambda x,y: base_dg
+            self.gas_gap_length = lambda x, y: base_dg
             self.luminescence_converters_dgs = np.array([base_dg])
 
         self.luminescence_converters = []
@@ -143,6 +145,7 @@ class Simulator(object):
 
             # Field in the gas gap. r is distance from anode center: start at r=rL
             E0 = V/(rL - rA + rA * (np.log(rA) - np.log(rW)))
+
             @np.vectorize
             def Er(r):
                 if r < rW:
@@ -536,7 +539,7 @@ class Simulator(object):
 
     def get_luminescence_times(self, n, x, y):
         # Get the gas gap width at this point
-        dg = self.config['elr_gas_gap_length'] + self.gas_gap_length(x, y)
+        dg = self.gas_gap_length(x, y)
 
         # Retrieve the closest uniform -> luminescence time converter we precomputed, then use it
         conv_i = np.argmin(np.abs(self.luminescence_converters_dgs - dg))
