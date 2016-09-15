@@ -491,8 +491,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                                           raw_data=np.fromstring(data,
                                                                  dtype="<i2"),
                                           channel=self.pmt_mappings[digitizer_id]))
-                # Count number of pulses per channel
-                event.n_pulses_per_channel[self.pmt_mappings[digitizer_id]] += 1
             elif digitizer_id not in self.ignored_channels:
                 self.log.warning("Found data from digitizer module %d, channel %d,"
                                  "which doesn't exist according to PMT mapping! Ignoring...",

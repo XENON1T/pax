@@ -87,6 +87,10 @@ class CheckBounds(plugin.TransformPlugin):
             #  Pulse bounds checking / truncation (see issue 43)
             ##
 
+            # Count pulses per channel
+            event.n_pulses_per_channel[channel] += 1
+            print(event.n_pulses_per_channel[channel])
+
             overhang = end_index - (event_length - 1)
 
             if start_index < 0 or end_index < 0 or overhang > 0:
