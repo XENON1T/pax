@@ -89,7 +89,6 @@ class CheckBounds(plugin.TransformPlugin):
 
             # Count pulses per channel
             event.n_pulses_per_channel[channel] += 1
-            print(event.n_pulses_per_channel[channel])
 
             overhang = end_index - (event_length - 1)
 
