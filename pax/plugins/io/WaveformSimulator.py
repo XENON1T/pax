@@ -264,7 +264,7 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         instruction_number = 0
         instruction = []
         for p in self.instruction_reader:
-            p['g4_id']=-1  # create fake g4_id=-1 for csv input
+            p['g4_id'] = -1  # create fake g4_id=-1 for csv input
             if p['depth'] == 'random':
                 p['z'] = 'random'
             else:
