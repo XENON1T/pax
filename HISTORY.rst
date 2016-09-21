@@ -9,7 +9,6 @@ History
 
 * MV processing support further
 
-
 ------------------
 5.6.2 (2016-09-01)
 ------------------
