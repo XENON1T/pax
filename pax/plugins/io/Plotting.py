@@ -99,6 +99,71 @@ class PlotBase(plugin.OutputPlugin):
         plt.close()
         self.skip_counter = self.config['plot_every'] - 1
 
+    def annotation_filter(self, event, nsamples):
+
+        annotation_filter_list = self.config['annotation_filter']
+        # Period needed to know how many peaks are in a single period
+        num_of_sections = self.config['num_of_sections']
+        period = nsamples // (num_of_sections * 100)
+        section_list = [[] for x in range(num_of_sections)]
+        annotation_list = []
+
+        # If we want largest peaks of a certain type we need to put them in the right section of the event
+        if 'largest' in annotation_filter_list or \
+                'largest_s1s' in annotation_filter_list or 'largest_s2s' in annotation_filter_list:
+            for peak in event.peaks:
+                x = peak.index_of_maximum * self.samples_to_us
+                counter = period
+                while counter < nsamples:
+                    if counter < x:
+                        counter += period
+                        continue
+                    else:
+                        counter -= period
+                        break
+                section_list[int(counter / period)].append(peak)
+
+        # For each section, only annotate the largest one (here defined by height)
+        if 'largest' in annotation_filter_list:
+            for section in section_list:
+                if len(section) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # Same as above but only checks s1s
+        if 'largest_s1s' in annotation_filter_list:
+            for section in section_list:
+                s1s = [p for p in section if p.type == 's1']
+                if len(s1s) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # Same again, only s2s , there must be a better way to combine these
+        if 'largest_s2s' in annotation_filter_list:
+            for section in section_list:
+                s2s = [p for p in section if p.type == 's2']
+                if len(s2s) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # If you want to annotate EVERY s1
+        if 'all_s1s' in annotation_filter_list:
+            all_s1s = [p for p in event.peaks if p.type == 's1']
+            for i in all_s1s:
+                print(i.type)
+            annotation_list.extend(all_s1s)
+        # If you want to annotate EVERY s2
+        if 'all_s2s' in annotation_filter_list:
+            all_s2s = [p for p in event.peaks if p.type == 's2']
+            annotation_list.extend(all_s2s)
+        # Always annotate the main S1 and S2 if they are there
+        if event.main_s1 is not None:
+            annotation_list.append(event.main_s1)
+        if event.main_s2 is not None:
+            annotation_list.append(event.main_s2)
+
+        if not annotation_list:
+            self.log.debug("Either filter is not set up right or no peaks at all in this event, which would be weird")
+
+        return annotation_list
+
     def plot_waveform(self, event,
                       left=0, right=None, pad=0,
                       show_peaks=False, show_legend=True, log_y_axis=False,
@@ -157,35 +222,19 @@ class PlotBase(plugin.OutputPlugin):
             # Possibly the waveform is highest outside a peak.
             max_y = max([p.height for p in event.peaks])
 
-            # Setting less_black to True in config file will make sure the annotated blobs don't become a black blob
-            less_black = self.config['less_black']
-            if less_black:
-                # Period needed to know how many peaks are in a single period
-                num_of_sections = self.config['num_of_sections']
-                period = nsamples // (num_of_sections*100)
-                section_list = [[] for x in range(num_of_sections)]
-                annotation_list = []
-                # Put all peaks in appropriate section, based on index_of_maximum
-                for peak in event.peaks:
-                    x = peak.index_of_maximum * self.samples_to_us
-                    counter = period
-                    while counter < nsamples:
-                        if counter < x:
-                            counter += period
-                            continue
-                        else:
-                            counter -= period
-                            break
-                    section_list[int(counter/period)].append(peak)
+            # Setting less_black to True in config file will make sure the annotated peaks don't become a black blob
+            annotation_filter = self.config['annotation_filter']
 
-                for section in section_list:
-                    if len(section) >= 1:
-                        biggest_peak = max(section, key=attrgetter('height'))
-                        annotation_list.append(biggest_peak)
-
+            if annotation_filter is not None:
+                annotation_list = self.annotation_filter(event, nsamples)
+                print(annotation_filter)
             for peak in event.peaks:
                 if self.config.get('hide_peak_info') or peak.type == 'lone_hit':
                     continue
+                if annotation_filter is not None:
+                    # Go to next peak if not in annotation list, otherwise annotate!
+                    if peak not in annotation_list:
+                        continue
                 textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
                 x = peak.index_of_maximum * self.samples_to_us
@@ -206,10 +255,6 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                if less_black:
-                    #Go to next peak if not the biggest in section, otherwise annotate!
-                    if peak not in annotation_list:
-                        continue
 
                 ax.annotate('%s:%0.1f' % (peak.type, peak.area),
                             xy=(x, y),
