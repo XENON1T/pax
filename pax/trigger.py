@@ -237,7 +237,7 @@ class Trigger(object):
           metadata: more data. Just convenience so you can pass numpy array as data.
         """
         if isinstance(data, np.ndarray):
-            data = {'data': bson.Binary(data.tostring())}
+            data = {'data': data.tolist()}
         data['data_type'] = data_type
         if metadata is not None:
             data.update(metadata)
