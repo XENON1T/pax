@@ -226,13 +226,13 @@ class TestDeadTimeCalculation(unittest.TestCase):
         captured_data = []
 
         def hacked_save_monitor_data(data_type, data, metadata=None):
-            # print("Captured data: ", data)
-            nonlocal captured_data
-            captured_data.append((data_type, data, metadata))
+            # Store captured data in a function attribute, would have liked to use a variable in outer scope,
+            # but we don't have nonlocal in py2...
+            hacked_save_monitor_data.captured_data.append((data_type, data, metadata))
+        hacked_save_monitor_data.captured_data = []
 
         trig.save_monitor_data = hacked_save_monitor_data
         tp = DeadTimeTally(trig, dict(dark_rate_save_interval=1*units.s))
-        tp.log.setLevel(logging.DEBUG)
 
         n_on = len(on_times)
         n_off = len(off_times)
@@ -258,6 +258,7 @@ class TestDeadTimeCalculation(unittest.TestCase):
                                  (pulses['time'] < batch_start + batch_duration)]
             tp.process(data)
 
+        captured_data = hacked_save_monitor_data.captured_data
         if return_type == 'full':
             return captured_data
 
