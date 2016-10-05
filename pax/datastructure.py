@@ -617,6 +617,9 @@ class Event(StrictModel):
     #: Number of pulses per channel
     n_pulses_per_channel = np.array([], dtype=np.int16)
 
+    #: Total number of pulses
+    n_pulses = 0
+
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int16)
 
