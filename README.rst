@@ -1,4 +1,4 @@
-.. image:: docs/pax_logo_bw_cropped.png
+s.. image:: docs/pax_logo_bw_cropped.png
 
 The Processor for Analyzing XENON (PAX) is used for doing digital signal
 processing and other data processing on the XENON100/XENON1T raw data.
@@ -86,7 +86,7 @@ for your platform using the `conda` tool as follows. Make sure to replace <envir
 
 If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
 
-Note the command to install an old version of conda above: if you use the latest conda (as of October 2016) everything will appear to install, but you'll end up with a version of python where you can't import ROOT (so pax won't work). For more information, see https://github.com/remenska/root-conda-recipes/issues/6.
+Note the command to install an old version of conda above: if you use the latest conda (as of October 2016) everything will appear to install, but you'll end up with a version of python where you can't import ROOT (so pax won't work if you need ROOT support). For more information, see https://github.com/remenska/root-conda-recipes/issues/6.
 
 Whenever you want to use `pax`, you have to run the following command to set it up your environment (containing all the dependencies)::
   
