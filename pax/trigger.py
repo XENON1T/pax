@@ -21,7 +21,6 @@ from pax.exceptions import InvalidConfigurationError
 pulse_dtype = np.dtype([('time', np.int64),
                         ('pmt', np.int32),
                         ('area', np.float64),
-                        ('_detector', np.int16),   # Temporary marker for detector... no meaning outside
                         ])
 
 
@@ -29,18 +28,16 @@ class TriggerData(object):
     """Carries all data from one "batch" between trigger modules"""
 
     def __init__(self, **kwargs):
-        # Deleted in early stages
-        self.pulses = None              # Pulses array, but not yet sorted by detector and time
-        self.input_data = dict()        # times, modules, channels, etc. raw from input
-
-        # Kept until the end
+        self.pulses = None                                          # Pulses array, see pulse_dtype above
         self.last_data = False                                      # Is this the last batch of data?
         self.last_time_searched = 0                                 # Last time searched while querying this batch
-        self.pulses_per_detector = dict()                           # Dict mapping detector name -> pulses
         self.signals = np.array([], dtype=TriggerSignal.get_dtype())
         self.event_ranges = np.zeros((0, 2), dtype=np.int64)        # Event (left, right) time ranges (in ns)
         self.signals_by_event = []                                  # Signals to save with each event
         self.batch_info_doc = dict()                                # Status info about batch, saved by monitor
+
+        # Deleted in early stages
+        self.input_data = dict()        # times, modules, channels, etc. raw from input
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -248,7 +245,7 @@ class Trigger(object):
           data: either
             a dictionary with things bson.BSON.encode() will not crash on, or
             a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
-          metadata: more data. Just convenience so you can pass numpy array as data.
+          metadata: more data. Just convenience so you can pass numpy array as data, then something else as well.
         """
         if isinstance(data, np.ndarray):
             data = {'data': bson.Binary(data.tostring())}
