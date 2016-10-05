@@ -115,6 +115,7 @@ class Trigger(object):
 
         self.end_of_run_info = dict(pulses_read=0,
                                     signals_found=0,
+                                    trigger_monitor_data_format_version=2,
                                     events_built=0,
                                     start_timestamp=time.time(),
                                     pax_version=pax.__version__,
@@ -233,7 +234,7 @@ class Trigger(object):
           data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).
           data: either
             a dictionary with things bson.BSON.encode() will not crash on, or
-            a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
+            a numpy array. It will be converted to a list, to ensure it is queryable by the DAQ website.
           metadata: more data. Just convenience so you can pass numpy array as data.
         """
         if isinstance(data, np.ndarray):
