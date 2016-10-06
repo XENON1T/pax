@@ -157,6 +157,10 @@ def main():
         # Apply command-line override settings for trigger
         trigger_settings_override = {'trigger_monitor_file_path': os.path.join(data_info_entry['location'],
                                                                                'trigger_monitor_data.zip')}
+        if config_dict.get('save_acquisition_monitor_pulses', True):
+            trigger_settings_override['acquisition_monitor_file_path'] = os.path.join(
+                data_info_entry['location'], 'acquisition_monitor_data.pickles')
+
         for argname, factor in (('left_extension', units.us),
                                 ('right_extension', units.us),
                                 ('signal_separation', units.us),
