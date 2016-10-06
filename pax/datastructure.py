@@ -614,6 +614,12 @@ class Event(StrictModel):
     #: referring to the index of a pulse in this field.
     pulses = ListField(Pulse)
 
+    #: Number of pulses per channel
+    n_pulses_per_channel = np.array([], dtype=np.int16)
+
+    #: Total number of pulses
+    n_pulses = 0
+
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int16)
 
@@ -655,6 +661,7 @@ class Event(StrictModel):
             raise ValueError("Nonpositive event duration %s!" % self.duration())
 
         # Initialize numpy arrays -- need to have n_channels and self.length
+        self.n_pulses_per_channel = np.zeros(n_channels, dtype=np.int16)
         self.noise_pulses_in = np.zeros(n_channels, dtype=np.int16)
         self.n_hits_rejected = np.zeros(n_channels, dtype=np.int16)
         self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
