@@ -76,7 +76,8 @@ class MongoBase:
         # In split collections mode, we use the subcollection methods (see below) to get the input collections
 
         if self.split_hosts:
-            self.hosts = ['eb0', 'eb1', 'eb2']   # TODO: don't hardcode
+            self.hosts = [parse_passwordless_uri(x)[0]
+                          for x in set(self.run_doc['reader']['ini']['mongo']['hosts'].values())]
         else:
             self.hosts = [parse_passwordless_uri(self.input_info['location'])[0]]
 
