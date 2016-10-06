@@ -2,11 +2,13 @@ from __future__ import division
 import unittest
 
 import numpy as np
+import six
 
 from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
 from pax.trigger_plugins.FindSignals import signal_finder
 from pax.trigger_plugins.SaveSignals import group_signals
+from pax.trigger_plugins.DeadTimeTally import DeadTimeTally
 from pax.exceptions import TriggerGroupSignals
 import tempfile
 
@@ -203,10 +205,101 @@ class TestTriggerIntegration(unittest.TestCase):
 
         print("Trigger finished. Event ranges received: %s" % event_ranges)
 
+        self.assertEqual(len(should_get), len(event_ranges))
         for i in range(len(should_get)):
             self.assertEqual(should_get[i], event_ranges[i])
 
         self.assertEqual(event_ranges, should_get)
+
+
+class TestDeadTimeCalculation(unittest.TestCase):
+
+    def run_test(self, on_times, off_times, return_type='summed',
+                 batch_duration=np.pi * units.s,
+                 end_of_run_offset=1 * units.s):
+        pax_config = configuration.load_configuration('XENON1T')
+        trig = trigger.Trigger(pax_config)
+
+        # The results of the dead time tally would normally only be written to the db, not stored in the trigger
+        # data datastructure.
+        # So... we monkey-patch the trigger to intercept the call to save_monitor_data
+        captured_data = []
+
+        def hacked_save_monitor_data(data_type, data, metadata=None):
+            # Store captured data in a function attribute, would have liked to use a variable in outer scope,
+            # but we don't have nonlocal in py2...
+            hacked_save_monitor_data.captured_data.append((data_type, data, metadata))
+        hacked_save_monitor_data.captured_data = []
+
+        trig.save_monitor_data = hacked_save_monitor_data
+        tp = DeadTimeTally(trig, dict(dark_rate_save_interval=1*units.s))
+
+        n_on = len(on_times)
+        n_off = len(off_times)
+        pulses = np.zeros(n_on + n_off, dtype=trigger.pulse_dtype)
+        pulses['pmt'][:n_on] = pax_config['DEFAULT']['channels_in_detector']['busy_on'][0]
+        pulses['time'][:n_on] = on_times
+        pulses['pmt'][n_on:] = pax_config['DEFAULT']['channels_in_detector']['busy_off'][0]
+        pulses['time'][n_on:] = off_times
+        pulses.sort(order='time')
+
+        end_of_run = max(pulses['time']) + end_of_run_offset
+
+        # Feed the data in in batches
+        batch_starts = np.arange(0, end_of_run, batch_duration)
+        for batch_i, batch_start in enumerate(batch_starts):
+            data = trigger.TriggerData()
+            if batch_i == len(batch_starts) - 1:
+                data.last_data = True
+                data.last_time_searched = end_of_run
+            else:
+                data.last_time_searched = batch_start + end_of_run_offset
+            data.pulses = pulses[(pulses['time'] >= batch_start) &
+                                 (pulses['time'] < batch_start + batch_duration)]
+            tp.process(data)
+
+        captured_data = hacked_save_monitor_data.captured_data
+        if return_type == 'full':
+            return captured_data
+
+        self.assertEqual(len(captured_data), np.ceil(data.last_time_searched / units.s))
+
+        # Sum the batch data
+        dead_time = 0
+        for x in captured_data:
+            dead_time += x[1]['busy']
+        return dead_time
+
+    def test_dead_time_calculation(self):
+        # nonlocal in dirty monkeypatch below not supported in py2
+        if six.PY2:
+            return
+
+        # Very basic test, some more checks
+        captured_data = self.run_test([0], [10], return_type='full')
+        self.assertEqual(len(captured_data), 2)
+        self.assertEqual(captured_data[0][0], 'dead_time_info')
+        self.assertEqual(captured_data[0][1]['time'], 1 * units.s)
+        self.assertEqual(captured_data[0][1]['busy'], 10)
+        self.assertEqual(captured_data[1][1]['busy'], 0)
+
+        # Test summing data
+        self.assertEqual(self.run_test([0], [10]), 10)
+
+        # Test abrupt end
+        self.assertEqual(self.run_test([0], [10], end_of_run_offset=0.2 * units.s), 10)
+
+        # Test two intervals
+        self.assertEqual(self.run_test([0, 100], [10, 110]), 20)
+
+        # Test two intervals, spread over two batches
+        self.assertEqual(self.run_test([0, units.s], [10, units.s + 10]), 20)
+
+        # Test an interval straddling a batch
+        self.assertEqual(self.run_test([units.s - 100], [units.s + 100]), 200)
+
+        # Test a very large interval
+        self.assertEqual(self.run_test([0], [13.5 * units.s]), 13.5 * units.s)
 
 
 if __name__ == '__main__':

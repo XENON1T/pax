@@ -21,7 +21,6 @@ from pax.exceptions import InvalidConfigurationError
 pulse_dtype = np.dtype([('time', np.int64),
                         ('pmt', np.int32),
                         ('area', np.float64),
-                        ('_detector', np.int16),   # Temporary marker for detector... no meaning outside
                         ])
 
 
@@ -29,18 +28,16 @@ class TriggerData(object):
     """Carries all data from one "batch" between trigger modules"""
 
     def __init__(self, **kwargs):
-        # Deleted in early stages
-        self.pulses = None              # Pulses array, but not yet sorted by detector and time
-        self.input_data = dict()        # times, modules, channels, etc. raw from input
-
-        # Kept until the end
+        self.pulses = None                                          # Pulses array, see pulse_dtype above
         self.last_data = False                                      # Is this the last batch of data?
         self.last_time_searched = 0                                 # Last time searched while querying this batch
-        self.pulses_per_detector = dict()                           # Dict mapping detector name -> pulses
         self.signals = np.array([], dtype=TriggerSignal.get_dtype())
-        self.event_ranges = np.zeros((0, 2), dtype=np.int64)        # Event (left, right) ranges
+        self.event_ranges = np.zeros((0, 2), dtype=np.int64)        # Event (left, right) time ranges (in ns)
         self.signals_by_event = []                                  # Signals to save with each event
         self.batch_info_doc = dict()                                # Status info about batch, saved by monitor
+
+        # Deleted in early stages
+        self.input_data = dict()        # times, modules, channels, etc. raw from input
 
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -113,7 +110,8 @@ class Trigger(object):
             self.log.info("Not trigger monitor file path provided: won't write trigger monitor data to Zipfile")
             self.trigger_monitor_file = None
 
-        self.end_of_run_info = dict(pulses_read=0,
+        self.end_of_run_info = defaultdict(float)
+        self.end_of_run_info.update(pulses_read=0,
                                     signals_found=0,
                                     trigger_monitor_data_format_version=2,
                                     events_built=0,
@@ -166,6 +164,8 @@ class Trigger(object):
             # Initialize the plugin with the config
             self.plugins.append(tm_classes[tp_name](trigger=self, config=conf))
 
+        self.previous_last_time_searched = 0
+
     def run(self, last_time_searched, start_times=tuple(), channels=None, modules=None, areas=None, last_data=False):
         """Run on the specified data, yields ((start time, stop time), signals in event, event type identifier)
         """
@@ -180,14 +180,28 @@ class Trigger(object):
             len(data.event_ranges), len(data.signals), len(start_times)))
 
         # Update and save the batch info doc
+        pulses_read = len(start_times)
+        signals_found = len(data.signals)
+        events_built = len(data.event_ranges)
+        if events_built:
+            total_event_duration = np.sum(data.event_ranges[:, 1] - data.event_ranges[:, 0])
+        else:
+            total_event_duration = 0
         data.batch_info_doc.update(dict(last_time_searched=data.last_time_searched,
+                                        timestamp=time.time(),
+                                        pulses_read=pulses_read,
+                                        signals_found=signals_found,
+                                        events_built=events_built,
+                                        total_event_duration=total_event_duration,
+                                        batch_duration=last_time_searched - self.previous_last_time_searched,
                                         is_last_data=data.last_data))
         self.save_monitor_data('batch_info', data.batch_info_doc)
 
         # Update the end of run info
-        self.end_of_run_info['pulses_read'] += len(start_times)
-        self.end_of_run_info['signals_found'] += len(data.signals)
-        self.end_of_run_info['events_built'] += len(data.event_ranges)
+        self.end_of_run_info['pulses_read'] += pulses_read
+        self.end_of_run_info['signals_found'] += signals_found
+        self.end_of_run_info['events_built'] += events_built
+        self.end_of_run_info['total_event_duration'] += total_event_duration
 
         # Store any documents in the monitor cache to disk / database
         # We don't want to do break the trigger logic every time some plugin calls save_monitor_data, so this happens
@@ -234,8 +248,13 @@ class Trigger(object):
           data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).
           data: either
             a dictionary with things bson.BSON.encode() will not crash on, or
+<<<<<<< HEAD
             a numpy array. It will be converted to a list, to ensure it is queryable by the DAQ website.
           metadata: more data. Just convenience so you can pass numpy array as data.
+=======
+            a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
+          metadata: more data. Just convenience so you can pass numpy array as data, then something else as well.
+>>>>>>> refs/remotes/origin/master
         """
         if isinstance(data, np.ndarray):
             data = {'data': data.tolist()}

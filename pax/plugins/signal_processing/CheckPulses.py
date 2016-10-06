@@ -57,7 +57,7 @@ class ConcatenateAdjacentPulses(plugin.TransformPlugin):
         return event
 
 
-class CheckBounds(plugin.TransformPlugin):
+class CheckBoundsAndCount(plugin.TransformPlugin):
     """Check if pulses extend beyond event bounds
     If so, truncate them or raise exception, depending on config
     """
@@ -86,7 +86,6 @@ class CheckBounds(plugin.TransformPlugin):
             ##
             #  Pulse bounds checking / truncation (see issue 43)
             ##
-
             overhang = end_index - (event_length - 1)
 
             if start_index < 0 or end_index < 0 or overhang > 0:
@@ -132,4 +131,13 @@ class CheckBounds(plugin.TransformPlugin):
         # Remove the to-be-ignored-pulses
         event.pulses = [p for p_i, p in enumerate(event.pulses) if p_i not in pulses_to_ignore]
 
+        # Count the number of pulses per channel. Must be done at the end, since pulses can be ignored (see above)
+        for p in event.pulses:
+            event.n_pulses_per_channel[p.channel] += 1
+        event.n_pulses = event.n_pulses_per_channel.sum()
+
         return event
+
+
+# Alias for old configs
+CheckBounds = CheckBoundsAndCount
