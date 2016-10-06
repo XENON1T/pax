@@ -33,6 +33,7 @@ class DeadTimeTally(TriggerPlugin):
 
         self.log.info("Dead time tally info: %s" % str(self.systems))
         self.log.info("Special channels: %s" % str(self.special_channels))
+        self.next_save_time = self.config['dark_rate_save_interval']
 
     def save_monitor_data(self):
         # Save the dead time in this interval
@@ -51,16 +52,15 @@ class DeadTimeTally(TriggerPlugin):
         self.trigger.save_monitor_data('dead_time_info', dead_times)
 
     def process(self, data):
-        self.next_save_time = self.config['dark_rate_save_interval']
         self.save_interval = self.config['dark_rate_save_interval']
         special_pulses = data.pulses[np.in1d(data.pulses['pmt'], list(self.special_channels.keys()))]
+        special_pulses.sort(order='time')
         self.log.info("Found %d signals in on/off acquisition monitor channels" % len(special_pulses))
 
         invalid_state_message_to = self.log.warning
-
         for p in special_pulses:
 
-            while p['time'] > self.next_save_time:
+            while p['time'] >= self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
 
@@ -92,6 +92,7 @@ class DeadTimeTally(TriggerPlugin):
             # Save the dead time info for the final part of the run
             # If there is no dead time anywhere in the run, this is actually the only time
             # we store information!
-            while data.last_time_searched > self.next_save_time:
+            while data.last_time_searched >= self.next_save_time:
                 self.save_monitor_data()
                 self.next_save_time += self.save_interval
+            self.save_monitor_data()
