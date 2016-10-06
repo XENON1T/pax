@@ -132,6 +132,10 @@ class CheckBoundsAndCount(plugin.TransformPlugin):
         event.pulses = [p for p_i, p in enumerate(event.pulses) if p_i not in pulses_to_ignore]
 
         # Count the number of pulses per channel. Must be done at the end, since pulses can be ignored (see above)
+        # Since we now use pickle as a raw data format, the events are no longer init'ed when they are loaded
+        # from raw data. That means this field never gets the right length set (in datastructure.py it is inited as
+        # an empty array) for data created with an old version of pax. So, let's init it ourselves...
+        event.n_pulses_per_channel = np.zeros(self.config['n_channels'], np.int16)
         for p in event.pulses:
             event.n_pulses_per_channel[p.channel] += 1
         event.n_pulses = event.n_pulses_per_channel.sum()
