@@ -248,13 +248,8 @@ class Trigger(object):
           data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).
           data: either
             a dictionary with things bson.BSON.encode() will not crash on, or
-<<<<<<< HEAD
             a numpy array. It will be converted to a list, to ensure it is queryable by the DAQ website.
-          metadata: more data. Just convenience so you can pass numpy array as data.
-=======
-            a numpy array. I'll convert it to bytes on the fly because I am just a nice guy.
           metadata: more data. Just convenience so you can pass numpy array as data, then something else as well.
->>>>>>> refs/remotes/origin/master
         """
         if isinstance(data, np.ndarray):
             data = {'data': data.tolist()}
