@@ -10,7 +10,7 @@ class SaveSignals(TriggerPlugin):
         self.save_mode = self.config.get('save_signals')
         self.ts_bins = self.config.get('trigger_signals_histogram_bins',
                                        (np.unique(np.logspace(0, 7, 100).astype(np.int)), np.logspace(0, 6, 100)))
-        self.end_of_run_info['trigger_signals_histogram_bins'] = self.ts_bins
+        self.end_of_run_info['trigger_signals_histogram_bins'] = self.ts_bins.tolist()
 
     def process(self, data):
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
