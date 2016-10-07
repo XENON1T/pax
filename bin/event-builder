@@ -154,12 +154,15 @@ def main():
             mongo_settings_override[argname] = argval
         config_dict = combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
 
+        # Acquisition monitor filename is a mongo db option...
+        if config_dict.get('save_acquisition_monitor_pulses', True):
+            config_dict['MongoDB']['acquisition_monitor_file_path'] = os.path.join(
+                data_info_entry['location'], 'acquisition_monitor_data.pickles')
+
         # Apply command-line override settings for trigger
+        # Trigger monitor filename is a trigger option...
         trigger_settings_override = {'trigger_monitor_file_path': os.path.join(data_info_entry['location'],
                                                                                'trigger_monitor_data.zip')}
-        if config_dict.get('save_acquisition_monitor_pulses', True):
-            trigger_settings_override['acquisition_monitor_file_path'] = os.path.join(
-                data_info_entry['location'], 'acquisition_monitor_data.pickles')
 
         for argname, factor in (('left_extension', units.us),
                                 ('right_extension', units.us),
