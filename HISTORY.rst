@@ -4,6 +4,18 @@ History
 -------
 
 ------------------
+5.7.0 (2016-10-07)
+------------------
+* Eventbuilder improvements
+ * Trigger base logic improvements (#407, 418)
+ * do_not_trigger option (#419)
+ * Fix for online dead time calculation (#416)
+ * Trigger monitor improvements (#412, #424, #429)
+ * Save acquisition monitor pulses (#414)
+* pulses_per_channel and n_pulses attributes added to Event class (#425, #422)
+* Fax saves GEANT4 id to ROOT file, more noise options (#426)
+
+------------------
 5.6.5 (2016-09-21)
 ------------------
 
