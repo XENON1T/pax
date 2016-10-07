@@ -533,7 +533,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
             # Get the acquisition monitor module from the pmts dictionary in the config
             # It's a bit bad we've hardcoded 'sum_wv' as detector name here...
             some_ch_from_aqm = self.config['channels_in_detector']['sum_wv'][0]
-            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['module']
+            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['digitizer']['module']
             self.log.info("Acquisition monitor (module %d) pulses will be saved to %s" % (
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
