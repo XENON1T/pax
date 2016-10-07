@@ -87,6 +87,16 @@ class MongoBase:
                                        host=host,
                                        uri=self.input_info['location'],
                                        w=0)[self.input_info['database']] for host in self.hosts]
+
+        # Get the database in which the acquisition monitor data resides.
+        if not self.split_hosts:
+            # If we haven't split hosts, just take the one host we have.
+            self.aqm_db = self.dbs[0]
+        else:
+            aqm_host = self.config.get('acquisition_monitor_host', 'eb0')
+            db_i = self.hosts.index(aqm_host)
+            self.aqm_db = self.dbs[db_i]
+
         if not self.split_collections:
             self.input_collections = [db.get_collection(self.input_info['collection']) for db in self.dbs]
 
@@ -525,6 +535,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
+        if not self.config['delete_data']:
+            self.log.info("Will NOT rescue acquisition monitor pulses, need delete_data enabled for this")
+            return
         aqm_file_path = self.config.get('acquisition_monitor_file_path')
         if aqm_file_path is None:
             self.log.info("Will NOT rescue acquisition monitor pulses!")
@@ -566,9 +579,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         return event_proxy
 
     def shutdown(self):
-        if self.aqm_output_handle is not None:
-            self.aqm_output_handle.close()
-
         if self.config['delete_data']:
 
             self.log.info("Dropping all remaining collections from this run")
@@ -586,6 +596,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
             self.runs_collection.update_one({'_id': self.run_doc['_id']},
                                             {'$set': {'data': [d for d in self.run_doc['data']
                                                                if d['type'] != 'untriggered']}})
+
+        if self.aqm_output_handle is not None:
+            self.aqm_output_handle.close()
 
     def rescue_acquisition_monitor_pulses(self, collection, query=None):
         """Saves all acquisition monitor pulses from collection the acquisition monitor data file.
@@ -622,7 +635,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def drop_collection_named(self, db, collection_name):
         """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
-        self.rescue_acquisition_monitor_pulses(db[collection_name])
+        if db is self.aqm_db:
+            self.rescue_acquisition_monitor_pulses(db[collection_name])
         db.drop_collection(collection_name)
 
 
