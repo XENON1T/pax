@@ -6,6 +6,12 @@ from pax.exceptions import TriggerGroupSignals
 
 class SaveSignals(TriggerPlugin):
 
+    def startup(self):
+        self.save_mode = self.config.get('save_signals')
+        self.ts_bins = self.config.get('trigger_signals_histogram_bins',
+                                       (np.unique(np.logspace(0, 7, 100).astype(np.int)), np.logspace(0, 6, 100)))
+        self.end_of_run_info['trigger_signals_histogram_bins'] = self.ts_bins
+
     def process(self, data):
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
 
@@ -21,21 +27,19 @@ class SaveSignals(TriggerPlugin):
                 signals_by_event.append(data.signals[sig_idx[event_i][0]:sig_idx[event_i][1] + 1])
             data.signals_by_event = signals_by_event
 
-        save_mode = self.config.get('save_signals')
-        if save_mode:
+        if self.save_mode:
             sigs = data.signals
             if self.config.get('only_save_signals_outside_events'):
                 sigs = sigs[True ^ is_in_event]
-            if save_mode == 'full':
+            if self.save_mode == 'full':
                 sigs = sigs[sigs['n_pulses'] >= self.config['signals_save_threshold']]
                 if len(sigs):
                     self.log.debug("Storing %d signals in trigger data" % len(sigs))
                     self.trigger.save_monitor_data('trigger_signals', sigs)
-            elif save_mode == '2d_histogram':
-                hist, _, _ = np.histogram2d(np.log10(sigs['n_pulses']),
-                                            np.log10(sigs['time_rms'] + 1),
-                                            bins=(np.linspace(0, 10, 100),
-                                                  np.linspace(0, 10, 100)))
+            elif self.save_mode == '2d_histogram':
+                hist, _, _ = np.histogram2d(np.clip(sigs['n_pulses'], self.ts_bins[0][0], self.ts_bins[0][1]),
+                                            np.clip(sigs['time_rms'] + 1, self.ts_bins[1][0], self.ts_bins[1][1]),
+                                            bins=self.ts_bins)
                 self.trigger.save_monitor_data('trigger_signals_histogram', hist)
 
 
