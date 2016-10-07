@@ -1,11 +1,11 @@
 import errno
+from collections import defaultdict
+from copy import deepcopy
+from glob import glob
 import inspect
-import time
 import logging
 import os
-from glob import glob
-from copy import deepcopy
-from collections import defaultdict
+import time
 import zipfile
 import zlib
 
@@ -184,7 +184,7 @@ class Trigger(object):
         signals_found = len(data.signals)
         events_built = len(data.event_ranges)
         if events_built:
-            total_event_duration = np.sum(data.event_ranges[:, 1] - data.event_ranges[:, 0])
+            total_event_duration = int(np.sum(data.event_ranges[:, 1] - data.event_ranges[:, 0]))
         else:
             total_event_duration = 0
         data.batch_info_doc.update(dict(last_time_searched=data.last_time_searched,
@@ -207,15 +207,20 @@ class Trigger(object):
         # We don't want to do break the trigger logic every time some plugin calls save_monitor_data, so this happens
         # only at the end of each batch
         if len(self.monitor_cache):
+            if self.trigger_monitor_file is not None:
+                for data_type, d in self.monitor_cache:
+                    try:
+                        self.trigger_monitor_file.writestr("%s=%012d" % (data_type, self.data_type_counter[data_type]),
+                                                           zlib.compress(bson.BSON.encode(d)))
+                    except bson.errors.InvalidDocument:
+                        self.log.fatal("Error converting trigger monitor document to bson: %s" % d)
+                        raise
+                    self.data_type_counter[data_type] += 1
+
             if self.trigger_monitor_collection is not None:
                 self.log.debug("Inserting %d trigger monitor documents into MongoDB" % len(self.monitor_cache))
                 result = self.trigger_monitor_collection.insert_many([d for _, d in self.monitor_cache])
                 self.log.debug("Inserted docs ids: %s" % result.inserted_ids)
-            if self.trigger_monitor_file is not None:
-                for data_type, d in self.monitor_cache:
-                    self.trigger_monitor_file.writestr("%s=%012d" % (data_type, self.data_type_counter[data_type]),
-                                                       zlib.compress(bson.BSON.encode(d)))
-                    self.data_type_counter[data_type] += 1
             self.monitor_cache = []
 
         # Yield the events to the processor
