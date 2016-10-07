@@ -1,15 +1,15 @@
 import errno
+from collections import defaultdict
+from copy import deepcopy
+from glob import glob
 import inspect
-import time
 import logging
 import os
-from glob import glob
-from copy import deepcopy
-from collections import defaultdict
+import pickle
+import time
 import zipfile
 import zlib
 
-import bson
 import numpy as np
 
 import pax          # For version number
@@ -214,7 +214,7 @@ class Trigger(object):
             if self.trigger_monitor_file is not None:
                 for data_type, d in self.monitor_cache:
                     self.trigger_monitor_file.writestr("%s=%012d" % (data_type, self.data_type_counter[data_type]),
-                                                       zlib.compress(bson.BSON.encode(d)))
+                                                       zlib.compress(pickle.dumps(d)))
                     self.data_type_counter[data_type] += 1
             self.monitor_cache = []
 
