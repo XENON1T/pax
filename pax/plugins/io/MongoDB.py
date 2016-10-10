@@ -14,6 +14,7 @@ import pytz
 import numpy as np
 import pymongo
 import snappy
+import pickle
 
 from pax.MongoDB_ClientMaker import ClientMaker, parse_passwordless_uri
 from pax.datastructure import Event, Pulse, EventProxy
@@ -76,7 +77,8 @@ class MongoBase:
         # In split collections mode, we use the subcollection methods (see below) to get the input collections
 
         if self.split_hosts:
-            self.hosts = ['eb0', 'eb1', 'eb2']   # TODO: don't hardcode
+            self.hosts = [parse_passwordless_uri(x)[0]
+                          for x in set(self.run_doc['reader']['ini']['mongo']['hosts'].values())]
         else:
             self.hosts = [parse_passwordless_uri(self.input_info['location'])[0]]
 
@@ -391,7 +393,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                         yield EventProxy(event_number=next_event_number, data=data)
                         next_event_number += 1
 
-        # Built all events for the run!
+        # We've built all the events for this run!
         # Compile the end of run info for the run doc and for display
         trigger_end_info = self.trigger.shutdown()
         trigger_end_info.update(dict(ended=True,
@@ -523,6 +525,18 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
+        aqm_file_path = self.config.get('acquisition_monitor_file_path')
+        if aqm_file_path is None:
+            self.log.info("Will NOT rescue acquisition monitor pulses!")
+            self.aqm_output_handle = None
+        else:
+            # Get the acquisition monitor module from the pmts dictionary in the config
+            # It's a bit bad we've hardcoded 'sum_wv' as detector name here...
+            some_ch_from_aqm = self.config['channels_in_detector']['sum_wv'][0]
+            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['module']
+            self.log.info("Acquisition monitor (module %d) pulses will be saved to %s" % (
+                self.aqm_module, aqm_file_path))
+            self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
@@ -535,15 +549,15 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.log.info("Seen event at subcollection %d, clearing subcollection %d" % (
                     coll_number, self.last_subcollection_not_yet_deleted))
                 for db in self.dbs:
-                    self.executor.submit(db.drop_collection,
+                    self.executor.submit(self.drop_collection_named,
+                                         db,
                                          self.subcollection_name(self.last_subcollection_not_yet_deleted))
                 self.last_subcollection_not_yet_deleted += 1
         else:
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
-                self.log.info("Seen event at %s, clearing "
-                              "all data until then." % pax_to_human_time(time_since_start))
+                self.log.info("Seen event at %s, clearing all data until then." % pax_to_human_time(time_since_start))
                 for coll in self.input_collections:
-                    self.executor.submit(delete_pulses,
+                    self.executor.submit(self.delete_pulses,
                                          coll,
                                          start_mongo_time=self._to_mt(self.last_time_deleted),
                                          stop_mongo_time=self._to_mt(time_since_start))
@@ -552,22 +566,64 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         return event_proxy
 
     def shutdown(self):
-        if not self.config['delete_data']:
+        if self.aqm_output_handle is not None:
+            self.aqm_output_handle.close()
+
+        if self.config['delete_data']:
+
+            self.log.info("Dropping all remaining collections from this run")
+
+            for db in self.dbs:
+                for coll_name in db.collection_names():
+                    if not coll_name.startswith(self.run_doc['name']):
+                        continue
+                    self.drop_collection_named(db, coll_name)
+            self.log.info("Completed.")
+
+            # Update the run doc to remove the 'untriggered' entry
+            # since we just deleted the last of the untriggered data
+            self.refresh_run_doc()
+            self.runs_collection.update_one({'_id': self.run_doc['_id']},
+                                            {'$set': {'data': [d for d in self.run_doc['data']
+                                                               if d['type'] != 'untriggered']}})
+
+    def rescue_acquisition_monitor_pulses(self, collection, query=None):
+        """Saves all acquisition monitor pulses from collection the acquisition monitor data file.
+         - collection: pymongo object (not collection name!)
+         - query: optional query inside the collection (e.g. for a specific time range).
+        The condition to select pulses from the acquistion monitor module will be added to this.
+        """
+        if self.aqm_output_handle is None:
             return
 
-        self.log.info("Dropping all remaining collections from this run")
-        for db in self.dbs:
-            for coll_name in db.collection_names():
-                if not coll_name.startswith(self.run_doc['name']):
-                    continue
-                db.drop_collection(coll_name)
-        self.log.info("Completed.")
+        if query is None:
+            query = {}
+        query['module'] = self.aqm_module
 
-        # Update the run doc to remove the 'untriggered' entry
-        self.refresh_run_doc()
-        self.runs_collection.update_one({'_id': self.run_doc['_id']},
-                                        {'$set': {'data': [d for d in self.run_doc['data']
-                                                           if d['type'] != 'untriggered']}})
+        # Count first, in case something is badly wrong and we end up saving bazillions of docs we'll at least have
+        # a fair warning...
+        n_to_rescue = collection.count(query)
+        self.log.info("Saving %d acquisition monitor pulses" % n_to_rescue)
+
+        for doc in collection.find(query):
+            self.aqm_output_handle.write(pickle.dumps(doc))
+
+        # Flush explicitly: we want to save the data even if the event builder crashes before properly closing the file
+        self.aqm_output_handle.flush()
+
+    def delete_pulses(self, collection, start_mongo_time, stop_mongo_time):
+        """Deletes all pulses in collection between start_mongo_time (inclusive) and stop_mongo_time (exclusive),
+        both in mongo time units (not pax units!).
+        """
+        query = {'time': {'$gte': start_mongo_time,
+                          '$lt': stop_mongo_time}}
+        self.rescue_acquisition_monitor_pulses(collection, query)
+        collection.delete_many(query)
+
+    def drop_collection_named(self, db, collection_name):
+        """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
+        self.rescue_acquisition_monitor_pulses(db[collection_name])
+        db.drop_collection(collection_name)
 
 
 def pax_to_human_time(num):
@@ -622,11 +678,3 @@ def get_pulses(client_maker_config, input_info, collection_name, query, host, ge
             areas = np.zeros(len(times), dtype=np.float64)
 
     return times, modules, channels, areas
-
-
-def delete_pulses(collection, start_mongo_time, stop_mongo_time):
-    """Deletes pulse between start_mongo_time (inclusive) and stop_mongo_time (exclusive), both in mongo time units.
-    """
-    query = {'time': {'$gte': start_mongo_time,
-                      '$lt': stop_mongo_time}}
-    collection.delete_many(query)
