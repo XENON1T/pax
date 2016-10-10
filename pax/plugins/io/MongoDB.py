@@ -421,6 +421,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         MongoBase.startup(self)
         self.ignored_channels = []
         self.max_pulses_per_event = self.config.get('max_pulses_per_event', float('inf'))
+        self.high_energy_prescale = self.config.get('high_energy_prescale', 0.1)
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
@@ -478,9 +479,10 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             if start_col == end_col:
                 count, mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
                 if count > self.max_pulses_per_event:
-                    self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
                     # Software "veto" the event to prevent overloading the event builder
-                    return event
+                    if np.random.rand() > self.high_energy_prescale:
+                        self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
+                        return event
             else:
                 self.log.info("Found event [%s-%s] which straddles subcollection boundary." % (
                     pax_to_human_time(t0), pax_to_human_time(t1)))
