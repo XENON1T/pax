@@ -420,6 +420,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.ignored_channels = []
+        self.max_pulses_per_event = self.config.get('max_pulses_per_event', float('inf'))
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
@@ -428,11 +429,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
     def _get_cursor_between_times(self, start, stop, subcollection_number=None):
-        """Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run).
+        """Returns count, cursor over all pulses that start in [start, stop) (both pax units since start of run).
         Order of pulses is not defined.
+        count is 0 if max_pulses_per_event is float('inf'), since we don't care about it in that case.
         Does NOT deal with time ranges split between subcollections, but does deal with split hosts.
         """
         cursors = []
+        count = 0
         for host_i, host in enumerate(self.hosts):
             if subcollection_number is None:
                 assert not self.split_collections
@@ -440,11 +443,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             else:
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
-            cursors.append(collection.find(self.time_range_query(start, stop)))
+            query = collection.find(self.time_range_query(start, stop))
+            cursors.append(query)
+            if self.max_pulses_per_event != float('inf'):
+                count += collection.count(query)
         if len(self.hosts) == 1:
-            return cursors[0]
+            return count, cursors[0]
         else:
-            return chain(*cursors)
+            return count, chain(*cursors)
 
     def transform_event(self, event_proxy):
         # t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run
@@ -470,12 +476,17 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             start_col = self.subcollection_with_time(t0)
             end_col = self.subcollection_with_time(t1)
             if start_col == end_col:
-                mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                count, mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                if count > self.max_pulses_per_event:
+                    self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
+                    # Software "veto" the event to prevent overloading the event builder
+                    return event
             else:
                 self.log.info("Found event [%s-%s] which straddles subcollection boundary." % (
                     pax_to_human_time(t0), pax_to_human_time(t1)))
-                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col),
-                                       self._get_cursor_between_times(t0, t1, end_col))
+                # Ignore the software-HEV in this case
+                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col)[1],
+                                       self._get_cursor_between_times(t0, t1, end_col)[1])
         else:
             mongo_iterator = self._get_cursor_between_times(t0, t1)
 
