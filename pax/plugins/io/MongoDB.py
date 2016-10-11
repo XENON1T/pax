@@ -482,6 +482,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                     # Software "veto" the event to prevent overloading the event builder
                     if np.random.rand() > self.high_energy_prescale:
                         self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
+                        event.n_pulses = count
                         return event
             else:
                 self.log.info("Found event [%s-%s] which straddles subcollection boundary." % (
