@@ -390,8 +390,12 @@ def load_event_class_code(class_code, other_process_compiles=False):
     class_filename = 'pax_event_class-%s.cpp' % checksum
     libfile = get_libname(class_filename)
     lockfile = get_libname(class_filename) + '.lock'
+    we_made_the_lockfile = False
 
-    if other_process_compiles:
+    if os.path.exists(libfile) and not os.path.exists(lockfile):
+        # The library has already been compiled, load_event_class will just load it.
+        pass
+    elif other_process_compiles:
         while not os.path.exists(libfile) or os.path.exists(lockfile):
             log.debug("Waiting for another process to compile the pax event class")
             time.sleep(5)
@@ -401,6 +405,7 @@ def load_event_class_code(class_code, other_process_compiles=False):
                                "Either a previous compilation crashed, or you are trying to run several paxes "
                                "in parallel from the same directory (which won't work). Remove the file manually "
                                "and try again." % lockfile)
+        we_made_the_lockfile = True
         with open(lockfile, mode='w') as lf:
             lf.write("Hi fellas! I just need a minute to compile this pax ROOT class business. "
                      "Could you just hang on a minute? I started at %s." % (
@@ -408,15 +413,16 @@ def load_event_class_code(class_code, other_process_compiles=False):
         with open(class_filename, mode='w') as outfile:
             outfile.write(class_code)
 
-    # Compile the class (or decide we don't have to)
+    # Compile / load the class
     load_event_class(os.path.abspath(class_filename))
 
-    if not other_process_compiles:
+    if we_made_the_lockfile:
         os.remove(lockfile)
 
 
 def load_event_class(filename, force_recompile=False):
     """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
+    Or, if the library hass been compiled before, load it.
     """
     # Load , or if necessary compile, the file in ROOT
     # Unfortunately this must happen in the current directory.
