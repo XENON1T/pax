@@ -433,6 +433,9 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         self.max_pulses_per_event = self.config.get('max_pulses_per_event', float('inf'))
         self.high_energy_prescale = self.config.get('high_energy_prescale', 0.1)
 
+        self.log.info("Software HEV settings: %s max pulses per event, %s prescale" % (self.max_pulses_per_event,
+                                                                                       self.high_energy_prescale))
+
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
         self.pmts = self.config['pmts']
@@ -454,8 +457,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             else:
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
-            query = collection.find(self.time_range_query(start, stop))
-            cursors.append(query)
+            query = self.time_range_query(start, stop)
+            cursors.append(collection.find(query))
             if self.max_pulses_per_event != float('inf'):
                 count += collection.count(query)
         if len(self.hosts) == 1:
