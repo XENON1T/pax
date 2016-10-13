@@ -147,7 +147,7 @@ def main():
         for argname in ('detector', 'secret_mode',
                         'host', 'port', 'user', 'password',
                         'batch_window', 'delete_data', 'edge_safety_margin',
-                        'max_query_workers', 'skip_ahead', 'stop_after_sec', 'start_from_sec'):
+                        'max_query_workers', 'skip_ahead', 'stop_after_sec', 'start_after_sec'):
             argval = getattr(args, argname)
             if argval is None or argval == '':
                 continue

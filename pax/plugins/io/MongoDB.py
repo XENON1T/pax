@@ -186,9 +186,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                        trigger_monitor_collection=trig_mon_coll)
 
         # For starting event building in the middle of a run:
-        self.initial_start_time = self.config.get('start_after_sec', 0)
+        self.initial_start_time = self.config.get('start_after_sec', 0) * units.s
         if self.initial_start_time:
             self.latest_subcollection = self.initial_start_time // self.batch_window
+            self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time, self.latest_subcollection))
 
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
@@ -254,7 +255,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 if not self.latest_subcollection == 0:
                     self.log.warning("Latest subcollection %d seems empty now, but wasn't before... Race condition/edge"
                                      " case in mongodb, bug in clearing code, or something else weird? Investigate if "
-                                     "this occurs often!!")
+                                     "this occurs often!!" % self.latest_subcollection)
                 last_pulse_time = self.latest_subcollection * self.batch_window
             else:
                 # Apparently the DAQ has not taken any pulses yet?
@@ -280,6 +281,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         self.refresh_run_info()
         # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
         last_time_searched = self.initial_start_time
+        self.log.info("self.initial_start_time: %s", pax_to_human_time(self.initial_start_time))
         next_event_number = 0
         more_data_coming = True
 
