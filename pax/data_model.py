@@ -30,6 +30,7 @@ class Model(object):
             # Speed is critical! Forget about any syntax sugar, just set the attributes from kwargs
             for k, v in kwargs.items():
                 setattr(self, k, v)
+            return
 
         # Initialize the collection fields to empty lists
         # object.__setattr__ is needed to bypass type checking in StrictModel
