@@ -514,12 +514,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         else:
             mongo_iterator = self._get_cursor_between_times(t0, t1)
 
+        data_is_compressed = self.input_info['compressed']
         for i, pulse_doc in enumerate(mongo_iterator):
             digitizer_id = (pulse_doc['module'], pulse_doc['channel'])
-            if digitizer_id in self.pmt_mappings:
+            pmt = self.pmt_mappings.get(digitizer_id)
+            if pmt is not None:
                 # Fetch the raw data
                 data = pulse_doc['data']
-                if self.input_info['compressed']:
+                if data_is_compressed:
                     data = snappy.decompress(data)
 
                 time_within_event = self._from_mt(pulse_doc['time']) - t0  # ns
@@ -527,7 +529,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 event.pulses.append(Pulse(left=self._to_mt(time_within_event),
                                           raw_data=np.fromstring(data,
                                                                  dtype="<i2"),
-                                          channel=self.pmt_mappings[digitizer_id]))
+                                          channel=pmt,
+                                          do_it_fast=True))
             elif digitizer_id not in self.ignored_channels:
                 self.log.warning("Found data from digitizer module %d, channel %d,"
                                  "which doesn't exist according to PMT mapping! Ignoring...",
