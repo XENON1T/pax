@@ -8,6 +8,7 @@ import shutil
 from operator import itemgetter
 
 from bson import json_util
+import snappy
 
 from six.moves import input
 from pax import utils, plugin
@@ -314,7 +315,10 @@ class ReadZippedDecoder(plugin.TransformPlugin):
     do_input_check = False
 
     def transform_event(self, event_proxy):
-        data = zlib.decompress(event_proxy.data)
+        if self.config.get('compression_format') == 'snappy':
+            data = snappy.decompress(event_proxy.data)
+        else:
+            data = zlib.decompress(event_proxy.data)
         return self.decode_event(data)
 
     def decode_event(self, event):
@@ -333,7 +337,10 @@ class WriteZippedEncoder(plugin.TransformPlugin):
     def transform_event(self, event):
         event_number = event.event_number
         data = self.encode_event(event)
-        data = zlib.compress(data, self.compresslevel)
+        if self.config.get('compression_format') == 'snappy':
+            data = snappy.compress(data)
+        else:
+            data = zlib.compress(data, self.compresslevel)
         # Add start and stop time to the data, for use in MongoDBClearUntriggered
         return EventProxy(data=dict(blob=data,
                                     start_time=event.start_time,
