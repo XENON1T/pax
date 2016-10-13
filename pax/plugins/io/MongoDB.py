@@ -87,6 +87,16 @@ class MongoBase:
                                        host=host,
                                        uri=self.input_info['location'],
                                        w=0)[self.input_info['database']] for host in self.hosts]
+
+        # Get the database in which the acquisition monitor data resides.
+        if not self.split_hosts:
+            # If we haven't split hosts, just take the one host we have.
+            self.aqm_db = self.dbs[0]
+        else:
+            aqm_host = self.config.get('acquisition_monitor_host', 'eb0')
+            db_i = self.hosts.index(aqm_host)
+            self.aqm_db = self.dbs[db_i]
+
         if not self.split_collections:
             self.input_collections = [db.get_collection(self.input_info['collection']) for db in self.dbs]
 
@@ -420,6 +430,11 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.ignored_channels = []
+        self.max_pulses_per_event = self.config.get('max_pulses_per_event', float('inf'))
+        self.high_energy_prescale = self.config.get('high_energy_prescale', 0.1)
+
+        self.log.info("Software HEV settings: %s max pulses per event, %s prescale" % (self.max_pulses_per_event,
+                                                                                       self.high_energy_prescale))
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
@@ -428,11 +443,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
     def _get_cursor_between_times(self, start, stop, subcollection_number=None):
-        """Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run).
+        """Returns count, cursor over all pulses that start in [start, stop) (both pax units since start of run).
         Order of pulses is not defined.
+        count is 0 if max_pulses_per_event is float('inf'), since we don't care about it in that case.
         Does NOT deal with time ranges split between subcollections, but does deal with split hosts.
         """
         cursors = []
+        count = 0
         for host_i, host in enumerate(self.hosts):
             if subcollection_number is None:
                 assert not self.split_collections
@@ -440,11 +457,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             else:
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
-            cursors.append(collection.find(self.time_range_query(start, stop)))
+            query = self.time_range_query(start, stop)
+            cursors.append(collection.find(query))
+            if self.max_pulses_per_event != float('inf'):
+                count += collection.count(query)
         if len(self.hosts) == 1:
-            return cursors[0]
+            return count, cursors[0]
         else:
-            return chain(*cursors)
+            return count, chain(*cursors)
 
     def transform_event(self, event_proxy):
         # t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run
@@ -470,12 +490,19 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             start_col = self.subcollection_with_time(t0)
             end_col = self.subcollection_with_time(t1)
             if start_col == end_col:
-                mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                count, mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                if count > self.max_pulses_per_event:
+                    # Software "veto" the event to prevent overloading the event builder
+                    if np.random.rand() > self.high_energy_prescale:
+                        self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
+                        event.n_pulses = int(count)
+                        return event
             else:
                 self.log.info("Found event [%s-%s] which straddles subcollection boundary." % (
                     pax_to_human_time(t0), pax_to_human_time(t1)))
-                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col),
-                                       self._get_cursor_between_times(t0, t1, end_col))
+                # Ignore the software-HEV in this case
+                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col)[1],
+                                       self._get_cursor_between_times(t0, t1, end_col)[1])
         else:
             mongo_iterator = self._get_cursor_between_times(t0, t1)
 
@@ -525,6 +552,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
+        if not self.config['delete_data']:
+            self.log.info("Will NOT rescue acquisition monitor pulses, need delete_data enabled for this")
+            return
         aqm_file_path = self.config.get('acquisition_monitor_file_path')
         if aqm_file_path is None:
             self.log.info("Will NOT rescue acquisition monitor pulses!")
@@ -533,7 +563,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
             # Get the acquisition monitor module from the pmts dictionary in the config
             # It's a bit bad we've hardcoded 'sum_wv' as detector name here...
             some_ch_from_aqm = self.config['channels_in_detector']['sum_wv'][0]
-            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['module']
+            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['digitizer']['module']
             self.log.info("Acquisition monitor (module %d) pulses will be saved to %s" % (
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
@@ -566,9 +596,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         return event_proxy
 
     def shutdown(self):
-        if self.aqm_output_handle is not None:
-            self.aqm_output_handle.close()
-
         if self.config['delete_data']:
 
             self.log.info("Dropping all remaining collections from this run")
@@ -586,6 +613,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
             self.runs_collection.update_one({'_id': self.run_doc['_id']},
                                             {'$set': {'data': [d for d in self.run_doc['data']
                                                                if d['type'] != 'untriggered']}})
+
+        if self.aqm_output_handle is not None:
+            self.aqm_output_handle.close()
 
     def rescue_acquisition_monitor_pulses(self, collection, query=None):
         """Saves all acquisition monitor pulses from collection the acquisition monitor data file.
@@ -622,7 +652,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def drop_collection_named(self, db, collection_name):
         """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
-        self.rescue_acquisition_monitor_pulses(db[collection_name])
+        if db is self.aqm_db:
+            self.rescue_acquisition_monitor_pulses(db[collection_name])
         db.drop_collection(collection_name)
 
 
