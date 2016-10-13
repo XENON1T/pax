@@ -41,10 +41,12 @@ def main():
     log = setup_logging(loglevel=args.log.upper())
 
     # Check for strange argument combinations
-    if args.stop_after_sec and (0 < args.stop_after_sec < float('inf')) and not args.secret_mode:
-        print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing "
+    not_searching_full_run = ((args.stop_after_sec and (0 < args.stop_after_sec < float('inf'))) or
+                              (args.start_after_sec and (0 < args.start_after_sec < float('inf'))))
+    if not_searching_full_run and not args.secret_mode:
+        print("You are about to trigger on a piece of a run, which means you are probably testing "
               "something out. However, you have NOT enabled secret mode and will be writing to official runs db!\n"
-              "Are you sure??" % args.stop_after_sec)
+              "Are you sure??")
         if input().lower() not in ('y', 'yes'):
             print("\nFine, Exiting event builder...\n")
             exit()
@@ -145,7 +147,7 @@ def main():
         for argname in ('detector', 'secret_mode',
                         'host', 'port', 'user', 'password',
                         'batch_window', 'delete_data', 'edge_safety_margin',
-                        'max_query_workers', 'skip_ahead', 'stop_after_sec'):
+                        'max_query_workers', 'skip_ahead', 'stop_after_sec', 'start_from_sec'):
             argval = getattr(args, argname)
             if argval is None or argval == '':
                 continue
@@ -390,7 +392,10 @@ def get_command_line_arguments():
                                         "Use only for dealing quickly with runs that have overflown to disk!")
     mongoreader_group.add_argument('--stop_after_sec', type=float,
                                    help="Stop the trigger after this many seconds of data have been read. "
-                                        "Won't stop in the middle of a batch. Use only for testing!")
+                                        "Will round to query batch. Use only for testing!")
+    mongoreader_group.add_argument('--start_after_sec', type=float,
+                                   help="Start the trigger after this many seconds into the run. "
+                                        "Use only for testing!")
 
     args = parser.parse_args()
     return args

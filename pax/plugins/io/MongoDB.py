@@ -185,6 +185,11 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         self.trigger = trigger.Trigger(pax_config=self.processor.config,
                                        trigger_monitor_collection=trig_mon_coll)
 
+        # For starting event building in the middle of a run:
+        self.initial_start_time = self.config.get('start_after_sec', 0)
+        if self.initial_start_time:
+            self.latest_subcollection = self.initial_start_time // self.batch_window
+
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
         """
@@ -273,7 +278,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
     def get_events(self):
         self.refresh_run_info()
-        last_time_searched = 0  # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        last_time_searched = self.initial_start_time
         next_event_number = 0
         more_data_coming = True
 
@@ -290,7 +296,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
             # What is the earliest time we still need to search?
             next_time_to_search = last_time_searched
-            if next_time_to_search != 0:
+            if next_time_to_search != self.initial_start_time:
                 next_time_to_search += self.batch_window * self.config['skip_ahead']
 
             # How many batch windows can we search now?
