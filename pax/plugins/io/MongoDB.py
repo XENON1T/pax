@@ -189,7 +189,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         self.initial_start_time = self.config.get('start_after_sec', 0) * units.s
         if self.initial_start_time:
             self.latest_subcollection = self.initial_start_time // self.batch_window
-            self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time, self.latest_subcollection))
+            self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time,
+                                                                       self.latest_subcollection))
 
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.

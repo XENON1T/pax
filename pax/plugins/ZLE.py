@@ -110,10 +110,13 @@ class SoftwareZLE(plugin.TransformPlugin):
                     if self.debug:
                         plt.axvspan(start, stop, alpha=0.3, color='green')
 
+                    # Explicit casts necessary since we've disabled type checking for pulse class
+                    # for speed in event builder.
+                    # and otherwise numpy ints would get in and break e.g. BSON output.
                     new_pulses.append(datastructure.Pulse(
-                        channel=pulse.channel,
-                        left=pulse.left+start,
-                        right=pulse.left+stop,
+                        channel=int(pulse.channel),
+                        left=int(pulse.left+start),
+                        right=int(pulse.left+stop),
                         raw_data=pulse.raw_data[start:stop + 1]
                     ))
                     itvs_encoded += 1
