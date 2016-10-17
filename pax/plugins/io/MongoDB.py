@@ -467,7 +467,11 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
             query = self.time_range_query(start, stop)
-            cursors.append(collection.find(query))
+            cursor = collection.find(query)
+            # Ask for a large batch size: the default is 101 documents or 1MB. This results in a very small speed
+            # increase (when I measured it on a normal dataset)
+            cursor.batch_size(int(1e7))
+            cursors.append(cursor)
             if self.max_pulses_per_event != float('inf'):
                 count += collection.count(query)
         if len(self.hosts) == 1:
