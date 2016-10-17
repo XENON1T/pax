@@ -102,7 +102,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     pass
 
                 # Combine the various multiplicative corrections to a single correction for S1 and S2
-                ia.s1_area_correction *= ia.s1_spatial_correction * ia.s1_saturation_correction
+                ia.s1_area_correction *= ia.s1_spatial_correction
                 ia.s2_area_correction *= ia.s2_lifetime_correction * s2.s2_spatial_correction
 
                 # Add the saturation correction only if explicitly told (since it's more experimental
