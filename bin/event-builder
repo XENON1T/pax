@@ -56,7 +56,9 @@ def main():
     # Connect to MongoDB
     clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                       for k in ('user', 'password', 'host', 'port')})
-    runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
+    run_db = clientmaker.get_client('run')['run']
+    runs = run_db.get_collection('runs_new')
+    pipeline_status_collection = run_db.get_collection('pipeline_status')
 
     # Build the query used to search for runs
     if args.run_name:
@@ -101,6 +103,10 @@ def main():
                 log.info("No runs to process: exiting.")
                 break
             log.info("No runs to process yet... waiting %d seconds", args.wait)
+            if not args.secret_mode:
+                pipeline_status_collection.insert({'name': 'eventbuilder_info',
+                                                   'time': datetime.datetime.utcnow(),
+                                                   'working_on_run': False})
             time.sleep(args.wait)
             continue
 

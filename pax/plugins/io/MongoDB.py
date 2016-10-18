@@ -295,6 +295,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                     'last_pulse_so_far_in_run': self.last_pulse_time,
                                                     'latest_subcollection': self.latest_subcollection,
                                                     'last_time_searched': lts,
+                                                    'working_on_run': True,
                                                     })
 
     def get_events(self):
