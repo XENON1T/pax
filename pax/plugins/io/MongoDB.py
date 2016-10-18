@@ -8,6 +8,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
+import datetime
 import time
 
 import pytz
@@ -192,8 +193,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
             self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time,
                                                                        self.latest_subcollection))
 
+        self.pipeline_status_collection = self.run_client['run'][self.config.get('pipeline_status_collection_name',
+                                                                                 'pipeline_status')]
+
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
+        Also updates the pipeline status info with the current queue length
         """
         self.refresh_run_doc()
 
@@ -278,10 +283,20 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(self.last_pulse_time)))
 
+        # Insert some status info into the pipeline info
+        if not self.secret_mode:
+            self.pipeline_status_collection.insert({'name': 'eventbuilder_info',
+                                                    'time': datetime.datetime.utcnow(),
+                                                    'eventbuilder_queue_size': self.processor.queued_events,
+                                                    'last_pulse_so_far_in_run': self.last_pulse_time,
+                                                    'latest_subcollection': self.latest_subcollection,
+                                                    'last_time_searched': self.last_time_searched,
+                                                    })
+
     def get_events(self):
         self.refresh_run_info()
         # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
-        last_time_searched = self.initial_start_time
+        self.last_time_searched = self.initial_start_time
         self.log.info("self.initial_start_time: %s", pax_to_human_time(self.initial_start_time))
         next_event_number = 0
         more_data_coming = True
@@ -298,7 +313,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 end_of_search_for_this_run = float('inf')
 
             # What is the earliest time we still need to search?
-            next_time_to_search = last_time_searched
+            next_time_to_search = self.last_time_searched
             if next_time_to_search != self.initial_start_time:
                 next_time_to_search += self.batch_window * self.config['skip_ahead']
 
@@ -352,20 +367,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     futures.append(futures_per_host)
 
                 # Record advancement of the batch window
-                last_time_searched = next_time_to_search + batches_to_search * self.batch_window
+                self.last_time_searched = next_time_to_search + batches_to_search * self.batch_window
 
                 # Check if there is more data
-                more_data_coming = (not self.data_taking_ended) or (last_time_searched < end_of_search_for_this_run)
+                more_data_coming = (not self.data_taking_ended) or (self.last_time_searched <
+                                                                    end_of_search_for_this_run)
                 if not more_data_coming:
                     self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
-                        pax_to_human_time(last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
+                        pax_to_human_time(self.last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
 
                 # Check if we've passed the user-specified stop (if so configured)
                 stop_after_sec = self.config.get('stop_after_sec', None)
                 if stop_after_sec and 0 < stop_after_sec < float('inf'):
-                    if last_time_searched > stop_after_sec * units.s:
+                    if self.last_time_searched > stop_after_sec * units.s:
                         self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
-                                         "This is the last batch of data" % (last_time_searched,
+                                         "This is the last batch of data" % (self.last_time_searched,
                                                                              self.config['stop_after_sec']))
                         more_data_coming = False
 
