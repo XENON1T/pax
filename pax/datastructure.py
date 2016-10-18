@@ -566,6 +566,9 @@ class Event(StrictModel):
     #: A nonnegative integer that uniquely identifies the event within the dataset.
     event_number = 0
 
+    #: Nonnegative integer to define which multiprocessing block the event belongs to
+    block_id = 0
+
     #: Total number of channels in the event (whether or not they see anything).
     #: Has to be the same as n_channels in config, provided here for deserialization ease.
     n_channels = INT_NAN
