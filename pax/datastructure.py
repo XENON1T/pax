@@ -12,7 +12,7 @@ import numpy as np
 import six
 
 from pax import units
-from pax.data_model import StrictModel, ListField
+from pax.data_model import Model, StrictModel, ListField
 if six.PY3:
     long = int
 
@@ -393,7 +393,7 @@ class SumWaveform(StrictModel):
             return False
 
 
-class Pulse(StrictModel):
+class Pulse(Model):
     """A region of raw digitizer data.
     For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.
 
@@ -450,7 +450,7 @@ class Pulse(StrictModel):
          - raw_data (numpy array of samples)
          - right (last index)
         """
-        StrictModel.__init__(self, **kwargs)
+        Model.__init__(self, **kwargs)
 
         if self.channel == INT_NAN:
             raise ValueError("Must specify channel to init Pulse")
@@ -614,6 +614,12 @@ class Event(StrictModel):
     #: referring to the index of a pulse in this field.
     pulses = ListField(Pulse)
 
+    #: Number of pulses per channel
+    n_pulses_per_channel = np.array([], dtype=np.int16)
+
+    #: Total number of pulses
+    n_pulses = 0
+
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int16)
 
@@ -655,6 +661,7 @@ class Event(StrictModel):
             raise ValueError("Nonpositive event duration %s!" % self.duration())
 
         # Initialize numpy arrays -- need to have n_channels and self.length
+        self.n_pulses_per_channel = np.zeros(n_channels, dtype=np.int16)
         self.noise_pulses_in = np.zeros(n_channels, dtype=np.int16)
         self.n_hits_rejected = np.zeros(n_channels, dtype=np.int16)
         self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)

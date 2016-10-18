@@ -57,7 +57,7 @@ class ConcatenateAdjacentPulses(plugin.TransformPlugin):
         return event
 
 
-class CheckBounds(plugin.TransformPlugin):
+class CheckBoundsAndCount(plugin.TransformPlugin):
     """Check if pulses extend beyond event bounds
     If so, truncate them or raise exception, depending on config
     """
@@ -86,7 +86,6 @@ class CheckBounds(plugin.TransformPlugin):
             ##
             #  Pulse bounds checking / truncation (see issue 43)
             ##
-
             overhang = end_index - (event_length - 1)
 
             if start_index < 0 or end_index < 0 or overhang > 0:
@@ -124,12 +123,27 @@ class CheckBounds(plugin.TransformPlugin):
                     end_index = event_length - 1
 
                 # Update the pulse data, so hit finder won't look at old un-truncated pulse
-                event.pulses[pulse_i] = datastructure.Pulse(left=start_index,
-                                                            right=end_index,
-                                                            channel=channel,
+                # Explicit casts necessary since we've disabled type checking for pulse class for speed in event builder
+                # and otherwise numpy ints would get in and break e.g. BSON output
+                event.pulses[pulse_i] = datastructure.Pulse(left=int(start_index),
+                                                            right=int(end_index),
+                                                            channel=int(channel),
                                                             raw_data=pulse_wave)
 
         # Remove the to-be-ignored-pulses
         event.pulses = [p for p_i, p in enumerate(event.pulses) if p_i not in pulses_to_ignore]
 
+        # Count the number of pulses per channel. Must be done at the end, since pulses can be ignored (see above)
+        # Since we now use pickle as a raw data format, the events are no longer init'ed when they are loaded
+        # from raw data. That means this field never gets the right length set (in datastructure.py it is inited as
+        # an empty array) for data created with an old version of pax. So, let's init it ourselves...
+        event.n_pulses_per_channel = np.zeros(self.config['n_channels'], np.int16)
+        for p in event.pulses:
+            event.n_pulses_per_channel[p.channel] += 1
+        event.n_pulses = event.n_pulses_per_channel.sum()
+
         return event
+
+
+# Alias for old configs
+CheckBounds = CheckBoundsAndCount

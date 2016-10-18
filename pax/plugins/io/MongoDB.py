@@ -8,12 +8,14 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
+import datetime
 import time
 
 import pytz
 import numpy as np
 import pymongo
 import snappy
+import pickle
 
 from pax.MongoDB_ClientMaker import ClientMaker, parse_passwordless_uri
 from pax.datastructure import Event, Pulse, EventProxy
@@ -76,7 +78,8 @@ class MongoBase:
         # In split collections mode, we use the subcollection methods (see below) to get the input collections
 
         if self.split_hosts:
-            self.hosts = ['eb0', 'eb1', 'eb2']   # TODO: don't hardcode
+            self.hosts = [parse_passwordless_uri(x)[0]
+                          for x in set(self.run_doc['reader']['ini']['mongo']['hosts'].values())]
         else:
             self.hosts = [parse_passwordless_uri(self.input_info['location'])[0]]
 
@@ -85,6 +88,16 @@ class MongoBase:
                                        host=host,
                                        uri=self.input_info['location'],
                                        w=0)[self.input_info['database']] for host in self.hosts]
+
+        # Get the database in which the acquisition monitor data resides.
+        if not self.split_hosts:
+            # If we haven't split hosts, just take the one host we have.
+            self.aqm_db = self.dbs[0]
+        else:
+            aqm_host = self.config.get('acquisition_monitor_host', 'eb0')
+            db_i = self.hosts.index(aqm_host)
+            self.aqm_db = self.dbs[db_i]
+
         if not self.split_collections:
             self.input_collections = [db.get_collection(self.input_info['collection']) for db in self.dbs]
 
@@ -173,8 +186,19 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         self.trigger = trigger.Trigger(pax_config=self.processor.config,
                                        trigger_monitor_collection=trig_mon_coll)
 
+        # For starting event building in the middle of a run:
+        self.initial_start_time = self.config.get('start_after_sec', 0) * units.s
+        if self.initial_start_time:
+            self.latest_subcollection = self.initial_start_time // self.batch_window
+            self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time,
+                                                                       self.latest_subcollection))
+
+        self.pipeline_status_collection = self.run_client['run'][self.config.get('pipeline_status_collection_name',
+                                                                                 'pipeline_status')]
+
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
+        Also updates the pipeline status info with the current queue length
         """
         self.refresh_run_doc()
 
@@ -237,7 +261,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 if not self.latest_subcollection == 0:
                     self.log.warning("Latest subcollection %d seems empty now, but wasn't before... Race condition/edge"
                                      " case in mongodb, bug in clearing code, or something else weird? Investigate if "
-                                     "this occurs often!!")
+                                     "this occurs often!!" % self.latest_subcollection)
                 last_pulse_time = self.latest_subcollection * self.batch_window
             else:
                 # Apparently the DAQ has not taken any pulses yet?
@@ -259,9 +283,26 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(self.last_pulse_time)))
 
+        # Insert some status info into the pipeline info
+        if not self.secret_mode:
+            if hasattr(self, 'last_time_searched'):
+                lts = self.last_time_searched
+            else:
+                lts = 0
+            self.pipeline_status_collection.insert({'name': 'eventbuilder_info',
+                                                    'time': datetime.datetime.utcnow(),
+                                                    'eventbuilder_queue_size': self.processor.queued_events,
+                                                    'last_pulse_so_far_in_run': self.last_pulse_time,
+                                                    'latest_subcollection': self.latest_subcollection,
+                                                    'last_time_searched': lts,
+                                                    'working_on_run': True,
+                                                    })
+
     def get_events(self):
         self.refresh_run_info()
-        last_time_searched = 0  # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        self.last_time_searched = self.initial_start_time
+        self.log.info("self.initial_start_time: %s", pax_to_human_time(self.initial_start_time))
         next_event_number = 0
         more_data_coming = True
 
@@ -277,8 +318,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 end_of_search_for_this_run = float('inf')
 
             # What is the earliest time we still need to search?
-            next_time_to_search = last_time_searched
-            if next_time_to_search != 0:
+            next_time_to_search = self.last_time_searched
+            if next_time_to_search != self.initial_start_time:
                 next_time_to_search += self.batch_window * self.config['skip_ahead']
 
             # How many batch windows can we search now?
@@ -331,20 +372,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     futures.append(futures_per_host)
 
                 # Record advancement of the batch window
-                last_time_searched = next_time_to_search + batches_to_search * self.batch_window
+                self.last_time_searched = next_time_to_search + batches_to_search * self.batch_window
 
                 # Check if there is more data
-                more_data_coming = (not self.data_taking_ended) or (last_time_searched < end_of_search_for_this_run)
+                more_data_coming = (not self.data_taking_ended) or (self.last_time_searched <
+                                                                    end_of_search_for_this_run)
                 if not more_data_coming:
                     self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
-                        pax_to_human_time(last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
+                        pax_to_human_time(self.last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
 
                 # Check if we've passed the user-specified stop (if so configured)
                 stop_after_sec = self.config.get('stop_after_sec', None)
                 if stop_after_sec and 0 < stop_after_sec < float('inf'):
-                    if last_time_searched > stop_after_sec * units.s:
+                    if self.last_time_searched > stop_after_sec * units.s:
                         self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
-                                         "This is the last batch of data" % (last_time_searched,
+                                         "This is the last batch of data" % (self.last_time_searched,
                                                                              self.config['stop_after_sec']))
                         more_data_coming = False
 
@@ -391,7 +433,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                         yield EventProxy(event_number=next_event_number, data=data)
                         next_event_number += 1
 
-        # Built all events for the run!
+        # We've built all the events for this run!
         # Compile the end of run info for the run doc and for display
         trigger_end_info = self.trigger.shutdown()
         trigger_end_info.update(dict(ended=True,
@@ -418,6 +460,11 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.ignored_channels = []
+        self.max_pulses_per_event = self.config.get('max_pulses_per_event', float('inf'))
+        self.high_energy_prescale = self.config.get('high_energy_prescale', 0.1)
+
+        self.log.info("Software HEV settings: %s max pulses per event, %s prescale" % (self.max_pulses_per_event,
+                                                                                       self.high_energy_prescale))
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
@@ -426,11 +473,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
     def _get_cursor_between_times(self, start, stop, subcollection_number=None):
-        """Returns a cursor over all pulses that start in [start, stop) (both pax units since start of run).
+        """Returns count, cursor over all pulses that start in [start, stop) (both pax units since start of run).
         Order of pulses is not defined.
+        count is 0 if max_pulses_per_event is float('inf'), since we don't care about it in that case.
         Does NOT deal with time ranges split between subcollections, but does deal with split hosts.
         """
         cursors = []
+        count = 0
         for host_i, host in enumerate(self.hosts):
             if subcollection_number is None:
                 assert not self.split_collections
@@ -438,11 +487,18 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             else:
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
-            cursors.append(collection.find(self.time_range_query(start, stop)))
+            query = self.time_range_query(start, stop)
+            cursor = collection.find(query)
+            # Ask for a large batch size: the default is 101 documents or 1MB. This results in a very small speed
+            # increase (when I measured it on a normal dataset)
+            cursor.batch_size(int(1e7))
+            cursors.append(cursor)
+            if self.max_pulses_per_event != float('inf'):
+                count += collection.count(query)
         if len(self.hosts) == 1:
-            return cursors[0]
+            return count, cursors[0]
         else:
-            return chain(*cursors)
+            return count, chain(*cursors)
 
     def transform_event(self, event_proxy):
         # t0, t1 are the start, stop time of the event in pax units (ns) since the start of the run
@@ -468,21 +524,30 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
             start_col = self.subcollection_with_time(t0)
             end_col = self.subcollection_with_time(t1)
             if start_col == end_col:
-                mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                count, mongo_iterator = self._get_cursor_between_times(t0, t1, start_col)
+                if count > self.max_pulses_per_event:
+                    # Software "veto" the event to prevent overloading the event builder
+                    if np.random.rand() > self.high_energy_prescale:
+                        self.log.debug("VETO: %d pulses in event %s" % (len(event.pulses), event.event_number))
+                        event.n_pulses = int(count)
+                        return event
             else:
                 self.log.info("Found event [%s-%s] which straddles subcollection boundary." % (
                     pax_to_human_time(t0), pax_to_human_time(t1)))
-                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col),
-                                       self._get_cursor_between_times(t0, t1, end_col))
+                # Ignore the software-HEV in this case
+                mongo_iterator = chain(self._get_cursor_between_times(t0, t1, start_col)[1],
+                                       self._get_cursor_between_times(t0, t1, end_col)[1])
         else:
             mongo_iterator = self._get_cursor_between_times(t0, t1)
 
+        data_is_compressed = self.input_info['compressed']
         for i, pulse_doc in enumerate(mongo_iterator):
             digitizer_id = (pulse_doc['module'], pulse_doc['channel'])
-            if digitizer_id in self.pmt_mappings:
+            pmt = self.pmt_mappings.get(digitizer_id)
+            if pmt is not None:
                 # Fetch the raw data
                 data = pulse_doc['data']
-                if self.input_info['compressed']:
+                if data_is_compressed:
                     data = snappy.decompress(data)
 
                 time_within_event = self._from_mt(pulse_doc['time']) - t0  # ns
@@ -490,7 +555,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 event.pulses.append(Pulse(left=self._to_mt(time_within_event),
                                           raw_data=np.fromstring(data,
                                                                  dtype="<i2"),
-                                          channel=self.pmt_mappings[digitizer_id]))
+                                          channel=pmt,
+                                          do_it_fast=True))
             elif digitizer_id not in self.ignored_channels:
                 self.log.warning("Found data from digitizer module %d, channel %d,"
                                  "which doesn't exist according to PMT mapping! Ignoring...",
@@ -523,6 +589,21 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
+        if not self.config['delete_data']:
+            self.log.info("Will NOT rescue acquisition monitor pulses, need delete_data enabled for this")
+            return
+        aqm_file_path = self.config.get('acquisition_monitor_file_path')
+        if aqm_file_path is None:
+            self.log.info("Will NOT rescue acquisition monitor pulses!")
+            self.aqm_output_handle = None
+        else:
+            # Get the acquisition monitor module from the pmts dictionary in the config
+            # It's a bit bad we've hardcoded 'sum_wv' as detector name here...
+            some_ch_from_aqm = self.config['channels_in_detector']['sum_wv'][0]
+            self.aqm_module = self.config['pmts'][some_ch_from_aqm]['digitizer']['module']
+            self.log.info("Acquisition monitor (module %d) pulses will be saved to %s" % (
+                self.aqm_module, aqm_file_path))
+            self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
@@ -535,15 +616,15 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.log.info("Seen event at subcollection %d, clearing subcollection %d" % (
                     coll_number, self.last_subcollection_not_yet_deleted))
                 for db in self.dbs:
-                    self.executor.submit(db.drop_collection,
+                    self.executor.submit(self.drop_collection_named,
+                                         db,
                                          self.subcollection_name(self.last_subcollection_not_yet_deleted))
                 self.last_subcollection_not_yet_deleted += 1
         else:
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
-                self.log.info("Seen event at %s, clearing "
-                              "all data until then." % pax_to_human_time(time_since_start))
+                self.log.info("Seen event at %s, clearing all data until then." % pax_to_human_time(time_since_start))
                 for coll in self.input_collections:
-                    self.executor.submit(delete_pulses,
+                    self.executor.submit(self.delete_pulses,
                                          coll,
                                          start_mongo_time=self._to_mt(self.last_time_deleted),
                                          stop_mongo_time=self._to_mt(time_since_start))
@@ -552,22 +633,65 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         return event_proxy
 
     def shutdown(self):
-        if not self.config['delete_data']:
+        if self.config['delete_data']:
+
+            self.log.info("Dropping all remaining collections from this run")
+
+            for db in self.dbs:
+                for coll_name in db.collection_names():
+                    if not coll_name.startswith(self.run_doc['name']):
+                        continue
+                    self.drop_collection_named(db, coll_name)
+            self.log.info("Completed.")
+
+            # Update the run doc to remove the 'untriggered' entry
+            # since we just deleted the last of the untriggered data
+            self.refresh_run_doc()
+            self.runs_collection.update_one({'_id': self.run_doc['_id']},
+                                            {'$set': {'data': [d for d in self.run_doc['data']
+                                                               if d['type'] != 'untriggered']}})
+
+        if self.aqm_output_handle is not None:
+            self.aqm_output_handle.close()
+
+    def rescue_acquisition_monitor_pulses(self, collection, query=None):
+        """Saves all acquisition monitor pulses from collection the acquisition monitor data file.
+         - collection: pymongo object (not collection name!)
+         - query: optional query inside the collection (e.g. for a specific time range).
+        The condition to select pulses from the acquistion monitor module will be added to this.
+        """
+        if self.aqm_output_handle is None:
             return
 
-        self.log.info("Dropping all remaining collections from this run")
-        for db in self.dbs:
-            for coll_name in db.collection_names():
-                if not coll_name.startswith(self.run_doc['name']):
-                    continue
-                db.drop_collection(coll_name)
-        self.log.info("Completed.")
+        if query is None:
+            query = {}
+        query['module'] = self.aqm_module
 
-        # Update the run doc to remove the 'untriggered' entry
-        self.refresh_run_doc()
-        self.runs_collection.update_one({'_id': self.run_doc['_id']},
-                                        {'$set': {'data': [d for d in self.run_doc['data']
-                                                           if d['type'] != 'untriggered']}})
+        # Count first, in case something is badly wrong and we end up saving bazillions of docs we'll at least have
+        # a fair warning...
+        n_to_rescue = collection.count(query)
+        self.log.info("Saving %d acquisition monitor pulses" % n_to_rescue)
+
+        for doc in collection.find(query):
+            self.aqm_output_handle.write(pickle.dumps(doc))
+
+        # Flush explicitly: we want to save the data even if the event builder crashes before properly closing the file
+        self.aqm_output_handle.flush()
+
+    def delete_pulses(self, collection, start_mongo_time, stop_mongo_time):
+        """Deletes all pulses in collection between start_mongo_time (inclusive) and stop_mongo_time (exclusive),
+        both in mongo time units (not pax units!).
+        """
+        query = {'time': {'$gte': start_mongo_time,
+                          '$lt': stop_mongo_time}}
+        self.rescue_acquisition_monitor_pulses(collection, query)
+        collection.delete_many(query)
+
+    def drop_collection_named(self, db, collection_name):
+        """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
+        if db is self.aqm_db:
+            self.rescue_acquisition_monitor_pulses(db[collection_name])
+        db.drop_collection(collection_name)
 
 
 def pax_to_human_time(num):
@@ -622,11 +746,3 @@ def get_pulses(client_maker_config, input_info, collection_name, query, host, ge
             areas = np.zeros(len(times), dtype=np.float64)
 
     return times, modules, channels, areas
-
-
-def delete_pulses(collection, start_mongo_time, stop_mongo_time):
-    """Deletes pulse between start_mongo_time (inclusive) and stop_mongo_time (exclusive), both in mongo time units.
-    """
-    query = {'time': {'$gte': start_mongo_time,
-                      '$lt': stop_mongo_time}}
-    collection.delete_many(query)

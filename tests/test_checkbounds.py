@@ -13,10 +13,10 @@ class TestCheckPulses(unittest.TestCase):
                                   config_dict={
                                       'pax': {
                                           'plugin_group_names': ['test'],
-                                          'test':               'CheckPulses.CheckBounds'},
-                                      'CheckPulses.CheckBounds': {
+                                          'test':               'CheckPulses.CheckBoundsAndCount'},
+                                      'CheckPulses.CheckBoundsAndCount': {
                                           'truncate_pulses_partially_outside': True}})
-        self.plugin = self.pax.get_plugin_by_name('CheckBounds')
+        self.plugin = self.pax.get_plugin_by_name('CheckBoundsAndCount')
         self.baseline = self.pax.config['DEFAULT']['digitizer_reference_baseline']
 
     def tearDown(self):
@@ -38,7 +38,11 @@ class TestCheckPulses(unittest.TestCase):
             channel=1,
             left=1,
             raw_data=np.ones(20, dtype=np.int16) * self.baseline)
+
         self.plugin.transform_event(event)
+        self.assertEqual(event.n_pulses_per_channel[0], 0)
+        self.assertEqual(event.n_pulses_per_channel[1], 1)
+        self.assertEqual(event.n_pulses, 1)
 
     def test_strange_pulses(self):
         # One sample at end
