@@ -285,12 +285,16 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
         # Insert some status info into the pipeline info
         if not self.secret_mode:
+            if hasattr(self, 'last_time_searched'):
+                lts = self.last_time_searched
+            else:
+                lts = 0
             self.pipeline_status_collection.insert({'name': 'eventbuilder_info',
                                                     'time': datetime.datetime.utcnow(),
                                                     'eventbuilder_queue_size': self.processor.queued_events,
                                                     'last_pulse_so_far_in_run': self.last_pulse_time,
                                                     'latest_subcollection': self.latest_subcollection,
-                                                    'last_time_searched': self.last_time_searched,
+                                                    'last_time_searched': lts,
                                                     })
 
     def get_events(self):
