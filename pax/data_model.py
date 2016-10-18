@@ -25,7 +25,13 @@ class Model(object):
       - dump as dictionary and JSON
     """
 
-    def __init__(self, kwargs_dict=None, **kwargs):
+    def __init__(self, kwargs_dict=None, do_it_fast=False, **kwargs):
+        if do_it_fast:
+            # Speed is critical! Forget about any syntax sugar, just set the attributes from kwargs
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+            return
+
         # Initialize the collection fields to empty lists
         # object.__setattr__ is needed to bypass type checking in StrictModel
         list_field_info = self.get_list_field_info()
