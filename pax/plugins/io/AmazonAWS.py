@@ -16,11 +16,11 @@ class WriteDynamoDB(plugin.OutputPlugin):
                                                 KeySchema=[
                                                     {
                                                         'AttributeName': 'event_number',
-                                                        'KeyType'      : 'HASH'
+                                                        'KeyType': 'HASH'
                                                     },
                                                     {
                                                         'AttributeName': 'dataset_name',
-                                                        'KeyType'      : 'RANGE'
+                                                        'KeyType': 'RANGE'
                                                     }
                                                 ],
                                                 AttributeDefinitions=[
@@ -35,7 +35,7 @@ class WriteDynamoDB(plugin.OutputPlugin):
 
                                                 ],
                                                 ProvisionedThroughput={
-                                                    'ReadCapacityUnits' : 5,
+                                                    'ReadCapacityUnits': 5,
                                                     'WriteCapacityUnits': 5
                                                 }
                                                 )
