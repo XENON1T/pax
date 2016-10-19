@@ -22,6 +22,7 @@ if os.name != 'nt' and not os.environ.get('DISPLAY'):
 # (so which of them is actually importing matplotlib.pyplot??)
 import pax    # flake8: noqa
 from pax import core, utils, formats    # flake8: noqa
+from pax.parallel import multiprocess_locally
 
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
@@ -42,7 +43,6 @@ def main():
     # Feed certain command line args into pax configuration format
     for argname, configname in (('input',       'input_name'),
                                 ('output',      'output_name'),
-                                ('cpus',        'n_cpus'),
                                 ('log',         'logging_level'),
                                 ('stop_after',  'stop_after'),
                                 ('event',       'events_to_process'),
@@ -107,18 +107,23 @@ def main():
     config_str = config_str.replace(']', ']\n')
     config_str = config_str.replace(';', '\n')
 
-    pax_instance = core.Processor(config_names=args.config,
-                                  config_paths=args.config_path,
-                                  config_string=config_str,
-                                  config_dict=override_dict)
 
-    try:
-        pax_instance.run()
-    except (KeyboardInterrupt, SystemExit):
-        print("\nShutting down all plugins...")
-        pax_instance.shutdown()
-        print("Exiting")
-        sys.exit()
+    config_kwargs = dict(config_names=args.config,
+                         config_paths=args.config_path,
+                         config_string=config_str,
+                         config_dict=override_dict)
+    if args.cpus > 1:
+        multiprocess_locally(n_cpus=args.cpus, **config_kwargs)
+    else:
+        pax_instance = core.Processor(**config_kwargs)
+
+        try:
+            pax_instance.run()
+        except (KeyboardInterrupt, SystemExit):
+            print("\nShutting down all plugins...")
+            pax_instance.shutdown()
+            print("Exiting")
+            sys.exit()
 
 
 def get_argsparser(input_plugin_aliases, output_plugin_aliases):

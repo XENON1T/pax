@@ -4,10 +4,12 @@ from configparser import ConfigParser, ExtendedInterpolation
 import six
 
 from pax import units, utils
+from pax.exceptions import InvalidConfigurationError
 
 
-def load_configuration(config_names=(), config_paths=(), config_string=None, config_dict=None):
+def load_configuration(config_names=(), config_paths=(), config_string=None, config_dict=None, maybe_call_mongo=False):
     """Load pax configuration using configuration data. See the docstring of Processor for more info.
+    :param: maybe_call_mongo: if True, at the end of loading the config (but before applying config_dict)
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     """
     if config_dict is None:
@@ -114,8 +116,49 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
             # Eval value in a context where all units are defined
             evaled_config[section_name][key] = eval(value, visible_variables)
 
-    # Apply the config_dict
+    # Apply the config dict.
     evaled_config = combine_configs(evaled_config, config_dict)
+
+    if evaled_config['pax'].get('look_for_config_in_runs_db'):
+        # Connect to MongoDB. Do import here, since someone may wish to run pax without mongo
+        from pax.MongoDB_ClientMaker import ClientMaker         # noqa
+        run_collection = ClientMaker(evaled_config['MongoDB']).get_client('run')['run'].get_collection('runs_new')
+
+        # Get the run document, either by explicitly specified run number, or by the input name
+        # The last option is a bit of a hack... if you don't like it, think of some way to always pass
+        # the run number explicitly. By the way, let's hope nobody tries to reprocess run 0..
+        if evaled_config.get('DEFAULT', {}).get('run_number', 0) > 0:
+            run_number = evaled_config['DEFAULT']['run_number']
+            run_doc = run_collection.find_one({'number': run_number})
+            if not run_doc:
+                raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
+
+        elif 'input_name' in evaled_config['pax']:
+            run_name = os.path.basename(evaled_config['pax']['input_name'])
+
+            if run_name.endswith("_MV"):
+                run_doc = run_collection.find_one({'name': run_name[:-3],
+                                                   'detector': 'muon_veto'})
+            else:
+                run_doc = run_collection.find_one({'name': run_name,
+                                                   'detector': 'tpc'})
+
+            if not run_doc:
+                raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
+
+        else:
+            raise InvalidConfigurationError("Cannot get configuration from runs db: give run_number or input_name!")
+
+        # The run doc settings act as (but do not override) config_dict
+        mongo_conf = fix_sections_from_mongo(run_doc.get('processor', {}))
+        config_dict = combine_configs(mongo_conf, override=config_dict)
+
+        # Add run number and run name to the config_dict
+        config_dict.setdefault('DEFAULT', {})
+        config_dict['DEFAULT']['run_number'] = run_doc['number']
+        config_dict['DEFAULT']['run_name'] = run_doc['name']
+
+        evaled_config = combine_configs(evaled_config, config_dict)
 
     # Make sure [DEFAULT] is at least present
     evaled_config['DEFAULT'] = evaled_config.get('DEFAULT', {})
@@ -125,15 +168,23 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
     return evaled_config
 
 
-def combine_configs(config, override):
-    """Apply overrides to config, then returns config.
-    Config and overrides must be configuration dictionaries, i.e. have at most one level of sections.
-    Settings in overrides override settings in config (as you might have guessed).
+def combine_configs(*args):
+    """Combines a series of configuration dictionaries; later ones have higher priority.
+    Each argument must be a pax configuration dictionary, i.e. have at most one level of sections.
     """
+    if not len(args):
+        return {}
+    elif len(args) == 1:
+        return args[0]
+    elif len(args) == 2:
+        config, override = args
+    else:
+        return combine_configs(combine_configs(*args[:-1]), args[-1])
+
     for section_name, section_config in override.items():
         config.setdefault(section_name, {})
         if not isinstance(section_config, dict):
-            raise ValueError("COnfiguration dictionary should be a dictionary of dictionaries.")
+            raise ValueError("Configuration dictionary should be a dictionary of dictionaries.")
         config[section_name].update(section_config)
     return config
 

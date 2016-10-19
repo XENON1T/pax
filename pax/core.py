@@ -5,19 +5,11 @@ import logging
 import six
 import itertools
 import os
-import psutil
-import sys
 import time
-import multiprocessing
-import heapq
 if six.PY2:
     import imp
 else:
     import importlib
-try:
-    import queue
-except ImportError:
-    import Queue as queue   # flake8: noqa
 
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
@@ -26,20 +18,11 @@ import pax      # Needed for pax.__version__
 from pax.configuration import load_configuration, fix_sections_from_mongo, combine_configs
 from pax.exceptions import InvalidConfigurationError
 from pax import simulation, utils
-from pax.MongoDB_ClientMaker import ClientMaker
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
 # import gc
 # import objgraph
-
-# Multiprocess status codes
-MP_STATUS = dict(normal=0,
-                 shutdown=1,
-                 crashing=2,
-                 input_in_progress=3,
-                 input_done=4,
-                 processing_done=5)
 
 
 class Processor:
@@ -70,116 +53,16 @@ class Processor:
           setting that will not be modified once set. New instances of the Processor class will have
           the same log level as the first, regardless of their configuration.  See #78.
         """
-        self.config = load_configuration(config_names, config_paths, config_string, config_dict)
-        self.log = self.setup_logging()
+        self.config = load_configuration(config_names, config_paths, config_string, config_dict, maybe_call_mongo=True)
 
-        # Do we need to get further configuration from the runs database?
-        if self.config['pax'].get('look_for_config_in_runs_db'):
-            self.log.debug("Looking for extra configuration in runs db")
-            # Connect to MongoDB
-            run_collection = ClientMaker(self.config['MongoDB']).get_client('run')['run'].get_collection('runs_new')
-
-            # Get the run document, either by explicitly specified run number, or by the input name
-            # The last option is a bit of a hack... if you don't like it, think of some way to always pass
-            # the run number explicitly. By the way, let's hope nobody tries to reprocess run 0..
-            if self.config.get('DEFAULT', {}).get('run_number', 0) > 0:
-                run_number = self.config['DEFAULT']['run_number']
-                run_doc = run_collection.find_one({'number': run_number})
-                if not run_doc:
-                    raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
-
-            elif 'input_name' in self.config['pax']:
-                run_name = os.path.basename(self.config['pax']['input_name'])
-
-                if run_name.endswith("_MV"):
-                    run_doc = run_collection.find_one({'name': run_name[:-3],
-                                                   'detector' : 'muon_veto'})
-                else:
-                    run_doc = run_collection.find_one({'name': run_name,
-                                                   'detector' : 'tpc'})
-
-                if not run_doc:
-                    raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
-
-            else:
-                raise InvalidConfigurationError("Cannot get configuration from runs db: give run_number or input_name!")
-
-            self.log.debug("Found run document for run %d, %s" % (run_doc['number'], run_doc['name']))
-
-            # The run doc settings act as (but do not override) config_dict
-            mongo_conf = fix_sections_from_mongo(run_doc.get('processor', {}))
-            config_dict = combine_configs(mongo_conf, override=config_dict)
-
-            # Add run number and run name to the config_dict
-            config_dict.setdefault('DEFAULT', {})
-            config_dict['DEFAULT']['run_number'] = run_doc['number']
-            config_dict['DEFAULT']['run_name'] = run_doc['name']
-
-            self.config = combine_configs(self.config, override=config_dict)
+        # Check for outdated n_cpus option
+        if self.config.get('pax', {}).get('n_cpus', 1) != 1:
+            raise RuntimeError("The n_cpus option is no longer supported. Start a MultiProcessor instead.")
 
         pc = self.config['pax']
-        self.worker_id = pc.get('_worker_id', 'master')
-
-        if self.worker_id != 'master':
-            self.log.debug("I'm worker %s" % self.worker_id)
-            # I'm a child processor
-            self.multiprocessing = True
-            self.status = pc['status']
-            self.input_queue = pc['input_queue']
-            self.output_queue = pc.get('output_queue', None)
-            # Remove multiprocessing objects from config datastructure,
-            # so the configuration can still be serialized to JSON later
-            for k in ['input_queue', 'output_queue', 'status']:
-                pc[k] = None
-
-        else:
-            # I'm the main processor
-            self.log.info("This is PAX version %s, running with configuration for %s." % (
-                pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
-
-            n_cpus = pc.get('n_cpus', 1)
-            if n_cpus == 'all':
-                n_cpus = multiprocessing.cpu_count()
-            n_cpus = int(n_cpus)   # On the command line it gets passed as a string, since 'all' is possible
-            if n_cpus == 1:
-                self.multiprocessing = False
-            else:
-                # Setup multiprocessing
-                self.multiprocessing = True
-                self.manager = multiprocessing.Manager()
-                self.status = self.manager.Value('i', MP_STATUS['normal'])
-                self.input_queue = self.manager.Queue()
-                self.output_queue = self.manager.Queue()
-                self.last_status_update = time.time()
-
-                # Start worker processes
-                self.processing_workers = []
-                from copy import deepcopy
-                for worker_number in range(n_cpus):
-                    c = deepcopy(self.config)
-                    c['pax'].update(dict(plugin_group_names=[q for q in pc['plugin_group_names']
-                                                             if q not in ('input', 'output')],
-                                         input_queue=self.input_queue,
-                                         output_queue=self.output_queue,
-                                         status=self.status,
-                                         _worker_id='processing_%d' % worker_number))
-                    self.processing_workers.append(multiprocessing.Process(target=Processor,
-                                                                           kwargs=dict(config_dict=c)))
-
-                c = deepcopy(self.config)
-                c['pax'].update(dict(plugin_group_names=['output'],
-                                     _worker_id='output',
-                                     status=self.status,
-                                     input_queue=self.output_queue))
-                self.output_worker = multiprocessing.Process(target=Processor,
-                                                             kwargs=dict(config_dict=c))
-
-                # Start my child processes
-                for w in self.processing_workers + [self.output_worker]:
-                    w.start()
-
-                # I will just focus on input
-                pc['plugin_group_names'] = ['input']
+        self.log = setup_logging(pc.get('logging_level'))
+        self.log.info("This is PAX version %s, running with configuration for %s." % (
+            pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
 
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
@@ -200,22 +83,22 @@ class Processor:
                 self.log.warning('You did not specify any plugin groups to load: are you testing me?')
             pc['plugin_group_names'] = []
 
-        if not self.multiprocessing or self.worker_id not in ('master', 'output'):
-            # Standalone or child processor (not output)
-            # Make plugin group names for the encoder and decoder plugins
-            # By having this code here, we ensure they are always just after/before input/output,
-            # no matter what plugin group names the user is using
-            if pc.get('decoder_plugin') is not None:
-                decoder_pos = 0
-                if len(pc['plugin_group_names']) and pc['plugin_group_names'][0] == 'input':
-                    decoder_pos += 1
-                pc['plugin_group_names'].insert(decoder_pos, 'decoder_plugin')
+        # Make plugin group names for the encoder and decoder plugins
+        # By having this code here, we ensure they are always just after/before input/output,
+        # no matter what plugin group names the user is using
+        if pc.get('decoder_plugin') is not None:
+            print("\n>>Detected decoder %s<<\n" % pc.get('decoder_plugin'))
+            decoder_pos = 0
+            if len(pc['plugin_group_names']) and pc['plugin_group_names'][0] == 'input':
+                decoder_pos += 1
+            pc['plugin_group_names'].insert(decoder_pos, 'decoder_plugin')
 
-            if pc.get('encoder_plugin') is not None:
-                encoder_pos = len(pc['plugin_group_names'])
-                if len(pc['plugin_group_names']) and pc['plugin_group_names'][-1] == 'output':
-                    encoder_pos -= 1
-                pc['plugin_group_names'].insert(encoder_pos, 'encoder_plugin')
+        if pc.get('encoder_plugin') is not None:
+            print("\n>>Detected encoder %s<<\n" % pc.get('encoder_plugin'))
+            encoder_pos = len(pc['plugin_group_names'])
+            if len(pc['plugin_group_names']) and pc['plugin_group_names'][-1] == 'output':
+                encoder_pos -= 1
+            pc['plugin_group_names'].insert(encoder_pos, 'encoder_plugin')
 
         for plugin_group_name in pc['plugin_group_names']:
             if plugin_group_name not in pc:
@@ -299,30 +182,10 @@ class Processor:
 
         self.timer = utils.Timer()
 
-        # For worker processed, we have to call run from init: nobody else wil...
-        self.max_queue_blocks = self.config['pax'].get('max_queue_blocks', 100)
-        self.block_size = self.config['pax'].get('event_block_size', 10)
-        if self.worker_id != 'master':
+        # Sometimes the config tells us to start running immediately (e.g. if fetching from a queue
+        if pc.get('autorun', False):
             self.run()
 
-    def setup_logging(self):
-        """Sets up logging. Must have loaded config first."""
-
-        pc = self.config['pax']
-
-        # Setup logging
-        log_spec = pc.get('logging_level', 'INFO').upper()
-        numeric_level = getattr(logging, log_spec, None)
-        if not isinstance(numeric_level, int):
-            raise InvalidConfigurationError('Invalid log level: %s' % log_spec)
-
-        logging.basicConfig(level=numeric_level,
-                            format='%(name)s %(processName)-10s L%(lineno)s %(levelname)s %(message)s')
-
-        logger = logging.getLogger('processor')
-        logger.debug('Logging initialized with level %s' % log_spec)
-
-        return logger
 
     @staticmethod
     def get_plugin_search_paths(extra_paths=None):
@@ -394,12 +257,17 @@ class Processor:
             raise ValueError("No plugin named %s has been initialized." % name)
 
     def get_metadata(self):
+        # Remove any 'queue' arguments from the "config",
+        # they are used to pass queue objects (which we certainly can't serialize!
+        cleaned_conf = {sn: {k: v
+                             for k, v in section.items() if k != 'queue'}
+                        for sn, section in self.config.items()}
         return dict(run_number=self.config['DEFAULT']['run_number'],
                     tpc=self.config['DEFAULT']['tpc_name'],
                     file_builder_name='pax',
                     file_builder_version=pax.__version__,
                     timestamp=time.time(),
-                    configuration=self.config)
+                    configuration=cleaned_conf)
 
     def process_event(self, event):
         """Process one event with all action plugins. Returns processed event."""
@@ -424,193 +292,34 @@ class Processor:
             If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
 
         """
-        if self.worker_id != 'master':
-            # I'm a child processor
-            self.check_crash()
-            if self.worker_id == 'output':
-                block_id = -1
-                block_heap = []
+        if self.input_plugin is None:
+            # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
+            # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
+            raise InvalidConfigurationError("You just tried to run a Processor without specifying input plugin.")
 
-            while True:
-                # Check if we can end before we fetch event blocks:
-                # the last block may get added while we are fetching events
-                can_end = self.status.value == MP_STATUS['processing_done' if self.worker_id == 'output'
-                                                         else 'input_done']
+        if self.input_plugin.has_shut_down:
+            raise RuntimeError("Attempt to run a Processor twice!")
 
-                if self.worker_id == 'output':
-                    # The output worker has an additional complication: blocks must be written in proper order
-                    self.check_crash()
+        i = 0  # in case loop does not run
+        self.timer.punch()
+        for i, event in enumerate(tqdm(self.get_events(),
+                                       desc='Event',
+                                       total=self.number_of_events)):
+            self.input_plugin.total_time_taken += self.timer.punch()
+            if i >= self.stop_after:
+                self.log.info("User-defined limit of %d events reached." % i)
+                break
+            self.process_event(event)
+            self.log.debug("Event %d (%d processed)" % (event.event_number, i))
+        else:   # If no break occurred:
+            self.log.info("All events from input source have been processed.")
 
-                    try:
-                        # If we don't have the block we want yet, keep fetching event blocks from the queue .
-                        # Note: if one block takes much longer than the others, this would slurp all blocks
-                        # while waiting for the difficult one to come through, potentially exhausting your RAM...
-                        while not (len(block_heap) and block_heap[0][0] == block_id + 1):
-                            self.check_crash()
-                            heapq.heappush(block_heap, self.input_queue.get(block=True, timeout=1))
-                            self.log.debug("Output just got a block, heap is now %d blocks long" % len(block_heap))
-                            self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0],
-                                                                                         block_id + 1))
-
-                    except queue.Empty:
-                        if can_end and not len(block_heap):
-                            # We're done!
-                            break
-                        # Queue is empty, but either we're not in the processing_done status, or we're waiting for a
-                        # block which hasn't arrived on the queue yet. Wait, then try the queue again.
-                        time.sleep(1)
-                        continue
-
-                    # Pop the next event block from the heap
-                    block_id, event_block = heapq.heappop(block_heap)
-
-                else:
-                    # Ordinary worker
-                    self.check_crash()
-                    try:
-                        block_id, event_block = self.input_queue.get(block=True, timeout=1)
-                    except queue.Empty:
-                        if can_end:
-                            # We're done!
-                            break
-                        # Queue is empty: wait for more data, then check can_end again
-                        self.log.debug("%s found empty input queue, can_end is %s, status is %s" % (
-                            self.worker_id, can_end, self.status.value))
-                        time.sleep(1)
-                        continue
-
-                try:
-                    self.log.debug("%s now processing block %d" % (self.worker_id, block_id))
-                    for i, event in enumerate(event_block):
-                        self.check_crash()
-                        event_block[i] = self.process_event(event)
-                except Exception:
-                    # Crash occurred during processing: notify everyone else, then die
-                    self.status.value = MP_STATUS['crashing']
-                    raise
-
-                if self.worker_id != 'output':
-                    # Push the result to the output queue
-                    self.output_queue.put((block_id, event_block))
-                    # If the output worker has trouble catching up, sleep for a bit
-                    while self.output_queue.qsize() >= self.max_queue_blocks:
-                        self.check_crash()
-                        time.sleep(1)
-
-        else:
-            # I'm a master or standalone processor
-            if self.input_plugin is None:
-                # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
-                # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
-                raise InvalidConfigurationError("You just tried to run a Processor without specifying input plugin.")
-
-            if self.input_plugin.has_shut_down:
-                raise RuntimeError("Attempt to run a Processor twice!")
-
-            if self.multiprocessing:
-                # I'm a master processor
-                block_id = 0
-                event_block = []
-                for i, event in enumerate(self.get_events()):
-                    event_block.append(event)
-                    self.master_heartbeat()
-                    if len(event_block) >= self.block_size:
-                        self.log.debug("Created event block %d" % block_id)
-                        self.input_queue.put((block_id, event_block))
-                        block_id += 1
-                        event_block = []
-                    # If the processing workers have trouble catching up, sleep for a bit
-                    while self.input_queue.qsize() >= self.max_queue_blocks:
-                        self.master_heartbeat()
-                        time.sleep(1)
-                    if i >= self.stop_after:
-                        self.log.info("Read in user-defined limit of %d events." % i)
-                        break
-                self.input_queue.put((block_id, event_block))
-                self.master_heartbeat()
-                self.status.value = MP_STATUS['input_done']
-
-                # Wait for child processes to die or crash
-                # Note we never use join/wait -- so we never wait for something that may not happen
-                while True:
-                    self.master_heartbeat()
-                    if all([not w.is_alive() for w in self.processing_workers]):
-                        self.status.value = MP_STATUS['processing_done']
-                    if not self.output_worker.is_alive():
-                        break
-                    time.sleep(1)
-                self.log.info("Pax is done, goodbye!")
-
-            else:
-                # I'm a standalone processor
-                i = 0  # in case loop does not run
-                self.timer.punch()
-                for i, event in enumerate(tqdm(self.get_events(),
-                                               desc='Event',
-                                               total=self.number_of_events)):
-                    self.input_plugin.total_time_taken += self.timer.punch()
-                    if i >= self.stop_after:
-                        self.log.info("User-defined limit of %d events reached." % i)
-                        break
-                    self.process_event(event)
-                    self.log.debug("Event %d (%d processed)" % (event.event_number, i))
-                else:   # If no break occurred:
-                    self.log.info("All events from input source have been processed.")
-
-                if self.config['pax']['print_timing_report']:
-                    self.make_timing_report(i + 1)
+        if self.config['pax']['print_timing_report']:
+            self.make_timing_report(i + 1)
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
             self.shutdown()
-
-    def master_heartbeat(self):
-        self.check_crash()
-        self.update_status()
-
-    def check_crash(self):
-        if self.status.value == MP_STATUS['crashing']:
-            if self.worker_id == 'master':
-                self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
-                time.sleep(5)
-                self.log.fatal("That's it, farewell cruel world!")
-                raise RuntimeError("Terminated pax multiprocessing due to crash in one of the workers.")
-            exit('')
-
-    @property
-    def queued_events(self):
-        """Return the number of events waiting to be processed, or 0 if we're not multiprocessing"""
-        if hasattr(self, 'input_queue'):
-            return self.input_queue.qsize() * self.block_size
-        return 0
-
-    def update_status(self):
-        # Don't update the status too often: this is expensive
-        if time.time() <= self.last_status_update + 1:
-            return
-        self.last_status_update = time.time()
-
-        def get_mem_usage(pid):
-            """Return memory usage in MB for process with PID pid.
-            Returns 0 if process does not exist (anymore).
-            Maintains a cache to make sure this is not polled more than once per second
-            """
-            try:
-                return psutil.Process(pid).memory_info().rss / 1e6
-            except psutil.NoSuchProcess:
-                return 0
-
-        sys.stdout.write('\rStatus: %s. Processing queue: %d events. Output queue: %s events. '
-                         'RAM usage: %0.1f (master) %0.1f (workers) %0.1f (output)' % (
-            [k for k, v in MP_STATUS.items() if v == self.status.value][0],
-            self.queued_events,
-            self.output_queue.qsize() * self.block_size,
-            get_mem_usage(os.getpid()),
-            sum([get_mem_usage(worker.pid) if worker.pid is not None else 0
-                 for worker in self.processing_workers]),
-            (get_mem_usage(self.output_worker.pid) if self.output_worker.pid is not None else 0),
-        ))
-        sys.stdout.flush()
 
     def make_timing_report(self, events_actually_processed):
         all_plugins = [self.input_plugin] + self.action_plugins
@@ -670,3 +379,20 @@ class Processor:
             self.log.debug("Shutting down %s..." % ap.name)
             ap.shutdown()
             ap.has_shut_down = True
+
+
+def setup_logging(level_str, name='processor'):
+    if level_str is None:
+        level_str = 'INFO'
+    log_spec = level_str.upper()
+    numeric_level = getattr(logging, log_spec, None)
+    if not isinstance(numeric_level, int):
+        raise InvalidConfigurationError('Invalid log level: %s' % log_spec)
+
+    logging.basicConfig(level=numeric_level,
+                        format='%(name)s %(processName)-10s L%(lineno)s %(levelname)s %(message)s')
+
+    logger = logging.getLogger(name)
+    logger.debug('Logging initialized with level %s' % log_spec)
+
+    return logger

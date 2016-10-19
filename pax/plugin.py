@@ -117,7 +117,7 @@ class OutputPlugin(ProcessPlugin):
             # Is there an input plugin? If so, try to use the input plugin's input name without extension.
             # This will give problems when both input and output have no extension (e.g. directories, databases),
             # but is very convenient otherwise.
-            # Appending e.g. '_procesed' inevitably leads to '_processed_processed_...'
+            # Appending e.g. '_processed' inevitably leads to '_processed_processed_...'
             ip = self.processor.input_plugin
             if ip is not None and 'input_name' in ip.config:
                 self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
