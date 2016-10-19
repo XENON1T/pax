@@ -15,7 +15,7 @@ from rootpy import stl
 
 import pax  # For version number
 from pax import plugin, datastructure, exceptions
-from pax.datastructure import EventProxy
+from pax.datastructure import make_event_proxy
 
 log = logging.getLogger('ROOTClass_helpers')
 
@@ -73,8 +73,8 @@ class EncodeROOTClass(plugin.TransformPlugin):
         self.set_root_object_attrs(event, root_event)
         self.last_collection = {}
 
-        event_proxy = EventProxy(event_number=event.event_number, data=dict(root_event=pickle.dumps(root_event),
-                                                                            class_code=self.class_code))
+        event_proxy = make_event_proxy(event, data=dict(root_event=pickle.dumps(root_event),
+                                                        class_code=self.class_code))
         root_event.IsA().Destructor(root_event)
         return event_proxy
 

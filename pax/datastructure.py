@@ -7,7 +7,7 @@ NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
-from collections import namedtuple
+from recordclass import recordclass
 import numpy as np
 import six
 
@@ -566,6 +566,9 @@ class Event(StrictModel):
     #: A nonnegative integer that uniquely identifies the event within the dataset.
     event_number = 0
 
+    #: Internal number used for multiprocessing, no physical meaning.
+    block_id = -1
+
     #: Total number of channels in the event (whether or not they see anything).
     #: Has to be the same as n_channels in config, provided here for deserialization ease.
     n_channels = INT_NAN
@@ -786,4 +789,8 @@ class Event(StrictModel):
 # other code will be fooled into treating it as a normal event
 # (except the explicit event class checks in ProcessPlugin of course,
 #  these have to be disabled by as needed using do_output_check and do_input_check)
-EventProxy = namedtuple('EventProxy', ['data', 'event_number'])
+EventProxy = recordclass('EventProxy', ['data', 'event_number', 'block_id'])
+
+
+def make_event_proxy(event, data):
+    return EventProxy(data=data, event_number=event.event_number, block_id=event.block_id)

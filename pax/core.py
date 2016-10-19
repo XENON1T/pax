@@ -6,18 +6,19 @@ import six
 import itertools
 import os
 import time
-if six.PY2:
-    import imp
-else:
-    import importlib
 
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
-from pax.configuration import load_configuration, fix_sections_from_mongo, combine_configs
+from pax.configuration import load_configuration
 from pax.exceptions import InvalidConfigurationError
 from pax import simulation, utils
+
+if six.PY2:
+    import imp
+else:
+    import importlib
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -105,7 +106,7 @@ class Processor:
             plugin_names[plugin_group_name] = pc[plugin_group_name]
 
             if not isinstance(plugin_names[plugin_group_name], (str, list)):
-                raise InvalidConfigurationError("Plugin group list %s should be a string, not %s"  % (
+                raise InvalidConfigurationError("Plugin group list %s should be a string, not %s" % (
                     plugin_group_name, type(plugin_names)))
 
             if not isinstance(plugin_names[plugin_group_name], list):
@@ -183,7 +184,6 @@ class Processor:
         # Sometimes the config tells us to start running immediately (e.g. if fetching from a queue
         if pc.get('autorun', False):
             self.run()
-
 
     @staticmethod
     def get_plugin_search_paths(extra_paths=None):

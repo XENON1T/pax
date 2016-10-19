@@ -430,7 +430,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                  modules=modules,
                                                  areas=areas,
                                                  last_data=(not more_data_coming and i == len(futures) - 1)):
-                        yield EventProxy(event_number=next_event_number, data=data)
+                        yield EventProxy(event_number=next_event_number, data=data, block_id=-1)
                         next_event_number += 1
 
         # We've built all the events for this run!

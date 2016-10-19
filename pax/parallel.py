@@ -4,6 +4,7 @@ import time
 
 from .core import Processor
 from .configuration import combine_configs
+NO_MORE_EVENTS = 42
 
 
 def multiprocess_locally(n_cpus, **kwargs):
@@ -26,8 +27,9 @@ def multiprocess_locally(n_cpus, **kwargs):
                                    event_numbers_file=None,
                                    events_to_process=None),
                        'Queues.PullFromSharedMemoryQueue': dict(queue=processing_queue,
-                                                                ordered_pull=False),
-                       'Queues.PushToSharedMemoryQueue': dict(queue=output_queue)}
+                                                                preserve_ids=True),
+                       'Queues.PushToSharedMemoryQueue': dict(queue=output_queue,
+                                                              send_no_more_events_signal=False)}
 
     output_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                     encoder_plugin=None,
@@ -35,7 +37,8 @@ def multiprocess_locally(n_cpus, **kwargs):
                                     event_numbers_file=None,
                                     events_to_process=None,
                                     input='Queues.PullFromSharedMemoryQueue'),
-                           Queues=dict(queue=output_queue))
+                           Queues=dict(queue=output_queue,
+                                       ordered_pull=True))
 
     # Initialize the various worker processes
     living_workers = []
@@ -71,6 +74,10 @@ def multiprocess_locally(n_cpus, **kwargs):
                 living_workers[i] = None
 
         living_workers = [w for w in living_workers if w is not None]
+
+        if len(living_workers) == 1:
+            # Only the output worker is still alive; send it a no more events message
+            output_queue.put(NO_MORE_EVENTS)
 
         # TODO: better status line
         print(living_workers, processing_queue.qsize(), output_queue.qsize())

@@ -200,7 +200,6 @@ class TestPax(unittest.TestCase):
         self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
         os.remove('temp_eventlist.txt')
 
-
     def test_simulator(self):
         """ Process the events in dummy_waveforms.csv
         """

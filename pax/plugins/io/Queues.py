@@ -1,25 +1,26 @@
-import queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue   # flake8: noqa
 import time
 import heapq
 
 from pax import plugin
+from pax.parallel import NO_MORE_EVENTS
 
 
 ##
 # Generic queue handling
 ##
-NO_MORE_EVENTS = "we're out of events! get more funding!"
 
 class QueuePlugin:
-    no_more_events = False
-
     def startup(self):
         self.init_queue()
 
     def init_queue(self):
         raise NotImplementedError
 
-    def push_queue(self, block_id, event_block):
+    def push_queue(self, stuff):
         raise NotImplementedError
 
     def get_queue_size(self):
@@ -33,13 +34,14 @@ class QueuePlugin:
 class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
     # We may get eventproxies rather than real events
     do_output_check = False
+    no_more_events = False
 
     def startup(self):
         QueuePlugin.startup(self)
         # If we need to order events received from the queue before releasing them, we need a heap
         # NB! If you enable this, you must GUARANTEE no other process will be consuming from this queue
         # (otherwise there will be holes in the event block ids, triggering an infinite wait)
-        self.ordered_pull = self.config.get('ordered_pull', True)
+        self.ordered_pull = self.config.get('ordered_pull', False)
         self.block_heap = []
 
     def get_block(self):
@@ -50,14 +52,22 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
             # There could be stuff left on the queue, but then it's a None = NoMoreEvents message for other consumers.
             raise queue.Empty
 
-        block_id, event_block = self.pull_queue()
+        result = self.pull_queue()
 
-        if event_block == NO_MORE_EVENTS:
+        if result == NO_MORE_EVENTS:
             # The last event has been popped from the queue. Push None back on the queue for
             # the benefit of other consumers.
             self.no_more_events = True
-            self.push_queue(block_id, NO_MORE_EVENTS)
+            self.push_queue(NO_MORE_EVENTS)
             raise queue.Empty
+
+        else:
+            block_id, event_block = result
+            # Annotate each event with the block id.
+            # If the output is a queue push plugin, we need it to use the same block id
+            # (else block_id's may get duplicated)
+            for e in event_block:
+                e.block_id = block_id
 
         return block_id, event_block
 
@@ -95,11 +105,13 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
                 # The queue is empty so we must wait for the next event / The event we wan't hasn't arrived on the heap.
                 self.log.debug("Found empty queue, no more events is %s, len block heap is %s, sleeping for 1 sec" % (
                     self.no_more_events, len(block_heap)))
+                self.log.debug("Here's what's on the heap: %s" % block_heap)
                 time.sleep(1)
                 continue
 
-            self.log.debug("Now processing block %d" % block_id)
+            self.log.debug("Now processing block %d, %d events" % (block_id, len(event_block)))
             for i, event in enumerate(event_block):
+                self.log.debug("Yielding event number %d" % event.event_number)
                 yield event
 
         self.log.debug("Exited get_events loop")
@@ -114,29 +126,46 @@ class QueuePushPlugin(QueuePlugin, plugin.OutputPlugin):
         QueuePlugin.startup(self)
 
         self.max_queue_blocks = self.config.get('max_queue_blocks', 100)
-        self.current_block = []
-        self.current_block_id = 0
         self.max_block_size = self.config.get('event_block_size', 10)
+        self.preserve_ids = self.config.get('preserve_ids', False)
+        self.send_no_more_events_signal = self.config.get('send_no_more_events_signal', True)
+        self.current_block = []
+        if self.preserve_ids:
+            # We get events with block_id's already set, and must return them in groups with the same id
+            # We can assume the id's come in order, however
+            self.current_block_id = None
+        else:
+            # We're getting events that have never been on a queue before, and can freely assign block id's
+            self.current_block_id = 0
 
     def write_event(self, event):
-        self.current_block.append(event)
-        if len(self.current_block) == self.max_block_size:
-            self.send_block()
+        if self.preserve_ids:
+            if event.block_id != self.current_block_id:
+                self.send_block()
+                self.current_block_id = event.block_id
+            self.current_block.append(event)
 
-    def push_block(self, block_id, event_block):
-        while self.get_queue_size() >= self.max_queue_blocks:
-            self.log.debug("Max queue size %d reached, waiting to push block")
-            time.sleep(1)
-        self.push_queue(block_id, event_block)
+        else:
+            self.current_block.append(event)
+            if len(self.current_block) == self.max_block_size:
+                self.send_block()
+                self.current_block_id += 1
 
     def send_block(self):
-        self.push_queue(self.current_block_id, self.current_block)
-        self.current_block_id += 1
+        """Sends the current block if it has any events in it, then resets the current block to []
+        Does NOT change self.current_block_id!
+        """
+        if len(self.current_block):
+            while self.get_queue_size() >= self.max_queue_blocks:
+                self.log.debug("Max queue size %d reached, waiting to push block")
+                time.sleep(1)
+            self.push_queue((self.current_block_id, self.current_block))
         self.current_block = []
 
     def shutdown(self):
         self.send_block()
-        self.push_queue(self.current_block_id, NO_MORE_EVENTS)
+        if self.send_no_more_events_signal:
+            self.push_queue(NO_MORE_EVENTS)
 
 
 ##
@@ -153,8 +182,8 @@ class SharedMemoryQueuePlugin():
     def pull_queue(self):
         return self.queue.get(block=True, timeout=1)
 
-    def push_queue(self, block_id, event_block):
-        self.queue.put((block_id, event_block))
+    def push_queue(self, stuff):
+        self.queue.put(stuff)
 
     def get_queue_size(self):
         return self.queue.qsize()

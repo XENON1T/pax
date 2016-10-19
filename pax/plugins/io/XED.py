@@ -143,6 +143,7 @@ class ReadXED(InputFromFolder):
                                      event_layer_metadata['samples_in_event'])
 
             result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                block_id=-1,
                                 data=dict(xed_type='raw',
                                           data=data,
                                           dataset_name=dataset_name,
@@ -166,6 +167,7 @@ class ReadXED(InputFromFolder):
             data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
 
             result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                block_id=-1,
                                 data=dict(xed_type='zle',
                                           data=data_to_decompress,
                                           dataset_name=dataset_name,
