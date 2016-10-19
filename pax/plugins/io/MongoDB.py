@@ -508,6 +508,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                        pax_to_human_time(t1))
 
         event = Event(n_channels=self.config['n_channels'],
+                      block_id=event_proxy.block_id,
                       start_time=t0 + self.time_of_run_start,
                       sample_duration=self.sample_duration,
                       stop_time=t1 + self.time_of_run_start,

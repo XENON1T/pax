@@ -9,7 +9,7 @@ except ImportError:
     import Queue as queue   # flake8: noqa
 
 from pax.parallel import multiprocess_locally
-from pax.plugins.io.Queues import PullFromSharedMemoryQueue, PushToSharedMemoryQueue, NO_MORE_EVENTS
+from pax.plugins.io.Queues import PullFromQueue, PushToQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE
 from pax.datastructure import Event
 
 
@@ -26,21 +26,33 @@ class TestMultiprocessing(unittest.TestCase):
     def test_ordered_pull(self):
         # Test pulling from a queue in order. Queue is here just a local (non-multiprocessing) queue
         q = queue.Queue()
-        p = PullFromSharedMemoryQueue(dict(queue=q, ordered_pull=True),
-                                      processor=MagicMock())
+        p = PullFromQueue(dict(queue=q, ordered_pull=True), processor=MagicMock())
         events = fake_events(20)
         q.put((2, events[8:]))
         q.put((0, events[:5]))
         q.put((1, events[5:8]))
-        q.put(NO_MORE_EVENTS)
+        q.put((NO_MORE_EVENTS, None))
+        for i, e in enumerate(p.get_events()):
+            self.assertEqual(e.event_number, i)
+
+    def test_pull_multiple(self):
+        q = queue.Queue()
+        p = PullFromQueue(dict(queue=q, ordered_pull=True), processor=MagicMock())
+        events = fake_events(20)
+        q.put((REGISTER_PUSHER, 'gast'))
+        q.put((REGISTER_PUSHER, 'gozer'))
+        q.put((2, events[8:]))
+        q.put((0, events[:5]))
+        q.put((PUSHER_DONE, 'gozer'))
+        q.put((1, events[5:8]))
+        q.put((PUSHER_DONE, 'gast'))
         for i, e in enumerate(p.get_events()):
             self.assertEqual(e.event_number, i)
 
     def test_push(self):
         # Test pushing to a local (non-multiprocessing) queue
         q = queue.Queue()
-        p = PushToSharedMemoryQueue(dict(queue=q),
-                                    processor=MagicMock())
+        p = PushToQueue(dict(queue=q), processor=MagicMock())
 
         # Submit a series of fake events, then shut down
         events = fake_events(22)
@@ -56,7 +68,7 @@ class TestMultiprocessing(unittest.TestCase):
             pass
 
         # No more events message pushed to queue
-        self.assertEqual(blocks_out[-1], NO_MORE_EVENTS)
+        self.assertEqual(blocks_out[-1], (NO_MORE_EVENTS, None))
         blocks_out = blocks_out[:-1]
 
         # Block ids must be correct
@@ -65,11 +77,9 @@ class TestMultiprocessing(unittest.TestCase):
         # Block sizes are correct
         self.assertEqual([len(x[1]) for x in blocks_out], [10, 10, 2])
 
-
     def test_push_preserveid(self):
         q = queue.Queue()
-        p = PushToSharedMemoryQueue(dict(queue=q, preserve_ids=True),
-                                    processor=MagicMock())
+        p = PushToQueue(dict(queue=q, preserve_ids=True), processor=MagicMock())
 
         events = fake_events(22)
         for e in events[:5]:
@@ -91,7 +101,7 @@ class TestMultiprocessing(unittest.TestCase):
             pass
 
         # No more events message pushed to queue
-        self.assertEqual(blocks_out[-1], NO_MORE_EVENTS)
+        self.assertEqual(blocks_out[-1], (NO_MORE_EVENTS, None))
         blocks_out = blocks_out[:-1]
 
         # Block ids must be correct
@@ -133,5 +143,5 @@ class TestMultiprocessing(unittest.TestCase):
 if __name__ == '__main__':
     import logging
     import sys
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    # logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     unittest.main()

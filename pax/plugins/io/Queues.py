@@ -4,45 +4,27 @@ except ImportError:
     import Queue as queue   # flake8: noqa
 import time
 import heapq
+import random
+import string
 
 from pax import plugin
-from pax.parallel import NO_MORE_EVENTS
+from pax.parallel import NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE
 
 
-##
-# Generic queue handling
-##
 
-class QueuePlugin:
-    def startup(self):
-        self.init_queue()
-
-    def init_queue(self):
-        raise NotImplementedError
-
-    def push_queue(self, stuff):
-        raise NotImplementedError
-
-    def get_queue_size(self):
-        raise NotImplementedError
-
-    def pull_queue(self):
-        """Pull event block from queue, or raise queue.Empty if no events queued"""
-        raise NotImplementedError
-
-
-class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
+class PullFromQueue(plugin.InputPlugin):
     # We may get eventproxies rather than real events
     do_output_check = False
     no_more_events = False
 
     def startup(self):
-        QueuePlugin.startup(self)
+        self.queue = self.config['queue']
         # If we need to order events received from the queue before releasing them, we need a heap
         # NB! If you enable this, you must GUARANTEE no other process will be consuming from this queue
         # (otherwise there will be holes in the event block ids, triggering an infinite wait)
         self.ordered_pull = self.config.get('ordered_pull', False)
         self.block_heap = []
+        self.pushers = []
 
     def get_block(self):
         """Get a block of events from the queue, or raise queue.Empty if no events are available
@@ -52,17 +34,34 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
             # There could be stuff left on the queue, but then it's a None = NoMoreEvents message for other consumers.
             raise queue.Empty
 
-        result = self.pull_queue()
+        head, body = self.queue.get(block=True, timeout=1)
 
-        if result == NO_MORE_EVENTS:
+        if head == NO_MORE_EVENTS:
             # The last event has been popped from the queue. Push None back on the queue for
             # the benefit of other consumers.
             self.no_more_events = True
-            self.push_queue(NO_MORE_EVENTS)
+            self.queue.put((NO_MORE_EVENTS, None))
             raise queue.Empty
 
+        elif head == REGISTER_PUSHER:
+            # We're in a many-push to one-pull situation.
+            # One of the pushers has just announced itself.
+            self.pushers.append(body)
+            self.log.info("Registered new pusher: %s" % body)
+            return self.get_block()
+
+        elif head == PUSHER_DONE:
+            # A pusher just proclaimed it will no longer push events
+            self.pushers.remove(body)
+            self.log.info("Removed pusher: %s. Remaining pushers: %s" % (body, self.pushers))
+            if not len(self.pushers):
+                # No pushers left, stop processing once there are no more events.
+                # This assumes all pushers will register before the first one is done!
+                self.queue.put((NO_MORE_EVENTS, None))
+            return self.get_block()
+
         else:
-            block_id, event_block = result
+            block_id, event_block = head, body
             # Annotate each event with the block id.
             # If the output is a queue push plugin, we need it to use the same block id
             # (else block_id's may get duplicated)
@@ -105,7 +104,7 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
                 # The queue is empty so we must wait for the next event / The event we wan't hasn't arrived on the heap.
                 self.log.debug("Found empty queue, no more events is %s, len block heap is %s, sleeping for 1 sec" % (
                     self.no_more_events, len(block_heap)))
-                self.log.debug("Here's what's on the heap: %s" % block_heap)
+                # self.log.debug("Here's what's on the heap: %s" % block_heap)
                 time.sleep(1)
                 continue
 
@@ -117,18 +116,23 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
         self.log.debug("Exited get_events loop")
 
 
-class QueuePushPlugin(QueuePlugin, plugin.OutputPlugin):
+class PushToQueue(plugin.OutputPlugin):
     # We must be allowed to route eventproxies as well as actual events
     do_input_check = False
     do_output_check = False
 
     def startup(self):
-        QueuePlugin.startup(self)
-
+        self.queue = self.config['queue']
         self.max_queue_blocks = self.config.get('max_queue_blocks', 100)
         self.max_block_size = self.config.get('event_block_size', 10)
         self.preserve_ids = self.config.get('preserve_ids', False)
-        self.send_no_more_events_signal = self.config.get('send_no_more_events_signal', True)
+        self.many_to_one = self.config.get('many_to_one', False)
+
+        if self.many_to_one:
+            # Generate random name and tell the puller we're in town
+            self.pusher_name = ''.join(random.choice(string.ascii_letters) for _ in range(20))
+            self.queue.put((REGISTER_PUSHER, self.pusher_name))
+
         self.current_block = []
         if self.preserve_ids:
             # We get events with block_id's already set, and must return them in groups with the same id
@@ -156,42 +160,15 @@ class QueuePushPlugin(QueuePlugin, plugin.OutputPlugin):
         Does NOT change self.current_block_id!
         """
         if len(self.current_block):
-            while self.get_queue_size() >= self.max_queue_blocks:
+            while self.queue.qsize() >= self.max_queue_blocks:
                 self.log.debug("Max queue size %d reached, waiting to push block")
                 time.sleep(1)
-            self.push_queue((self.current_block_id, self.current_block))
+            self.queue.put((self.current_block_id, self.current_block))
         self.current_block = []
 
     def shutdown(self):
         self.send_block()
-        if self.send_no_more_events_signal:
-            self.push_queue(NO_MORE_EVENTS)
-
-
-##
-# Queue backends
-##
-
-class SharedMemoryQueuePlugin():
-    """Shared memory queues receive their queue objects (stdlib queue.Queue instances) via the config dict
-    """
-
-    def init_queue(self):
-        self.queue = self.config['queue']
-
-    def pull_queue(self):
-        return self.queue.get(block=True, timeout=1)
-
-    def push_queue(self, stuff):
-        self.queue.put(stuff)
-
-    def get_queue_size(self):
-        return self.queue.qsize()
-
-
-class PullFromSharedMemoryQueue(SharedMemoryQueuePlugin, QueuePullPlugin):
-    pass
-
-
-class PushToSharedMemoryQueue(SharedMemoryQueuePlugin, QueuePushPlugin):
-    pass
+        if self.many_to_one:
+            self.queue.put((PUSHER_DONE, self.pusher_name))
+        else:
+            self.queue.put((NO_MORE_EVENTS, None))

@@ -315,7 +315,9 @@ class ReadZippedDecoder(plugin.TransformPlugin):
 
     def transform_event(self, event_proxy):
         data = zlib.decompress(event_proxy.data)
-        return self.decode_event(data)
+        event = self.decode_event(data)
+        event.block_id = event_proxy.block_id
+        return event
 
     def decode_event(self, event):
         raise NotImplementedError

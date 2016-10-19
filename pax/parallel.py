@@ -4,7 +4,10 @@ import time
 
 from .core import Processor
 from .configuration import combine_configs
-NO_MORE_EVENTS = 42
+
+REGISTER_PUSHER = -11
+PUSHER_DONE = -12
+NO_MORE_EVENTS = -42
 
 
 def multiprocess_locally(n_cpus, **kwargs):
@@ -19,24 +22,24 @@ def multiprocess_locally(n_cpus, **kwargs):
     input_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                    encoder_plugin=None,
                                    decoder_plugin=None,
-                                   output='Queues.PushToSharedMemoryQueue'),
+                                   output='Queues.PushToQueue'),
                           Queues=dict(queue=processing_queue))
 
-    worker_override = {'pax': dict(input='Queues.PullFromSharedMemoryQueue',
-                                   output='Queues.PushToSharedMemoryQueue',
+    worker_override = {'pax': dict(input='Queues.PullFromQueue',
+                                   output='Queues.PushToQueue',
                                    event_numbers_file=None,
                                    events_to_process=None),
-                       'Queues.PullFromSharedMemoryQueue': dict(queue=processing_queue,
-                                                                preserve_ids=True),
-                       'Queues.PushToSharedMemoryQueue': dict(queue=output_queue,
-                                                              send_no_more_events_signal=False)}
+                       'Queues.PullFromQueue': dict(queue=processing_queue),
+                       'Queues.PushToQueue': dict(queue=output_queue,
+                                                  preserve_ids=True,
+                                                  many_to_one=True)}
 
     output_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                     encoder_plugin=None,
                                     decoder_plugin=None,
                                     event_numbers_file=None,
                                     events_to_process=None,
-                                    input='Queues.PullFromSharedMemoryQueue'),
+                                    input='Queues.PullFromQueue'),
                            Queues=dict(queue=output_queue,
                                        ordered_pull=True))
 
@@ -52,7 +55,7 @@ def multiprocess_locally(n_cpus, **kwargs):
     for w in living_workers:
         w.start()
 
-    # Check the health / done status of the workers every second.
+    # Check the health / status of the workers every second.
     crashing_down = False
     while len(living_workers):
         time.sleep(1)
@@ -74,10 +77,6 @@ def multiprocess_locally(n_cpus, **kwargs):
                 living_workers[i] = None
 
         living_workers = [w for w in living_workers if w is not None]
-
-        if len(living_workers) == 1:
-            # Only the output worker is still alive; send it a no more events message
-            output_queue.put(NO_MORE_EVENTS)
 
         # TODO: better status line
         print(living_workers, processing_queue.qsize(), output_queue.qsize())
