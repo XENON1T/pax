@@ -22,13 +22,18 @@ def multiprocess_locally(n_cpus, **kwargs):
                           Queues=dict(queue=processing_queue))
 
     worker_override = {'pax': dict(input='Queues.PullFromSharedMemoryQueue',
-                                   output='Queues.PushToSharedMemoryQueue'),
-                       'Queues.PullFromSharedMemoryQueue': dict(queue=processing_queue),
+                                   output='Queues.PushToSharedMemoryQueue',
+                                   event_numbers_file=None,
+                                   events_to_process=None),
+                       'Queues.PullFromSharedMemoryQueue': dict(queue=processing_queue,
+                                                                ordered_pull=False),
                        'Queues.PushToSharedMemoryQueue': dict(queue=output_queue)}
 
     output_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                     encoder_plugin=None,
                                     decoder_plugin=None,
+                                    event_numbers_file=None,
+                                    events_to_process=None,
                                     input='Queues.PullFromSharedMemoryQueue'),
                            Queues=dict(queue=output_queue))
 
@@ -66,6 +71,9 @@ def multiprocess_locally(n_cpus, **kwargs):
                 living_workers[i] = None
 
         living_workers = [w for w in living_workers if w is not None]
+
+        # TODO: better status line
+        print(living_workers, processing_queue.qsize(), output_queue.qsize())
 
     if crashing_down:
         raise RuntimeError("Pax multiprocessing crashed due to exception in one of the workers")

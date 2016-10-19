@@ -87,14 +87,12 @@ class Processor:
         # By having this code here, we ensure they are always just after/before input/output,
         # no matter what plugin group names the user is using
         if pc.get('decoder_plugin') is not None:
-            print("\n>>Detected decoder %s<<\n" % pc.get('decoder_plugin'))
             decoder_pos = 0
             if len(pc['plugin_group_names']) and pc['plugin_group_names'][0] == 'input':
                 decoder_pos += 1
             pc['plugin_group_names'].insert(decoder_pos, 'decoder_plugin')
 
         if pc.get('encoder_plugin') is not None:
-            print("\n>>Detected encoder %s<<\n" % pc.get('encoder_plugin'))
             encoder_pos = len(pc['plugin_group_names'])
             if len(pc['plugin_group_names']) and pc['plugin_group_names'][-1] == 'output':
                 encoder_pos -= 1

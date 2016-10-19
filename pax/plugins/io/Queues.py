@@ -8,13 +8,7 @@ from pax import plugin
 ##
 # Generic queue handling
 ##
-
-class NoMoreEvents:
-    """Instances of this are pushed to a queue instead of an event block
-    to let consumers know no more events are coming
-    """
-    pass
-
+NO_MORE_EVENTS = "we're out of events! get more funding!"
 
 class QueuePlugin:
     no_more_events = False
@@ -43,6 +37,8 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
     def startup(self):
         QueuePlugin.startup(self)
         # If we need to order events received from the queue before releasing them, we need a heap
+        # NB! If you enable this, you must GUARANTEE no other process will be consuming from this queue
+        # (otherwise there will be holes in the event block ids, triggering an infinite wait)
         self.ordered_pull = self.config.get('ordered_pull', True)
         self.block_heap = []
 
@@ -51,16 +47,16 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
         """
         if self.no_more_events:
             # There are no more events.
-            # There could be stuff left on the queue, but then it's a NoMoreEvents message for other consumers.
+            # There could be stuff left on the queue, but then it's a None = NoMoreEvents message for other consumers.
             raise queue.Empty
 
         block_id, event_block = self.pull_queue()
 
-        if isinstance(event_block, NoMoreEvents):
-            # The last event has been popped from the queue. Push NoMoreEvents back on the queue for
+        if event_block == NO_MORE_EVENTS:
+            # The last event has been popped from the queue. Push None back on the queue for
             # the benefit of other consumers.
             self.no_more_events = True
-            self.push_queue(block_id, event_block)
+            self.push_queue(block_id, NO_MORE_EVENTS)
             raise queue.Empty
 
         return block_id, event_block
@@ -97,7 +93,8 @@ class QueuePullPlugin(QueuePlugin, plugin.InputPlugin):
                     # We're done, no more events!
                     break
                 # The queue is empty so we must wait for the next event / The event we wan't hasn't arrived on the heap.
-                self.log.debug("Found empty queue, sleeping for 1 sec")
+                self.log.debug("Found empty queue, no more events is %s, len block heap is %s, sleeping for 1 sec" % (
+                    self.no_more_events, len(block_heap)))
                 time.sleep(1)
                 continue
 
@@ -139,7 +136,7 @@ class QueuePushPlugin(QueuePlugin, plugin.OutputPlugin):
 
     def shutdown(self):
         self.send_block()
-        self.push_queue(self.current_block_id, NoMoreEvents())
+        self.push_queue(self.current_block_id, NO_MORE_EVENTS)
 
 
 ##
@@ -157,10 +154,6 @@ class SharedMemoryQueuePlugin():
         return self.queue.get(block=True, timeout=1)
 
     def push_queue(self, block_id, event_block):
-        if isinstance(event_block, NoMoreEvents):
-            print("Putting no more events message")
-        else:
-            print("Putting %s" % block_id)
         self.queue.put((block_id, event_block))
 
     def get_queue_size(self):

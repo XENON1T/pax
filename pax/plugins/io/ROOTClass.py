@@ -64,8 +64,7 @@ class EncodeROOTClass(plugin.TransformPlugin):
             # Only master (in standalone mode) and processing_0 (in multiprocessing mode) are allowed to compile the lib
             # to avoid race conditions / clashes
             self.class_code = OVERALL_HEADER + self._build_model_class(event)
-            load_event_class_code(self.class_code,
-                                  other_process_compiles=(self.processor.worker_id not in ['master', 'processing_0']))
+            load_event_class_code(self.class_code)
 
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
@@ -251,8 +250,7 @@ class WriteROOTClass(plugin.OutputPlugin):
     def write_event(self, event_proxy):
         if not self.tree_created:
             # Load the event class code, ships with event_proxy
-            load_event_class_code(event_proxy.data['class_code'],
-                                  other_process_compiles=(self.processor.worker_id != 'master'))
+            load_event_class_code(event_proxy.data['class_code'])
 
             # Store the event class code in pax_event_class
             ROOT.TNamed('pax_event_class', event_proxy.data['class_code']).Write()
@@ -381,10 +379,9 @@ def find_class_names(filename):
     return classnames
 
 
-def load_event_class_code(class_code, other_process_compiles=False):
+def load_event_class_code(class_code):
     """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
-    If other_process_compiles = True, will not compile the code, but waits for another process to do so.
     """
     checksum = hashlib.md5(class_code.encode()).hexdigest()
     class_filename = 'pax_event_class-%s.cpp' % checksum
@@ -392,28 +389,37 @@ def load_event_class_code(class_code, other_process_compiles=False):
     lockfile = get_libname(class_filename) + '.lock'
     we_made_the_lockfile = False
 
-    if os.path.exists(libfile) and not os.path.exists(lockfile):
-        # The library has already been compiled, load_event_class will just load it.
-        pass
-    elif other_process_compiles:
-        while not os.path.exists(libfile) or os.path.exists(lockfile):
-            log.debug("Waiting for another process to compile the pax event class")
+    def check_lock(pid_for_message='some other process'):
+        while os.path.exists(lockfile):
+            log.debug("Waiting for %s to compile the pax event class" % pid_for_message)
+            # TODO: Check age of the lock file, break lock if older than XXX
             time.sleep(5)
-    else:
-        if os.path.exists(lockfile):
-            raise RuntimeError("Pax event class compilation lock file present at %s. "
-                               "Either a previous compilation crashed, or you are trying to run several paxes "
-                               "in parallel from the same directory (which won't work). Remove the file manually "
-                               "and try again." % lockfile)
+
+    check_lock()
+
+    if not os.path.exists(libfile):
+        # Loading will trigger compilation
+        # Create a lock file with our PID in it
+        my_pid = os.getpid()
         we_made_the_lockfile = True
         with open(lockfile, mode='w') as lf:
-            lf.write("Hi fellas! I just need a minute to compile this pax ROOT class business. "
-                     "Could you just hang on a minute? I started at %s." % (
-                        time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())))
-        with open(class_filename, mode='w') as outfile:
-            outfile.write(class_code)
+            lf.write(str(my_pid))
 
-    # Compile / load the class
+        time.sleep(1)
+
+        # Check the lock file to see if some other process overwrote it.
+        with open(lockfile, mode='r') as lf:
+            lockfile_pid = int(lf.read())
+
+        if lockfile_pid != my_pid:
+            # They did, ok... wait for them to compile it.
+            we_made_the_lockfile = False
+            check_lock(pid_for_message=lockfile_pid)
+        else:
+            # I am the chosen one! Output the cpp code and compile it
+            with open(class_filename, mode='w') as outfile:
+                outfile.write(class_code)
+
     load_event_class(os.path.abspath(class_filename))
 
     if we_made_the_lockfile:
