@@ -1,7 +1,7 @@
 import unittest
 import shutil
 import os
-from unittest.mock import MagicMock
+from mock import MagicMock
 
 try:
     import queue

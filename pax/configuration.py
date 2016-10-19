@@ -119,7 +119,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
     # Apply the config dict.
     evaled_config = combine_configs(evaled_config, config_dict)
 
-    if evaled_config['pax'].get('look_for_config_in_runs_db'):
+    if maybe_call_mongo and evaled_config['pax'].get('look_for_config_in_runs_db'):
         # Connect to MongoDB. Do import here, since someone may wish to run pax without mongo
         from pax.MongoDB_ClientMaker import ClientMaker         # noqa
         run_collection = ClientMaker(evaled_config['MongoDB']).get_client('run')['run'].get_collection('runs_new')
