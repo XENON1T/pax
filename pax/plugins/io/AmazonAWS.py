@@ -26,7 +26,7 @@ class WriteDynamoDB(plugin.OutputPlugin):
                                                 AttributeDefinitions=[
                                                     {
                                                         'AttributeName': 'event_number',
-                                                        'AttributeType': 'I'
+                                                        'AttributeType': 'N'
                                                     },
                                                     {
                                                         'AttributeName': 'dataset_name',
