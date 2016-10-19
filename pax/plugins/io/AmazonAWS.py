@@ -11,6 +11,7 @@ class WriteDynamoDB(plugin.OutputPlugin):
 
     def startup(self):
         self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table('processed')
         
     def write_event(self, event):
         self.table.put_item(Item=event.to_dict(
