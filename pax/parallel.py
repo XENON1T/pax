@@ -100,8 +100,7 @@ def multiprocess_configuration(n_cpus, base_config_kwargs, processing_queue_kwar
 
     for worker_overide in [input_override] + [worker_override] * n_cpus + [output_override]:
         new_conf = deepcopy(base_config_kwargs)
-        print(worker_override)
-        new_conf['config_dict'] = combine_configs(base_config_kwargs.get('config_dict'),
+        new_conf['config_dict'] = combine_configs(new_conf.get('config_dict'),
                                                   common_override,
                                                   worker_overide)
         yield new_conf
@@ -139,6 +138,7 @@ def multiprocess_locally(n_cpus, **kwargs):
 
         # TODO: better status line
         print(running_workers, processing_queue.qsize(), output_queue.qsize())
+
 
 
 # def multiprocess_remotely(n_cpus, **kwargs):
