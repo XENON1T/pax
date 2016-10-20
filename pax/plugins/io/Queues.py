@@ -8,8 +8,18 @@ import random
 import string
 
 from pax import plugin
-from pax.parallel import NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE
+from pax.parallel import RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE
 
+
+def get_queue_from_config(config):
+    """Given a queueplugin config, get the queue from it
+    Yeah, should have maybe made base class with this as only method...
+    """
+    if 'queue' in config:
+        return config['queue']
+    elif 'queue_url' in config:
+        assert 'queue_name' in config
+        return RabbitQueue(config['queue_url'], config['queue_name'])
 
 
 class PullFromQueue(plugin.InputPlugin):
@@ -18,7 +28,7 @@ class PullFromQueue(plugin.InputPlugin):
     no_more_events = False
 
     def startup(self):
-        self.queue = self.config['queue']
+        self.queue = get_queue_from_config(self.config)
         # If we need to order events received from the queue before releasing them, we need a heap
         # NB! If you enable this, you must GUARANTEE no other process will be consuming from this queue
         # (otherwise there will be holes in the event block ids, triggering an infinite wait)
@@ -122,7 +132,7 @@ class PushToQueue(plugin.OutputPlugin):
     do_output_check = False
 
     def startup(self):
-        self.queue = self.config['queue']
+        self.queue = get_queue_from_config(self.config)
         self.max_queue_blocks = self.config.get('max_queue_blocks', 100)
         self.max_block_size = self.config.get('event_block_size', 10)
         self.preserve_ids = self.config.get('preserve_ids', False)
