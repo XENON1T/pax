@@ -8,7 +8,7 @@ import random
 import string
 
 from pax import plugin
-from pax.parallel import RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE
+from pax.parallel import RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
 
 
 def get_queue_from_config(config):
@@ -17,9 +17,9 @@ def get_queue_from_config(config):
     """
     if 'queue' in config:
         return config['queue']
-    elif 'queue_url' in config:
-        assert 'queue_name' in config
-        return RabbitQueue(config['queue_url'], config['queue_name'])
+    elif 'queue_name' in config:
+        return RabbitQueue(config['queue_name'],
+                           config.get('queue_url', DEFAULT_RABBIT_URI))
 
 
 class PullFromQueue(plugin.InputPlugin):

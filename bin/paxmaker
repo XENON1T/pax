@@ -12,7 +12,7 @@ from pax import core, parallel
 
 parser = argparse.ArgumentParser(description="Listen to a RabbitMQ server for instructions to create pax instances",)
 
-parser.add_argument('--url', default=None,
+parser.add_argument('--url', default=parallel.DEFAULT_RABBIT_URI,
                     help="URL to connect to the RabbitMQ server. "
                          "If not provided, tries to connect to a local server configured with default credentials.")
 
@@ -22,15 +22,16 @@ parser.add_argument('--cpus', default=2,
 parser.add_argument('--startup_queue', default='pax_startup',
                     help='Name for the pax startup request queue, usually just leave as pax_startup (default).')
 
-parser.add_argument('--startup_queue', default='pax_crashes',
-                    help='Name for the pax crash reporting queue, usually just leave as pax_crashes (default).')
+parser.add_argument('--crash_watch_fanout', default='pax_crashes',
+                    help='Name for the pax crash reporting fanout (rabbitmq exchange), '
+                         'usually just leave as pax_crashes (default).')
 
 
 args = parser.parse_args()
 
 # Setup the startup queue. Here we will listen for messages for starting pax, which should look like
-#  (pax_id, {config_names=..., config_paths=..., etc})
-startup_queue = parallel.RabbitQueue(args.url, args.startup_queue)
+#  (pax_id, {config_names=..., config_paths=..., etc}))
+startup_queue = parallel.RabbitQueue(args.startup_queue, args.url)
 
 # Setup the crash-watching fanout. Here we can send/receive messages denoting a pax crash
 #  (pax_id, extra_info)
@@ -38,10 +39,10 @@ startup_queue = parallel.RabbitQueue(args.url, args.startup_queue)
 # When a crash message is enountered all paxes with pax_id will be terminated (SIGTERM).
 # paxmaker can also send such a message if it encounters a crash in pax,
 # which will fan out to every other connected paxmaker.
-crash_fanout = parallel.RabbitFanOut(args.url, args.crash_watch_queue)
+crash_fanout = parallel.RabbitFanOut(args.crash_watch_fanout, args.url)
 
 running_paxes = []
-max_paxes = args.max_cpu
+max_paxes = args.cpus
 
 while True:
     time.sleep(1)
@@ -62,12 +63,13 @@ while True:
         for p in running_paxes:
             if p.pax_id == pax_id:
                 p.terminate()
+        running_paxes = parallel.group_by_status(running_paxes)['running']
         continue
     except Empty:
         pass
 
     # TODO: better status line
-    print("%d pax slots available." % (len(running_paxes) - max_paxes))
+    print("%d pax slots available." % (max_paxes - len(running_paxes)))
 
     # Check and handle pax startup requests
     try:
@@ -75,13 +77,19 @@ while True:
     except Empty:
         continue
 
+    pax_id, kwargs = msg
+
     if len(running_paxes) >= max_paxes:
         # We're already full; can't start another pax. Let someone else do it.
+        print("Start pax %s message recieved, but out of capacity. Putting back on queue." % pax_id)
         startup_queue.put(msg)
         continue
 
     # Start a new pax and append it to the list of running paxes
-    pax_id, kwargs = msg
+    print("Starting pax %s" % pax_id)
+    kwargs.setdefault('config_dict', {})
+    kwargs['config_dict'].setdefault('pax', {})
+    kwargs['config_dict']['pax']['autorun'] = True
     newpax = multiprocessing.Process(target=core.Processor, kwargs=kwargs)
     newpax.pax_id = pax_id
     newpax.start()

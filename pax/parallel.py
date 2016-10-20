@@ -18,7 +18,6 @@ REGISTER_PUSHER = -11
 PUSHER_DONE = -12
 NO_MORE_EVENTS = -42
 
-
 DEFAULT_RABBIT_URI = 'amqp://guest:guest@localhost:5672/%2f'
 
 class RabbitQueue:
@@ -38,7 +37,7 @@ class RabbitQueue:
         rabbitpy.Message(self.channel, message).publish('', self.queue_name)
 
     def get(self, **kwargs):
-        msg = self.queue.get()
+        msg = self.queue.get(acknowledge=False)
         if msg is None:
             raise Empty
         return pickle.loads(msg.body)
@@ -150,7 +149,7 @@ def group_by_status(plist):
     for p in plist:
         if p.exitcode is None:
             result['running'].append(p)
-        elif p.exitcode is 0:
+        elif p.exitcode == 0:
             result['completed'].append(p)
         else:
             result['crashed'].append(p)
