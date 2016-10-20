@@ -47,26 +47,7 @@ max_paxes = args.cpus
 while True:
     time.sleep(1)
 
-    p_by_status = parallel.group_by_status(running_paxes)
-    running_paxes = p_by_status['running']
-
-    # If any of our own paxes crashed, send a message to the crash fanout
-    # This will inform everyone connected to the server (including ourselves)
-    for pax_id in set([p.pax_id for p in p_by_status['crashed']]):
-        crash_fanout.put((pax_id, 'exception tracking not yet implemented'))
-
-    # Check and handle messages in the crash fanout
-    try:
-        pax_id, exception = crash_fanout.get()
-        print("Terminating all paxes with id %s due to remote crash: %s" % (pax_id, exception))
-        # Terminate all running paxes processes with a matching pax_id
-        for p in running_paxes:
-            if p.pax_id == pax_id:
-                p.terminate()
-        running_paxes = parallel.group_by_status(running_paxes)['running']
-        continue
-    except Empty:
-        pass
+    running_paxes = parallel.check_local_processes_while_remote_processing(running_paxes, crash_fanout)
 
     # TODO: better status line
     print("%d pax slots available." % (max_paxes - len(running_paxes)))

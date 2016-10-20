@@ -114,30 +114,30 @@ class TestMultiprocessing(unittest.TestCase):
         multiprocess_locally(n_cpus=2,
                              config_names='XENON100',
                              config_dict=dict(pax=dict(stop_after=10)))
-    #
-    # def test_process_event_list_multiprocessing(self):
-    #     """Take a list of event numbers from a file, and process them on two cores
-    #     """
-    #     with open('temp_eventlist.txt', mode='w') as outfile:
-    #         outfile.write("0\n7\n")
-    #     config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
-    #                       'plugin_group_names': ['input', 'output'],
-    #                       'output_name': 'test_output',
-    #                       'encoder_plugin': None,
-    #                       'output': 'Table.TableWriter'},
-    #               'Table.TableWriter': {'output_format': 'csv'}}
-    #
-    #     multiprocess_locally(n_cpus=2, config_names='XENON100', config_dict=config)
-    #
-    #     # Check we actually wrote two events (and a header row)
-    #     self.assertTrue(os.path.exists('test_output'))
-    #     self.assertTrue(os.path.exists('test_output/Event.csv'))
-    #     with open('test_output/Event.csv') as infile:
-    #         self.assertEqual(len(infile.readlines()), 3)
-    #
-    #     # Cleanup
-    #     shutil.rmtree('test_output')
-    #     os.remove('temp_eventlist.txt')
+
+    def test_process_event_list_multiprocessing(self):
+        """Take a list of event numbers from a file, and process them on two cores
+        """
+        with open('temp_eventlist.txt', mode='w') as outfile:
+            outfile.write("0\n7\n")
+        config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
+                          'plugin_group_names': ['input', 'output'],
+                          'output_name': 'test_output',
+                          'encoder_plugin': None,
+                          'output': 'Table.TableWriter'},
+                  'Table.TableWriter': {'output_format': 'csv'}}
+
+        multiprocess_locally(n_cpus=2, config_names='XENON100', config_dict=config)
+
+        # Check we actually wrote two events (and a header row)
+        self.assertTrue(os.path.exists('test_output'))
+        self.assertTrue(os.path.exists('test_output/Event.csv'))
+        with open('test_output/Event.csv') as infile:
+            self.assertEqual(len(infile.readlines()), 3)
+
+        # Cleanup
+        shutil.rmtree('test_output')
+        os.remove('temp_eventlist.txt')
 
 
 if __name__ == '__main__':

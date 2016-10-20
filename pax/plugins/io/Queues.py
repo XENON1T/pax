@@ -4,10 +4,8 @@ except ImportError:
     import Queue as queue   # flake8: noqa
 import time
 import heapq
-import random
-import string
 
-from pax import plugin
+from pax import plugin, utils
 from pax.parallel import RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
 
 
@@ -140,7 +138,7 @@ class PushToQueue(plugin.OutputPlugin):
 
         if self.many_to_one:
             # Generate random name and tell the puller we're in town
-            self.pusher_name = ''.join(random.choice(string.ascii_letters) for _ in range(20))
+            self.pusher_name = utils.randomstring(20)
             self.queue.put((REGISTER_PUSHER, self.pusher_name))
 
         self.current_block = []
@@ -182,3 +180,4 @@ class PushToQueue(plugin.OutputPlugin):
             self.queue.put((PUSHER_DONE, self.pusher_name))
         else:
             self.queue.put((NO_MORE_EVENTS, None))
+        self.queue.close()

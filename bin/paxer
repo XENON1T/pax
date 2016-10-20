@@ -22,7 +22,7 @@ if os.name != 'nt' and not os.environ.get('DISPLAY'):
 # (so which of them is actually importing matplotlib.pyplot??)
 import pax    # flake8: noqa
 from pax import core, utils, formats    # flake8: noqa
-from pax.parallel import multiprocess_locally
+from pax.parallel import multiprocess_locally, multiprocess_remotely, DEFAULT_RABBIT_URI
 
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
@@ -113,7 +113,10 @@ def main():
                          config_string=config_str,
                          config_dict=override_dict)
     if args.cpus > 1:
-        multiprocess_locally(n_cpus=args.cpus, **config_kwargs)
+        if args.remote:
+            multiprocess_remotely(n_cpus=args.cpus, url=args.broker_url, **config_kwargs)
+        else:
+            multiprocess_locally(n_cpus=args.cpus, **config_kwargs)
     else:
         pax_instance = core.Processor(**config_kwargs)
 
@@ -136,12 +139,18 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
     # Basics
     parser.add_argument('--version',  action='store_true',
                         help="Print current pax version, then exit")
-    parser.add_argument('--cpus', default=1,
-                        help="Number of CPUs to use. Default is 1; can be 'all'.",
-                        nargs='?')
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")
 
+    # Multiprocessing
+    mp_group = parser.add_argument_group(title='Multiprocessing')
+    mp_group.add_argument('--cpus', default=1, type=int,
+                          help="Number of CPUs to use. If >1, will activate multiprocessing and use 2 + cpus cores.")
+    mp_group.add_argument('--remote',  action='store_true',
+                          help="Multiprocess using remote workers")
+    mp_group.add_argument('--broker_url', default=DEFAULT_RABBIT_URI,
+                          help="RabbitMQ message broker ULR (for remote multiprocessing). If omitted, will use local "
+                               "RabbitMQ setup with factory credentials.")
 
     # Input and output control
     io_group = parser.add_argument_group(title='Input/output')
