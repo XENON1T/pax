@@ -2,17 +2,21 @@ from copy import deepcopy
 from collections import defaultdict
 import multiprocessing
 import time
+import traceback
 import pickle
-try:
-    from queue import Empty
-except ImportError:
-    from Queue import Empty
 
 from . import utils
 from .core import Processor
 from .configuration import combine_configs
 
 import rabbitpy
+
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
+Empty = queue.Empty
 
 # Pax data queue message codes
 REGISTER_PUSHER = -11
@@ -75,14 +79,35 @@ class RabbitFanOut(RabbitQueue):
         rabbitpy.Message(self.channel, message).publish(self.exchange)
 
 
+def add_rabbit_command_line_args(parser):
+    """Add connection arguments for RabbitMQ parser"""
+    rabbit_args = [
+        ('username', 'guest', 'Username for'),
+        ('password', 'guest', 'Password for'),
+        ('host', 'localhost', 'Hostname of'),
+        ('port', 5672, 'Port to connect to'),
+    ]
+    for setting, default, helpprefix in rabbit_args:
+        parser.add_argument('--rabbit_%s' % setting,
+                            default=default,
+                            type=int if setting == 'port' else str,
+                            help='%s the RabbitMQ message broker (default %s)' % (helpprefix, default))
+
+
+def url_from_parsed_args(parsed_args):
+    """Return RabbitMQ connection URL from argparser args"""
+    return 'amqp://{username}:{password}@{host}:{port}/%2f'.format(**{x: getattr(parsed_args, 'rabbit_' + x)
+                                                                      for x in 'username password host port'.split()})
+
 ##
 # Pax multiprocessing code
 ##
 
+
 def multiprocess_configuration(n_cpus, base_config_kwargs, processing_queue_kwargs, output_queue_kwargs):
     """Yields configuration override dicts for multiprocessing"""
     # Config overrides for child processes
-    common_override = dict(pax=dict(autorun=True))
+    common_override = dict(pax=dict(autorun=True, show_progress_bar=False))
 
     input_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                    encoder_plugin=None,
@@ -118,6 +143,27 @@ def multiprocess_configuration(n_cpus, base_config_kwargs, processing_queue_kwar
         yield worker_type, new_conf
 
 
+def maybe_multiprocess(args, **config_kwargs):
+    """Start a pax with config_kwargs (config_names, config_dict, etc), and let argparser parser args args control
+    whether or not we should multiprocess
+    """
+    if args.cpus > 1:
+        if args.remote:
+            url = url_from_parsed_args(args)
+            multiprocess_remotely(n_cpus=args.cpus, url=url, **config_kwargs)
+        else:
+            multiprocess_locally(n_cpus=args.cpus, **config_kwargs)
+    else:
+        pax_instance = Processor(**config_kwargs)
+
+        try:
+            pax_instance.run()
+        except (KeyboardInterrupt, SystemExit):
+            print("\nShutting down all plugins...")
+            pax_instance.shutdown()
+            print("Exiting")
+
+
 def multiprocess_locally(n_cpus, **kwargs):
     # Setup an output and worker queue
     manager = multiprocessing.Manager()
@@ -133,9 +179,7 @@ def multiprocess_locally(n_cpus, **kwargs):
                                          output_queue_kwargs=dict(queue=output_queue))
 
     for _, config_kwargs in configs:
-        w = multiprocessing.Process(target=Processor, kwargs=config_kwargs)
-        w.start()
-        running_workers.append(w)
+        running_workers.append(start_safe_processor(manager, **config_kwargs))
 
     # Check the health / status of the workers every second.
     while len(running_workers):
@@ -156,6 +200,7 @@ def multiprocess_locally(n_cpus, **kwargs):
 def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
                           startup_queue_name='pax_startup', crash_watch_fanout_name='pax_crashes',
                           **kwargs):
+    manager = multiprocessing.Manager()
     if pax_id is None:
         pax_id = 'pax_%s' % utils.randomstring(6)
 
@@ -178,8 +223,7 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
     for process_type, config_kwargs in configs:
         if process_type in ['input', 'output']:
             # Endpoints start as local processes
-            w = multiprocessing.Process(target=Processor, kwargs=config_kwargs)
-            w.start()
+            w = start_safe_processor(manager, **config_kwargs)
             w.pax_id = pax_id
             local_paxes.append(w)
         else:
@@ -196,9 +240,9 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
 
 
 def status_line(local_processes, processing_queue, output_queue):
-    print("%d processes alive, %d items in processing queue, %d items in output queue" % (
-        len(local_processes), processing_queue.qsize(), output_queue.qsize())
-    )
+    utils.refresh_status_line("[Pax multiprocessing]: %d local processes, "
+                              "%d messages in processing queue, %d in output queue" %
+                              (len(local_processes), processing_queue.qsize(), output_queue.qsize()))
 
 
 def check_local_processes_while_remote_processing(running_paxes, crash_fanout):
@@ -212,19 +256,30 @@ def check_local_processes_while_remote_processing(running_paxes, crash_fanout):
 
     # If any of our own paxes crashed, send a message to the crash fanout
     # This will inform everyone connected to the server (including ourselves, on the next iteration)
-    for pax_id in set([p.pax_id for p in p_by_status['crashed']]):
-        print("Notifying crash fanout of crash of pax %s" % pax_id)
-        crash_fanout.put((pax_id, 'exception tracking not yet implemented'))
+    for crashed_w in p_by_status['crashed']:
+        pax_id = crashed_w.pax_id
+        traceb = crashed_w.shared_dict.get('traceback', "No traceback reported.")
+        print("Pax %s crashed!\nDumping exception traceback:\n\n%s\n\nNotifying crash fanout." % (
+            pax_id, format_exception_dump(traceb)
+        ))
+        crash_fanout.put((pax_id, traceb))
 
     # If any of the remote paxes crashed, we will learn about it from the crash fanout.
     try:
-        pax_id, exception = crash_fanout.get()
-        print("Terminating all paxes with id %s due to remote crash: %s" % (pax_id, exception))
+        pax_id, traceb = crash_fanout.get()
+        print("Remote crash notification for pax %s.\n"
+              "Remote exception traceback dump:\n\n%s\n.Terminating paxes with id %s." % (
+                pax_id, format_exception_dump(traceb), pax_id))
         # Terminate all running paxes processes with a matching pax_id
+        # Must build a new list here, if we call group_by_status again it would report every terminated process
+        # as a crash without a traceback.
+        new_running_paxes = []
         for p in running_paxes:
             if p.pax_id == pax_id:
                 p.terminate()
-        running_paxes = group_by_status(running_paxes)['running']
+            else:
+                new_running_paxes.append(p)
+        running_paxes = new_running_paxes
     except Empty:
         pass
 
@@ -244,3 +299,25 @@ def group_by_status(plist):
         else:
             result['crashed'].append(p)
     return result
+
+
+def start_safe_processor(manager, **kwargs):
+    """Start a processor with kwargs in a new process. Add an exception container in the exception attribute."""
+    shared_dict = manager.dict()
+    w = multiprocessing.Process(target=safe_processor, args=[shared_dict], kwargs=kwargs)
+    w.start()
+    w.shared_dict = shared_dict
+    return w
+
+
+def safe_processor(shared_dict, **kwargs):
+    """Starts a pax processor with kwargs. If it dies with an exception, update the value in exception container."""
+    try:
+        Processor(**kwargs)
+    except Exception:
+        shared_dict['traceback'] = traceback.format_exc()
+        raise
+
+
+def format_exception_dump(traceb):
+    return '\t\t'.join(traceb.splitlines(True))

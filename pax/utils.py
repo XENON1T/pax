@@ -5,6 +5,7 @@ e.g. a list clustering routine that isn't in some standard, library but several 
 """
 
 import re
+import sys
 import inspect
 import random
 import string
@@ -86,3 +87,9 @@ class Timer:
 
 def randomstring(n):
     return ''.join(random.choice(string.ascii_letters) for _ in range(n))
+
+
+def refresh_status_line(text):
+    sys.stdout.write('\r')
+    sys.stdout.write(text)
+    sys.stdout.flush()

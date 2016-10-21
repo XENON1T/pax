@@ -1,12 +1,8 @@
-try:
-    import queue
-except ImportError:
-    import Queue as queue   # flake8: noqa
 import time
 import heapq
 
 from pax import plugin, utils
-from pax.parallel import RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
+from pax.parallel import queue, RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
 
 
 def get_queue_from_config(config):
@@ -55,13 +51,13 @@ class PullFromQueue(plugin.InputPlugin):
             # We're in a many-push to one-pull situation.
             # One of the pushers has just announced itself.
             self.pushers.append(body)
-            self.log.info("Registered new pusher: %s" % body)
+            self.log.debug("Registered new pusher: %s" % body)
             return self.get_block()
 
         elif head == PUSHER_DONE:
             # A pusher just proclaimed it will no longer push events
             self.pushers.remove(body)
-            self.log.info("Removed pusher: %s. Remaining pushers: %s" % (body, self.pushers))
+            self.log.debug("Removed pusher: %s. Remaining pushers: %s" % (body, self.pushers))
             if not len(self.pushers):
                 # No pushers left, stop processing once there are no more events.
                 # This assumes all pushers will register before the first one is done!

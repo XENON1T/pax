@@ -300,9 +300,14 @@ class Processor:
 
         i = 0  # in case loop does not run
         self.timer.punch()
-        for i, event in enumerate(tqdm(self.get_events(),
-                                       desc='Event',
-                                       total=self.number_of_events)):
+        if self.config['pax'].get('show_progress_bar', True):
+            wrapper = tqdm
+        else:
+            def wrapper(x, **kwargs):
+                return x
+        for i, event in enumerate(wrapper(self.get_events(),
+                                          desc='Event',
+                                          total=self.number_of_events)):
             self.input_plugin.total_time_taken += self.timer.punch()
             if i >= self.stop_after:
                 self.log.info("User-defined limit of %d events reached." % i)

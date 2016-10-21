@@ -1,23 +1,18 @@
 #!/usr/env/python
+from datetime import datetime
 import time
 import argparse
 import multiprocessing
-try:
-    from queue import Empty
-except ImportError:
-    from Queue import Empty
 
-from pax import core, parallel
+from pax import core, parallel, utils
 
 
 parser = argparse.ArgumentParser(description="Listen to a RabbitMQ server for instructions to create pax instances",)
 
-parser.add_argument('--url', default=parallel.DEFAULT_RABBIT_URI,
-                    help="URL to connect to the RabbitMQ server. "
-                         "If not provided, tries to connect to a local server configured with default credentials.")
-
 parser.add_argument('--cpus', default=2,
                     help='Maximum number of CPUS to dedicate to pax = maximum number of pax instances to start.')
+
+parallel.add_rabbit_command_line_args(parser)
 
 parser.add_argument('--startup_queue', default='pax_startup',
                     help='Name for the pax startup request queue, usually just leave as pax_startup (default).')
@@ -31,7 +26,9 @@ args = parser.parse_args()
 
 # Setup the startup queue. Here we will listen for messages for starting pax, which should look like
 #  (pax_id, {config_names=..., config_paths=..., etc}))
-startup_queue = parallel.RabbitQueue(args.startup_queue, args.url)
+url = parallel.url_from_parsed_args(args)
+startup_queue = parallel.RabbitQueue(args.startup_queue, url)
+manager = multiprocessing.Manager()
 
 # Setup the crash-watching fanout. Here we can send/receive messages denoting a pax crash
 #  (pax_id, extra_info)
@@ -39,39 +36,43 @@ startup_queue = parallel.RabbitQueue(args.startup_queue, args.url)
 # When a crash message is enountered all paxes with pax_id will be terminated (SIGTERM).
 # paxmaker can also send such a message if it encounters a crash in pax,
 # which will fan out to every other connected paxmaker.
-crash_fanout = parallel.RabbitFanOut(args.crash_watch_fanout, args.url)
+crash_fanout = parallel.RabbitFanOut(args.crash_watch_fanout, url)
 
 running_paxes = []
 max_paxes = args.cpus
 
 while True:
-    time.sleep(1)
-
     running_paxes = parallel.check_local_processes_while_remote_processing(running_paxes, crash_fanout)
 
-    # TODO: better status line
-    print("%d pax slots available." % (max_paxes - len(running_paxes)))
+    utils.refresh_status_line("[Paxmaker] Listening to %s. %s: %s paxes running, %d pax slots available." % (
+        url,
+        datetime.now(),
+        len(running_paxes),
+        max_paxes - len(running_paxes),
+    ))
 
-    # Check and handle pax startup requests
-    try:
-        msg = startup_queue.get()
-    except Empty:
-        continue
+    # Check for and handle pax startup requests
+    while True:
+        try:
+            msg = startup_queue.get()
+        except parallel.Empty:
+            break
 
-    pax_id, kwargs = msg
+        pax_id, kwargs = msg
 
-    if len(running_paxes) >= max_paxes:
-        # We're already full; can't start another pax. Let someone else do it.
-        print("Start pax %s message recieved, but out of capacity. Putting back on queue." % pax_id)
-        startup_queue.put(msg)
-        continue
+        if len(running_paxes) >= max_paxes:
+            # We're already full; can't start another pax. Let someone else do it.
+            print("Start pax %s message received, but out of capacity. Putting back on queue." % pax_id)
+            startup_queue.put(msg)
+            break
 
-    # Start a new pax and append it to the list of running paxes
-    print("Starting pax %s" % pax_id)
-    kwargs.setdefault('config_dict', {})
-    kwargs['config_dict'].setdefault('pax', {})
-    kwargs['config_dict']['pax']['autorun'] = True
-    newpax = multiprocessing.Process(target=core.Processor, kwargs=kwargs)
-    newpax.pax_id = pax_id
-    newpax.start()
-    running_paxes.append(newpax)
+        # Start a new pax and append it to the list of running paxes
+        print("Starting pax %s" % pax_id)
+        kwargs.setdefault('config_dict', {})
+        kwargs['config_dict'].setdefault('pax', {})
+        kwargs['config_dict']['pax']['autorun'] = True
+        newpax = parallel.start_safe_processor(manager, **kwargs)
+        newpax.pax_id = pax_id
+        running_paxes.append(newpax)
+
+    time.sleep(1)

@@ -21,7 +21,7 @@ import shutil
 import pymongo
 from six.moves import input
 
-from pax import core, units
+from pax import parallel, units
 from pax.configuration import combine_configs, fix_sections_from_mongo
 from pax.exceptions import PaxException
 from pax.MongoDB_ClientMaker import ClientMaker
@@ -194,10 +194,10 @@ def main():
         log.info("Building events for %s", run_doc['name'])
         log.info("Config override is: %s" % config_dict)
         try:
-            p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
-                               config_paths=args.config_path,
-                               config_dict=config_dict)
-            p.run()     # The run() method includes a call to shutdown()
+            config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                                 config_paths=args.config_path,
+                                 config_dict=config_dict)
+            parallel.maybe_multiprocess(args, **config_kwargs)
 
         except (pymongo.errors.ServerSelectionTimeoutError,
                 PaxException) as e:
@@ -322,6 +322,14 @@ def get_command_line_arguments():
     """
     parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ.")
 
+    # Multiprocessing
+    mp_group = parser.add_argument_group(title='Multiprocessing')
+    mp_group.add_argument('--cpus', default=1, type=int,
+                          help="Number of CPUs to use. If >1, will activate multiprocessing and use 2 + cpus cores.")
+    mp_group.add_argument('--remote',  action='store_true',
+                          help="Multiprocess using remote workers")
+    parallel.add_rabbit_command_line_args(mp_group)
+
     parser.add_argument('--config',
                         default=['eventbuilder'],
                         nargs='+',
@@ -331,8 +339,6 @@ def get_command_line_arguments():
                         nargs='+',
                         help="Path(s) of the configuration file(s) to use.")
 
-    parser.add_argument('--cpus', default=1, nargs='?',
-                        help="Number of CPUs to use for event building. Default is 1; can be 'all'.")
     parser.add_argument('--detector', default='tpc', type=str,
                         help="Detector to build events for")
     parser.add_argument('--log', default='INFO',
