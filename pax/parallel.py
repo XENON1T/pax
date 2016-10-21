@@ -43,6 +43,7 @@ class RabbitQueue:
         rabbitpy.Message(self.channel, message).publish('', self.queue_name)
 
     def get(self, **kwargs):
+        """Get an item from the queue. Kwargs are ignored (often used in standard library queue.get calls)"""
         msg = self.queue.get(acknowledge=False)
         if msg is None:
             raise Empty

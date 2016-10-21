@@ -16,3 +16,4 @@ numexpr
 psutil
 recordclass
 mock
+rabbitpy

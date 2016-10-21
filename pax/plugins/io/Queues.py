@@ -123,6 +123,10 @@ class PullFromQueue(plugin.InputPlugin):
 
         self.log.debug("Exited get_events loop")
 
+    def shutdown(self):
+        if hasattr(self.queue, 'close'):
+            self.queue.close()
+
 
 class PushToQueue(plugin.OutputPlugin):
     # We must be allowed to route eventproxies as well as actual events
@@ -180,4 +184,5 @@ class PushToQueue(plugin.OutputPlugin):
             self.queue.put((PUSHER_DONE, self.pusher_name))
         else:
             self.queue.put((NO_MORE_EVENTS, None))
-        self.queue.close()
+        if hasattr(self.queue, 'close'):
+            self.queue.close()
