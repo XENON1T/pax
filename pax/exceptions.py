@@ -29,3 +29,7 @@ class TriggerGroupSignals(PaxException):
 
 class QueueTimeoutException(PaxException):
     pass
+
+
+class EventBlockHeapSizeExceededException(PaxException):
+    pass
