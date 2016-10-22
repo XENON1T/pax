@@ -302,7 +302,8 @@ def group_by_status(plist):
 
 
 def start_safe_processor(manager, **kwargs):
-    """Start a processor with kwargs in a new process. Add an exception container in the exception attribute."""
+    """Start a processor with kwargs in a new process. Return multiprocessing.Process instance, with
+    dict with shared info in the shared_dict attribute."""
     shared_dict = manager.dict()
     w = multiprocessing.Process(target=safe_processor, args=[shared_dict], kwargs=kwargs)
     w.start()
@@ -313,6 +314,9 @@ def start_safe_processor(manager, **kwargs):
 def safe_processor(shared_dict, **kwargs):
     """Starts a pax processor with kwargs. If it dies with an exception, update the value in exception container."""
     try:
+        # import cProfile
+        # import os
+        # cProfile.runctx('Processor(**kwargs)', globals(), locals(), 'profile-%s.out' % os.getpid())
         Processor(**kwargs)
     except Exception:
         shared_dict['traceback'] = traceback.format_exc()

@@ -1,7 +1,7 @@
 import time
 import heapq
 
-from pax import plugin, utils
+from pax import plugin, utils, exceptions
 from pax.parallel import queue, RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
 
 
@@ -27,8 +27,12 @@ class PullFromQueue(plugin.InputPlugin):
         # NB! If you enable this, you must GUARANTEE no other process will be consuming from this queue
         # (otherwise there will be holes in the event block ids, triggering an infinite wait)
         self.ordered_pull = self.config.get('ordered_pull', False)
+        self.time_slept_since_last_response = 0
         self.block_heap = []
         self.pushers = []
+
+        # If no message has been received for this amount of seconds, crash.
+        self.timeout_after_sec = self.config.get('timeout_after_sec', 120)
 
     def get_block(self):
         """Get a block of events from the queue, or raise queue.Empty if no events are available
@@ -100,16 +104,26 @@ class PullFromQueue(plugin.InputPlugin):
                 else:
                     block_id, event_block = self.get_block()
 
+                self.time_slept_since_last_response = 0
+
             except queue.Empty:
                 if self.no_more_events and not len(block_heap):
                     self.log.debug("All done!")
                     # We're done, no more events!
                     break
+
                 # The queue is empty so we must wait for the next event / The event we wan't hasn't arrived on the heap.
                 self.log.debug("Found empty queue, no more events is %s, len block heap is %s, sleeping for 1 sec" % (
                     self.no_more_events, len(block_heap)))
-                # self.log.debug("Here's what's on the heap: %s" % block_heap)
+
                 time.sleep(1)
+                self.processor.timer.last_t = time.time()    # Time spent idling shouldn't count for the timing report
+                self.time_slept_since_last_response += 1
+                if self.time_slept_since_last_response > self.timeout_after_sec:
+                    raise exceptions.QueueTimeoutException(
+                        "Waited for more than %s seconds to receive events; "
+                        "lost confidence they will ever come." % self.timeout_after_sec)
+
                 continue
 
             self.log.debug("Now processing block %d, %d events" % (block_id, len(event_block)))
@@ -135,6 +149,10 @@ class PushToQueue(plugin.OutputPlugin):
         self.max_block_size = self.config.get('event_block_size', 10)
         self.preserve_ids = self.config.get('preserve_ids', False)
         self.many_to_one = self.config.get('many_to_one', False)
+
+        # If we can't push a message due to a full queue for more than this number of seconds, crash
+        # since probably the process responsible for pulling from the queue has died.
+        self.timeout_after_sec = self.config.get('timeout_after_sec', 120)
 
         if self.many_to_one:
             # Generate random name and tell the puller we're in town
@@ -167,10 +185,16 @@ class PushToQueue(plugin.OutputPlugin):
         """Sends the current block if it has any events in it, then resets the current block to []
         Does NOT change self.current_block_id!
         """
+        seconds_slept_with_queue_full = 0
         if len(self.current_block):
             while self.queue.qsize() >= self.max_queue_blocks:
                 self.log.debug("Max queue size %d reached, waiting to push block")
+                seconds_slept_with_queue_full += 1
                 time.sleep(1)
+                if seconds_slept_with_queue_full >= self.timeout_after_sec:
+                    raise exceptions.QueueTimeoutException(
+                        "Blocked from pushing to the queue for more than %s seconds; "
+                        "lost confidence we will ever be able to." % self.timeout_after_sec)
             self.queue.put((self.current_block_id, self.current_block))
         self.current_block = []
 

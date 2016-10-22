@@ -25,3 +25,7 @@ class InvalidConfigurationError(PaxException):
 
 class TriggerGroupSignals(PaxException):
     pass
+
+
+class QueueTimeoutException(PaxException):
+    pass
