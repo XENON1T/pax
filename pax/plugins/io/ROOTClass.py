@@ -390,9 +390,14 @@ def load_event_class_code(class_code):
     we_made_the_lockfile = False
 
     def check_lock(pid_for_message='some other process'):
+        """Check the existence of a lockfile, and return once it has been removed
+        Breaks locks older than 90 seconds"""
         while os.path.exists(lockfile):
-            log.debug("Waiting for %s to compile the pax event class" % pid_for_message)
-            # TODO: Check age of the lock file, break lock if older than XXX
+            age = time.time() - os.path.getmtime(lockfile)
+            if age > 90:
+                log.warning("Breaking lockfile %s as it is %d seconds old" % (lockfile, age))
+                break
+            log.debug("Waiting for %s to compile the pax event class." % pid_for_message)
             time.sleep(5)
 
     check_lock()
