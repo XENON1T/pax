@@ -6,6 +6,7 @@ import json
 import bson
 import six
 import numpy as np
+import decimal
 
 from pax.utils import Memoize
 
@@ -138,7 +139,8 @@ class Model(object):
                 dtype.append((field_name, type_mapping[value_type]))
         return np.dtype(dtype)
 
-    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None, nan_to_none=False):
+    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None, nan_to_none=False,
+                use_decimal=False):
         result = {}
         if fields_to_ignore is None:
             fields_to_ignore = tuple()
@@ -148,20 +150,25 @@ class Model(object):
             if isinstance(v, Model):
                 result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
                                       fields_to_ignore=fields_to_ignore,
-                                      nan_to_none=nan_to_none)
+                                      nan_to_none=nan_to_none,
+                                      use_decimal=use_decimal)
             elif isinstance(v, list):
                 result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
                                         fields_to_ignore=fields_to_ignore,
-                                        nan_to_none=nan_to_none) for el in v]
+                                        nan_to_none=nan_to_none,
+                                        use_decimal=use_decimal) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
                 if convert_numpy_arrays_to == 'list':
-                    result[k] = v.tolist()
+                    result[k] = [decimal.Decimal("%f" % a) if isinstance(a, float) else a for a in v.tolist()]
+                    result[k]
                 elif convert_numpy_arrays_to == 'bytes':
                     result[k] = bson.Binary(v.tostring())
                 else:
                     raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
             elif nan_to_none and isinstance(v, float) and not np.isfinite(v):
                 result[k] = None
+            elif use_decimal and isinstance(v, float):
+                result[k] = decimal.Decimal("%f" % v)
             else:
                 result[k] = v
         return result
