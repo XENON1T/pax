@@ -72,7 +72,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s2_lifetime_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
-            ia.z = - self.config['drift_velocity_liquid'] * ia.drift_time
+            ia.z = - self.config['drift_velocity_liquid'] * (ia.drift_time - self.config['drift_time_gate'])
 
             # S1 area correction: divide by relative light yield at the position
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)

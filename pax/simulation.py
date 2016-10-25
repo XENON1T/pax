@@ -403,10 +403,8 @@ class Simulator(object):
             return []
         log.debug("Creating an s2 from %s electrons..." % electrons_generated)
 
-        # Average drift time, taking faster drift velocity after gate into account
-        drift_time_mean = - z / self.config['drift_velocity_liquid'] + \
-            (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length']) \
-            / self.config['drift_velocity_liquid_above_gate']
+        # Average drift time of the electrons
+        drift_time_mean = - z / self.config['drift_velocity_liquid'] + self.config['drift_time_gate']
 
         # Diffusion model from Sorensen 2011
         drift_time_stdev = math.sqrt(2 * self.config['diffusion_constant_liquid'] * drift_time_mean)
