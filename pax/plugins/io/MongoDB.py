@@ -652,7 +652,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                                             {'$set': {'data': [d for d in self.run_doc['data']
                                                                if d['type'] != 'untriggered']}})
 
-        if self.aqm_output_handle is not None:
+        if hasattr(self, 'aqm_output_handle') and self.aqm_output_handle is not None:
             self.aqm_output_handle.close()
 
     def rescue_acquisition_monitor_pulses(self, collection, query=None):
