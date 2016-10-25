@@ -8,6 +8,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
+import datetime
 import time
 
 import pytz
@@ -185,8 +186,19 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         self.trigger = trigger.Trigger(pax_config=self.processor.config,
                                        trigger_monitor_collection=trig_mon_coll)
 
+        # For starting event building in the middle of a run:
+        self.initial_start_time = self.config.get('start_after_sec', 0) * units.s
+        if self.initial_start_time:
+            self.latest_subcollection = self.initial_start_time // self.batch_window
+            self.log.info("Starting at %0.1f sec, subcollection %d" % (self.initial_start_time,
+                                                                       self.latest_subcollection))
+
+        self.pipeline_status_collection = self.run_client['run'][self.config.get('pipeline_status_collection_name',
+                                                                                 'pipeline_status')]
+
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
+        Also updates the pipeline status info with the current queue length
         """
         self.refresh_run_doc()
 
@@ -249,7 +261,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 if not self.latest_subcollection == 0:
                     self.log.warning("Latest subcollection %d seems empty now, but wasn't before... Race condition/edge"
                                      " case in mongodb, bug in clearing code, or something else weird? Investigate if "
-                                     "this occurs often!!")
+                                     "this occurs often!!" % self.latest_subcollection)
                 last_pulse_time = self.latest_subcollection * self.batch_window
             else:
                 # Apparently the DAQ has not taken any pulses yet?
@@ -271,9 +283,26 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                  "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
                                                          pax_to_human_time(self.last_pulse_time)))
 
+        # Insert some status info into the pipeline info
+        if not self.secret_mode:
+            if hasattr(self, 'last_time_searched'):
+                lts = self.last_time_searched
+            else:
+                lts = 0
+            self.pipeline_status_collection.insert({'name': 'eventbuilder_info',
+                                                    'time': datetime.datetime.utcnow(),
+                                                    'eventbuilder_queue_size': self.processor.queued_events,
+                                                    'last_pulse_so_far_in_run': self.last_pulse_time,
+                                                    'latest_subcollection': self.latest_subcollection,
+                                                    'last_time_searched': lts,
+                                                    'working_on_run': True,
+                                                    })
+
     def get_events(self):
         self.refresh_run_info()
-        last_time_searched = 0  # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
+        self.last_time_searched = self.initial_start_time
+        self.log.info("self.initial_start_time: %s", pax_to_human_time(self.initial_start_time))
         next_event_number = 0
         more_data_coming = True
 
@@ -289,8 +318,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 end_of_search_for_this_run = float('inf')
 
             # What is the earliest time we still need to search?
-            next_time_to_search = last_time_searched
-            if next_time_to_search != 0:
+            next_time_to_search = self.last_time_searched
+            if next_time_to_search != self.initial_start_time:
                 next_time_to_search += self.batch_window * self.config['skip_ahead']
 
             # How many batch windows can we search now?
@@ -343,20 +372,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     futures.append(futures_per_host)
 
                 # Record advancement of the batch window
-                last_time_searched = next_time_to_search + batches_to_search * self.batch_window
+                self.last_time_searched = next_time_to_search + batches_to_search * self.batch_window
 
                 # Check if there is more data
-                more_data_coming = (not self.data_taking_ended) or (last_time_searched < end_of_search_for_this_run)
+                more_data_coming = (not self.data_taking_ended) or (self.last_time_searched <
+                                                                    end_of_search_for_this_run)
                 if not more_data_coming:
                     self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
-                        pax_to_human_time(last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
+                        pax_to_human_time(self.last_time_searched), pax_to_human_time(end_of_search_for_this_run)))
 
                 # Check if we've passed the user-specified stop (if so configured)
                 stop_after_sec = self.config.get('stop_after_sec', None)
                 if stop_after_sec and 0 < stop_after_sec < float('inf'):
-                    if last_time_searched > stop_after_sec * units.s:
+                    if self.last_time_searched > stop_after_sec * units.s:
                         self.log.warning("Searched to %s, which is beyond the user-specified stop at %d sec."
-                                         "This is the last batch of data" % (last_time_searched,
+                                         "This is the last batch of data" % (self.last_time_searched,
                                                                              self.config['stop_after_sec']))
                         more_data_coming = False
 
@@ -458,7 +488,11 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 assert self.split_collections
                 collection = self.subcollection(subcollection_number, host_i)
             query = self.time_range_query(start, stop)
-            cursors.append(collection.find(query))
+            cursor = collection.find(query)
+            # Ask for a large batch size: the default is 101 documents or 1MB. This results in a very small speed
+            # increase (when I measured it on a normal dataset)
+            cursor.batch_size(int(1e7))
+            cursors.append(cursor)
             if self.max_pulses_per_event != float('inf'):
                 count += collection.count(query)
         if len(self.hosts) == 1:
@@ -506,12 +540,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
         else:
             mongo_iterator = self._get_cursor_between_times(t0, t1)
 
+        data_is_compressed = self.input_info['compressed']
         for i, pulse_doc in enumerate(mongo_iterator):
             digitizer_id = (pulse_doc['module'], pulse_doc['channel'])
-            if digitizer_id in self.pmt_mappings:
+            pmt = self.pmt_mappings.get(digitizer_id)
+            if pmt is not None:
                 # Fetch the raw data
                 data = pulse_doc['data']
-                if self.input_info['compressed']:
+                if data_is_compressed:
                     data = snappy.decompress(data)
 
                 time_within_event = self._from_mt(pulse_doc['time']) - t0  # ns
@@ -519,7 +555,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                 event.pulses.append(Pulse(left=self._to_mt(time_within_event),
                                           raw_data=np.fromstring(data,
                                                                  dtype="<i2"),
-                                          channel=self.pmt_mappings[digitizer_id]))
+                                          channel=pmt,
+                                          do_it_fast=True))
             elif digitizer_id not in self.ignored_channels:
                 self.log.warning("Found data from digitizer module %d, channel %d,"
                                  "which doesn't exist according to PMT mapping! Ignoring...",

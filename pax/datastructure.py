@@ -12,7 +12,7 @@ import numpy as np
 import six
 
 from pax import units
-from pax.data_model import StrictModel, ListField
+from pax.data_model import Model, StrictModel, ListField
 if six.PY3:
     long = int
 
@@ -393,7 +393,7 @@ class SumWaveform(StrictModel):
             return False
 
 
-class Pulse(StrictModel):
+class Pulse(Model):
     """A region of raw digitizer data.
     For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.
 
@@ -450,7 +450,7 @@ class Pulse(StrictModel):
          - raw_data (numpy array of samples)
          - right (last index)
         """
-        StrictModel.__init__(self, **kwargs)
+        Model.__init__(self, **kwargs)
 
         if self.channel == INT_NAN:
             raise ValueError("Must specify channel to init Pulse")

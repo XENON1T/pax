@@ -123,9 +123,11 @@ class CheckBoundsAndCount(plugin.TransformPlugin):
                     end_index = event_length - 1
 
                 # Update the pulse data, so hit finder won't look at old un-truncated pulse
-                event.pulses[pulse_i] = datastructure.Pulse(left=start_index,
-                                                            right=end_index,
-                                                            channel=channel,
+                # Explicit casts necessary since we've disabled type checking for pulse class for speed in event builder
+                # and otherwise numpy ints would get in and break e.g. BSON output
+                event.pulses[pulse_i] = datastructure.Pulse(left=int(start_index),
+                                                            right=int(end_index),
+                                                            channel=int(channel),
                                                             raw_data=pulse_wave)
 
         # Remove the to-be-ignored-pulses

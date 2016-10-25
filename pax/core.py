@@ -577,6 +577,13 @@ class Processor:
                 raise RuntimeError("Terminated pax multiprocessing due to crash in one of the workers.")
             exit('')
 
+    @property
+    def queued_events(self):
+        """Return the number of events waiting to be processed, or 0 if we're not multiprocessing"""
+        if hasattr(self, 'input_queue'):
+            return self.input_queue.qsize() * self.block_size
+        return 0
+
     def update_status(self):
         # Don't update the status too often: this is expensive
         if time.time() <= self.last_status_update + 1:
@@ -596,7 +603,7 @@ class Processor:
         sys.stdout.write('\rStatus: %s. Processing queue: %d events. Output queue: %s events. '
                          'RAM usage: %0.1f (master) %0.1f (workers) %0.1f (output)' % (
             [k for k, v in MP_STATUS.items() if v == self.status.value][0],
-            self.input_queue.qsize() * self.block_size,
+            self.queued_events,
             self.output_queue.qsize() * self.block_size,
             get_mem_usage(os.getpid()),
             sum([get_mem_usage(worker.pid) if worker.pid is not None else 0
