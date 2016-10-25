@@ -239,14 +239,19 @@ class PlotBase(plugin.OutputPlugin):
     def plot_hitpattern(self, peak, array='top', ax=None):
         if ax is None:
             ax = plt.gca()
-        pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
+        if self.config.get('show_all_pmts', True):
+            pmts_hit = self.pmts[array]
+            if self.config.get('pmt_0_is_fake'):
+                pmts_hit = [x for x in pmts_hit if x != 0]
+        else:
+            pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
         q = ax.scatter(*self.pmt_locations[pmts_hit].T,
                        c=peak.area_per_channel[pmts_hit],
                        norm=matplotlib.colors.LogNorm(),
                        vmin=self.hitpattern_limits[0],
                        vmax=self.hitpattern_limits[1],
                        alpha=0.4,
-                       s=250)
+                       s=200)
 
         # Plot the PMT numbers
         for pmt in pmts_hit:
