@@ -18,7 +18,7 @@ class WriteDynamoDB(plugin.OutputPlugin):
                             nan_to_none=True,
                             fields_to_ignore=self.config['fields_to_ignore'],
                             use_decimal=True)
-        
+
         doc['peaks'] = [peak for peak in doc['peaks'] if peak['area'] > 100]
 
         self.table.put_item(Item=doc)
