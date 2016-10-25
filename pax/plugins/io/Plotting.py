@@ -242,7 +242,7 @@ class PlotBase(plugin.OutputPlugin):
         if self.config.get('show_all_pmts', True):
             pmts_hit = self.pmts[array]
             if self.config.get('pmt_0_is_fake'):
-                pmts_hit = [x for x in pmts_hit if x !=0]
+                pmts_hit = [x for x in pmts_hit if x != 0]
         else:
             pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
         q = ax.scatter(*self.pmt_locations[pmts_hit].T,
