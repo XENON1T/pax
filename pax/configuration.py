@@ -151,7 +151,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
 
         # The run doc settings act as (but do not override) config_dict
         mongo_conf = fix_sections_from_mongo(run_doc.get('processor', {}))
-        config_dict = combine_configs(mongo_conf, override=config_dict)
+        config_dict = combine_configs(mongo_conf, config_dict)
 
         # Add run number and run name to the config_dict
         config_dict.setdefault('DEFAULT', {})
