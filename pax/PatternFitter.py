@@ -7,7 +7,7 @@ import logging
 
 import numpy as np
 import numexpr as ne
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from matplotlib import _cntr
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
