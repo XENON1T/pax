@@ -60,7 +60,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.s1_patterns = self.processor.simulator.s1_patterns
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
-        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', False)
+        self.include_saturation_correction = self.config.get('include_saturation_correction', False)
 
     def transform_event(self, event):
 
@@ -82,13 +82,12 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
                 # Correct for S1 saturation
                 try:
-                    if self.do_saturation_correction:
-                        ia.s1_saturation_correction *= saturation_correction(
-                            peak=s1,
-                            channels_in_pattern=self.tpc_channels,
-                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.z)),
-                            confused_channels=confused_s1_channels,
-                            log=self.log)
+                    ia.s1_saturation_correction *= saturation_correction(
+                        peak=s1,
+                        channels_in_pattern=self.tpc_channels,
+                        expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.z)),
+                        confused_channels=confused_s1_channels,
+                        log=self.log)
 
                     # Compute the S1 pattern fit statistic
                     ia.s1_pattern_fit = self.s1_patterns.compute_gof(
@@ -102,9 +101,14 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     # Do not add any saturation correction, leave pattern fit statistic float('nan')
                     pass
 
-                # Get the full area correction
-                ia.s1_area_correction *= ia.s1_spatial_correction * ia.s1_saturation_correction
-                ia.s2_area_correction *= (ia.s2_lifetime_correction *
-                                          s2.s2_spatial_correction *
-                                          s2.s2_saturation_correction)
+                # Combine the various multiplicative corrections to a single correction for S1 and S2
+                ia.s1_area_correction *= ia.s1_spatial_correction
+                ia.s2_area_correction *= ia.s2_lifetime_correction * s2.s2_spatial_correction
+
+                # Add the saturation correction only if explicitly told (since it's more experimental
+                # than the other ones)
+                if self.include_saturation_correction:
+                    ia.s1_area_correction *= ia.s1_saturation_correction
+                    ia.s2_area_correction *= s2.s2_saturation_correction
+
         return event
