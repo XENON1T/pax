@@ -139,8 +139,7 @@ def main():
         config_dict = combine_configs(config_dict, {
             'DEFAULT': {'run_doc_id': run_doc['_id'],
                         'run_number': run_doc['number']},
-            'pax': {'output_name': data_info_entry['location'],
-                    'n_cpus': args.cpus},
+            'pax': {'output_name': data_info_entry['location']},
             'BSON': {'fields_to_ignore': [],
                      'overwrite_output': True}})
 
