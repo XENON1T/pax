@@ -33,7 +33,7 @@ class PullFromQueue(plugin.InputPlugin):
 
         # If no message has been received for this amount of seconds, crash.
         self.timeout_after_sec = self.config.get('timeout_after_sec', float('inf'))
-        self.max_blocks_on_heap = self.config.get('max_blocks_on_heap', 1000)
+        self.max_blocks_on_heap = self.config.get('max_blocks_on_heap', 250)
 
     def get_block(self):
         """Get a block of events from the queue, or raise queue.Empty if no events are available
@@ -99,10 +99,9 @@ class PullFromQueue(plugin.InputPlugin):
                                 "We have received over %d blocks without receiving the next block id (%d) in order. "
                                 "Likely one of the block producers has died without telling anyone." % (
                                     self.max_blocks_on_heap, block_id + 1))
-                        self.log.debug("Just got block %d, heap is now %d blocks long" % (
+                        self.log.info("Just got block %d, heap is now %d blocks long" % (
                             new_block[0], len(block_heap)))
-                        self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0],
-                                                                                     block_id + 1))
+                        self.log.info("Earliest block: %d, looking for block %s" % (block_heap[0][0], block_id + 1))
 
                     # If we get here, we have the event block we need sitting at the top of the heap
                     block_id, event_block = heapq.heappop(block_heap)
