@@ -4,6 +4,19 @@ History
 -------
 
 ------------------
+6.0.0 (2016-10-26)
+------------------
+* Remote/distributed multiprocessing (#439)
+* New S1 overall LCE maps (#436) and S2 per-pmt LCE maps (#431)
+* Amazon Dynamo support (#438)
+* Saturation correction computed, not added to total for XENON1T (#437)
+* Matched waveform simulator S2 model (#428)
+* Event display improvements (#440, #427)
+* Event builder speed improvements (#434)
+* Fax naming changes (#443)
+
+
+------------------
 5.7.0 (2016-10-07)
 ------------------
 * Eventbuilder improvements
