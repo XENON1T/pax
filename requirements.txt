@@ -15,3 +15,4 @@ six
 numexpr
 psutil
 multihist
+boto3
