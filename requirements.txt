@@ -14,5 +14,6 @@ h5py
 six
 numexpr
 psutil
+boto3
 multihist
 boto3
