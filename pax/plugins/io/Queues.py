@@ -91,7 +91,7 @@ class PullFromQueue(plugin.InputPlugin):
                     # and push them onto a heap.
 
                     # While the next event we wan't isn't on the block heap, pull blocks from queue into the heap
-                    while not (len(block_heap) and block_heap[0][0] == block_id + 1):
+                    while not (len(block_heap) and block_heap[0][0] >= block_id + 1):
                         new_block = self.get_block()
                         heapq.heappush(block_heap, new_block)
                         if len(block_heap) > self.max_blocks_on_heap:
@@ -175,17 +175,18 @@ class PushToQueue(plugin.OutputPlugin):
             self.current_block_id = 0
 
     def write_event(self, event):
-        if self.preserve_ids:
-            if event.block_id != self.current_block_id:
-                self.send_block()
-                self.current_block_id = event.block_id
-            self.current_block.append(event)
+        if event.block_id != self.current_block_id:
+            self.current_block_id = event.block_id
+            # A change in the block id must always be just after sending a block
+            # otherwise the pax chain is using inconsistent event block sizes
+            assert len(self.current_block) == 0
 
-        else:
-            self.current_block.append(event)
-            if len(self.current_block) == self.max_block_size:
-                self.send_block()
-                self.current_block_id += 1
+        self.current_block.append(event)
+        # Send events once the max block size is reached. Do not wait until event with next id arrives:
+        # that can take forever if we're doing low-rate processing with way to much cores.
+        if len(self.current_block) == self.max_block_size:
+            self.send_block()
+            self.current_block_id += 1
 
     def send_block(self):
         """Sends the current block if it has any events in it, then resets the current block to []
