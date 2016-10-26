@@ -49,6 +49,7 @@ class PullFromQueue(plugin.InputPlugin):
             # The last event has been popped from the queue. Push None back on the queue for
             # the benefit of other consumers.
             self.no_more_events = True
+            self.log.info("Received no more events message, putting it back on queue for others")
             self.queue.put((NO_MORE_EVENTS, None))
             raise queue.Empty
 
@@ -56,13 +57,13 @@ class PullFromQueue(plugin.InputPlugin):
             # We're in a many-push to one-pull situation.
             # One of the pushers has just announced itself.
             self.pushers.append(body)
-            self.log.debug("Registered new pusher: %s" % body)
+            self.log.info("Registered new pusher: %s" % body)
             return self.get_block()
 
         elif head == PUSHER_DONE:
             # A pusher just proclaimed it will no longer push events
             self.pushers.remove(body)
-            self.log.debug("Removed pusher: %s. Remaining pushers: %s" % (body, self.pushers))
+            self.log.info("Removed pusher: %s. %d remaining pushers" % (body, len(self.pushers)))
             if not len(self.pushers):
                 # No pushers left, stop processing once there are no more events.
                 # This assumes all pushers will register before the first one is done!
