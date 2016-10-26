@@ -186,7 +186,6 @@ class PushToQueue(plugin.OutputPlugin):
         # that can take forever if we're doing low-rate processing with way to much cores.
         if len(self.current_block) == self.max_block_size:
             self.send_block()
-            self.current_block_id += 1
 
     def send_block(self):
         """Sends the current block if it has any events in it, then resets the current block to []
