@@ -430,7 +430,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                  modules=modules,
                                                  areas=areas,
                                                  last_data=(not more_data_coming and i == len(futures) - 1)):
-                        yield EventProxy(event_number=next_event_number, data=data)
+                        yield EventProxy(event_number=next_event_number, data=data, block_id=-1)
                         next_event_number += 1
 
         # We've built all the events for this run!
@@ -508,6 +508,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
                        pax_to_human_time(t1))
 
         event = Event(n_channels=self.config['n_channels'],
+                      block_id=event_proxy.block_id,
                       start_time=t0 + self.time_of_run_start,
                       sample_duration=self.sample_duration,
                       stop_time=t1 + self.time_of_run_start,
@@ -651,7 +652,7 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                                             {'$set': {'data': [d for d in self.run_doc['data']
                                                                if d['type'] != 'untriggered']}})
 
-        if self.aqm_output_handle is not None:
+        if hasattr(self, 'aqm_output_handle') and self.aqm_output_handle is not None:
             self.aqm_output_handle.close()
 
     def rescue_acquisition_monitor_pulses(self, collection, query=None):

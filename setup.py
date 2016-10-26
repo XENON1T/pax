@@ -62,7 +62,7 @@ setup(
                 ],
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},
-    scripts=['bin/paxer', 'bin/event-builder',
+    scripts=['bin/paxer', 'bin/event-builder', 'bin/paxmaker',
              'bin/convert_pax_formats'],
     install_requires=requirements,
     license="BSD",

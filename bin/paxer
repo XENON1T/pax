@@ -21,7 +21,7 @@ if os.name != 'nt' and not os.environ.get('DISPLAY'):
 # These imports must be after matplotlib.use, otherwise the backend is already chosen
 # (so which of them is actually importing matplotlib.pyplot??)
 import pax    # flake8: noqa
-from pax import core, utils, formats    # flake8: noqa
+from pax import core, utils, formats, parallel    # flake8: noqa
 
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
@@ -42,7 +42,6 @@ def main():
     # Feed certain command line args into pax configuration format
     for argname, configname in (('input',       'input_name'),
                                 ('output',      'output_name'),
-                                ('cpus',        'n_cpus'),
                                 ('log',         'logging_level'),
                                 ('stop_after',  'stop_after'),
                                 ('event',       'events_to_process'),
@@ -107,18 +106,12 @@ def main():
     config_str = config_str.replace(']', ']\n')
     config_str = config_str.replace(';', '\n')
 
-    pax_instance = core.Processor(config_names=args.config,
-                                  config_paths=args.config_path,
-                                  config_string=config_str,
-                                  config_dict=override_dict)
 
-    try:
-        pax_instance.run()
-    except (KeyboardInterrupt, SystemExit):
-        print("\nShutting down all plugins...")
-        pax_instance.shutdown()
-        print("Exiting")
-        sys.exit()
+    config_kwargs = dict(config_names=args.config,
+                         config_paths=args.config_path,
+                         config_string=config_str,
+                         config_dict=override_dict)
+    parallel.maybe_multiprocess(args, **config_kwargs)
 
 
 def get_argsparser(input_plugin_aliases, output_plugin_aliases):
@@ -131,12 +124,16 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
     # Basics
     parser.add_argument('--version',  action='store_true',
                         help="Print current pax version, then exit")
-    parser.add_argument('--cpus', default=1,
-                        help="Number of CPUs to use. Default is 1; can be 'all'.",
-                        nargs='?')
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")
 
+    # Multiprocessing
+    mp_group = parser.add_argument_group(title='Multiprocessing')
+    mp_group.add_argument('--cpus', default=1, type=int,
+                          help="Number of CPUs to use. If >1, will activate multiprocessing and use 2 + cpus cores.")
+    mp_group.add_argument('--remote',  action='store_true',
+                          help="Multiprocess using remote workers")
+    parallel.add_rabbit_command_line_args(mp_group)
 
     # Input and output control
     io_group = parser.add_argument_group(title='Input/output')

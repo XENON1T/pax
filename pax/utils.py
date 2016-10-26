@@ -5,7 +5,10 @@ e.g. a list clustering routine that isn't in some standard, library but several 
 """
 
 import re
+import sys
 import inspect
+import random
+import string
 import logging
 import time
 import os
@@ -80,3 +83,13 @@ class Timer:
         result = (now - self.last_t) * 1000
         self.last_t = now
         return result
+
+
+def randomstring(n):
+    return ''.join(random.choice(string.ascii_letters) for _ in range(n))
+
+
+def refresh_status_line(text):
+    sys.stdout.write('\r')
+    sys.stdout.write(text)
+    sys.stdout.flush()

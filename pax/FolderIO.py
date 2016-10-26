@@ -11,7 +11,7 @@ from bson import json_util
 
 from six.moves import input
 from pax import utils, plugin
-from pax.datastructure import EventProxy
+from pax.datastructure import make_event_proxy
 
 
 class InputFromFolder(plugin.InputPlugin):
@@ -315,7 +315,9 @@ class ReadZippedDecoder(plugin.TransformPlugin):
 
     def transform_event(self, event_proxy):
         data = zlib.decompress(event_proxy.data)
-        return self.decode_event(data)
+        event = self.decode_event(data)
+        event.block_id = event_proxy.block_id
+        return event
 
     def decode_event(self, event):
         raise NotImplementedError
@@ -331,14 +333,12 @@ class WriteZippedEncoder(plugin.TransformPlugin):
         self.compresslevel = self.config.get('compresslevel', 4)
 
     def transform_event(self, event):
-        event_number = event.event_number
         data = self.encode_event(event)
         data = zlib.compress(data, self.compresslevel)
-        # Add start and stop time to the data, for use in MongoDBClearUntriggered
-        return EventProxy(data=dict(blob=data,
-                                    start_time=event.start_time,
-                                    stop_time=event.stop_time),
-                          event_number=event_number)
+        # We also add start and stop time to the data, for use in MongoDBClearUntriggered
+        return make_event_proxy(event, data=dict(blob=data,
+                                                 start_time=event.start_time,
+                                                 stop_time=event.stop_time))
 
     def encode_event(self, event):
         raise NotImplementedError
