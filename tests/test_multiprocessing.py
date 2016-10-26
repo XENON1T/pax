@@ -18,6 +18,7 @@ def fake_events(n):
     for i in range(n):
         e = Event(n_channels=1, start_time=0, length=100, sample_duration=10)
         e.event_number = i
+        e.block_id = i // 10
         result.append(e)
     return result
 
@@ -28,9 +29,9 @@ class TestMultiprocessing(unittest.TestCase):
         q = queue.Queue()
         p = PullFromQueue(dict(queue=q, ordered_pull=True), processor=MagicMock())
         events = fake_events(20)
-        q.put((2, events[8:]))
-        q.put((0, events[:5]))
-        q.put((1, events[5:8]))
+        q.put((2, events[20:]))
+        q.put((0, events[:10]))
+        q.put((1, events[10:20]))
         q.put((NO_MORE_EVENTS, None))
         for i, e in enumerate(p.get_events()):
             self.assertEqual(e.event_number, i)
@@ -41,10 +42,10 @@ class TestMultiprocessing(unittest.TestCase):
         events = fake_events(20)
         q.put((REGISTER_PUSHER, 'gast'))
         q.put((REGISTER_PUSHER, 'gozer'))
-        q.put((2, events[8:]))
-        q.put((0, events[:5]))
+        q.put((2, events[20:]))
+        q.put((0, events[:10]))
         q.put((PUSHER_DONE, 'gozer'))
-        q.put((1, events[5:8]))
+        q.put((1, events[10:20]))
         q.put((PUSHER_DONE, 'gast'))
         for i, e in enumerate(p.get_events()):
             self.assertEqual(e.event_number, i)
@@ -82,13 +83,6 @@ class TestMultiprocessing(unittest.TestCase):
         p = PushToQueue(dict(queue=q, preserve_ids=True), processor=MagicMock())
 
         events = fake_events(22)
-        for e in events[:5]:
-            e.block_id = 0
-        for e in events[5:9]:
-            e.block_id = 1
-        for e in events[9:]:
-            e.block_id = 2
-
         for e in events:
             p.write_event(e)
         p.shutdown()
@@ -108,7 +102,7 @@ class TestMultiprocessing(unittest.TestCase):
         self.assertEqual([x[0] for x in blocks_out], [0, 1, 2])
 
         # Block sizes are correct
-        self.assertEqual([len(x[1]) for x in blocks_out], [5, 9-5, 22-9])
+        self.assertEqual([len(x[1]) for x in blocks_out], [10, 10, 2])
 
     def test_multiprocessing(self):
         multiprocess_locally(n_cpus=2,
@@ -138,6 +132,7 @@ class TestMultiprocessing(unittest.TestCase):
         # Cleanup
         shutil.rmtree('test_output')
         os.remove('temp_eventlist.txt')
+
 
 
 if __name__ == '__main__':

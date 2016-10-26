@@ -91,7 +91,7 @@ class PullFromQueue(plugin.InputPlugin):
                     # and push them onto a heap.
 
                     # While the next event we wan't isn't on the block heap, pull blocks from queue into the heap
-                    while not (len(block_heap) and block_heap[0][0] >= block_id + 1):
+                    while not (len(block_heap) and block_heap[0][0] == block_id + 1):
                         new_block = self.get_block()
                         heapq.heappush(block_heap, new_block)
                         if len(block_heap) > self.max_blocks_on_heap:
@@ -99,13 +99,15 @@ class PullFromQueue(plugin.InputPlugin):
                                 "We have received over %d blocks without receiving the next block id (%d) in order. "
                                 "Likely one of the block producers has died without telling anyone." % (
                                     self.max_blocks_on_heap, block_id + 1))
-                        self.log.debug("Just got block %d, heap is now %d blocks long" % (new_block[0],
-                                                                                          len(block_heap)))
+                        self.log.debug("Just got block %d, heap is now %d blocks long" % (
+                            new_block[0], len(block_heap)))
                         self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0],
                                                                                      block_id + 1))
 
                     # If we get here, we have the event block we need sitting at the top of the heap
                     block_id, event_block = heapq.heappop(block_heap)
+
+                    assert block_id >= 0
 
                 else:
                     block_id, event_block = self.get_block()
@@ -166,26 +168,30 @@ class PushToQueue(plugin.OutputPlugin):
             self.queue.put((REGISTER_PUSHER, self.pusher_name))
 
         self.current_block = []
-        if self.preserve_ids:
-            # We get events with block_id's already set, and must return them in groups with the same id
-            # We can assume the id's come in order, however
-            self.current_block_id = None
-        else:
-            # We're getting events that have never been on a queue before, and can freely assign block id's
-            self.current_block_id = 0
+        self.current_block_id = 0
 
     def write_event(self, event):
-        if event.block_id != self.current_block_id:
-            self.current_block_id = event.block_id
-            # A change in the block id must always be just after sending a block
-            # otherwise the pax chain is using inconsistent event block sizes
-            assert len(self.current_block) == 0
+        if self.preserve_ids:
+            assert event.block_id >= 0    # Datastructure default is -1, if we see that here we are in big doodoo
+            if event.block_id != self.current_block_id:
+                # A change in the block id must always be just after sending a block
+                # otherwise the pax chain is using inconsistent event block sizes
+                assert len(self.current_block) == 0
+                self.current_block_id = event.block_id
+
+        else:
+            # We have to set the block id's.
+            event.block_id = self.current_block_id
 
         self.current_block.append(event)
         # Send events once the max block size is reached. Do not wait until event with next id arrives:
         # that can take forever if we're doing low-rate processing with way to much cores.
         if len(self.current_block) == self.max_block_size:
             self.send_block()
+
+            # If we're setting the id's, from now on, we have to set with the next number
+            if not self.preserve_ids:
+                self.current_block_id += 1
 
     def send_block(self):
         """Sends the current block if it has any events in it, then resets the current block to []
@@ -194,7 +200,7 @@ class PushToQueue(plugin.OutputPlugin):
         seconds_slept_with_queue_full = 0
         if len(self.current_block):
             while self.queue.qsize() >= self.max_queue_blocks:
-                self.log.debug("Max queue size %d reached, waiting to push block")
+                self.log.info("Max queue size %d reached, waiting to push block")
                 seconds_slept_with_queue_full += 1
                 time.sleep(1)
                 if seconds_slept_with_queue_full >= self.timeout_after_sec:
