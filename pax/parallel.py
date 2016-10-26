@@ -5,7 +5,7 @@ import time
 import traceback
 import pickle
 
-from . import utils
+from . import utils, exceptions
 from .core import Processor
 from .configuration import combine_configs
 
@@ -104,10 +104,11 @@ def url_from_parsed_args(parsed_args):
 ##
 
 
-def multiprocess_configuration(n_cpus, base_config_kwargs, processing_queue_kwargs, output_queue_kwargs):
+def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_queue_kwargs, output_queue_kwargs):
     """Yields configuration override dicts for multiprocessing"""
     # Config overrides for child processes
-    common_override = dict(pax=dict(autorun=True, show_progress_bar=False))
+    common_override = dict(pax=dict(autorun=True, show_progress_bar=False),
+                           DEFAULT=dict(pax_id=pax_id))
 
     input_override = dict(pax=dict(plugin_group_names=['input', 'output'],
                                    encoder_plugin=None,
@@ -174,6 +175,7 @@ def multiprocess_locally(n_cpus, **kwargs):
     running_workers = []
 
     configs = multiprocess_configuration(n_cpus,
+                                         pax_id='local',
                                          base_config_kwargs=kwargs,
                                          processing_queue_kwargs=dict(queue=processing_queue),
                                          output_queue_kwargs=dict(queue=output_queue))
@@ -215,6 +217,7 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
 
     # Initialize worker processes
     configs = multiprocess_configuration(n_cpus,
+                                         pax_id=pax_id,
                                          base_config_kwargs=kwargs,
                                          processing_queue_kwargs=dict(queue_name=pq_name, queue_url=url),
                                          output_queue_kwargs=dict(queue_name=oq_name, queue_url=url))
@@ -234,7 +237,8 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
     while len(local_paxes):
         time.sleep(1)
 
-        local_paxes = check_local_processes_while_remote_processing(local_paxes, crash_fanout)
+        local_paxes = check_local_processes_while_remote_processing(local_paxes, crash_fanout,
+                                                                    terminate_host_on_crash=True)
 
         status_line(local_paxes, processing_queue, output_queue)
 
@@ -245,11 +249,14 @@ def status_line(local_processes, processing_queue, output_queue):
                               (len(local_processes), processing_queue.qsize(), output_queue.qsize()))
 
 
-def check_local_processes_while_remote_processing(running_paxes, crash_fanout):
+def check_local_processes_while_remote_processing(running_paxes, crash_fanout, terminate_host_on_crash=False):
     """Check on locally running paxes in running_paxes, returns list of remaining running pax processes.
      - Remove any paxes that have exited normally
      - If a pax has crashed, push a message to the crash fanout to terminate all paxes with the same id
      - Look for crash fanout messages from other processes, and terminate local paxes with the same id
+     - terminate_host_on_crash: if True, raise exception in the host process if a pax crash is detected in
+       a pax chain we're participating in. Do NOT use in a host process that can host multiple pax chains! We will not
+       check the presence of other pax chains and terminate them too!
     """
     p_by_status = group_by_status(running_paxes)
     running_paxes = p_by_status['running']
@@ -262,7 +269,12 @@ def check_local_processes_while_remote_processing(running_paxes, crash_fanout):
         print("Pax %s crashed!\nDumping exception traceback:\n\n%s\n\nNotifying crash fanout." % (
             pax_id, format_exception_dump(traceb)
         ))
+
         crash_fanout.put((pax_id, traceb))
+        running_paxes, _ = terminate_paxes_with_id(running_paxes, pax_id)
+        if terminate_host_on_crash:
+            raise exceptions.LocalPaxCrashed("Pax %s crashed! Traceback:\n %s" % (
+                pax_id, format_exception_dump(traceb)))
 
     # If any of the remote paxes crashed, we will learn about it from the crash fanout.
     try:
@@ -270,20 +282,30 @@ def check_local_processes_while_remote_processing(running_paxes, crash_fanout):
         print("Remote crash notification for pax %s.\n"
               "Remote exception traceback dump:\n\n%s\n.Terminating paxes with id %s." % (
                 pax_id, format_exception_dump(traceb), pax_id))
-        # Terminate all running paxes processes with a matching pax_id
-        # Must build a new list here, if we call group_by_status again it would report every terminated process
-        # as a crash without a traceback.
-        new_running_paxes = []
-        for p in running_paxes:
-            if p.pax_id == pax_id:
-                p.terminate()
-            else:
-                new_running_paxes.append(p)
-        running_paxes = new_running_paxes
+
+        running_paxes, n_terminated = terminate_paxes_with_id(running_paxes, pax_id)
+        if n_terminated > 0 and terminate_host_on_crash:
+            raise exceptions.RemotePaxChrash("Pax %s crashed! Traceback:\n %s" % (
+                pax_id, format_exception_dump(traceb)))
+
     except Empty:
         pass
 
     return running_paxes
+
+
+def terminate_paxes_with_id(running_paxes, pax_id):
+    """Terminate all running paxes processes with a matching pax_id, return new list of running paxes, number terminated
+    """
+    new_running_paxes = []
+    n_terminated = 0
+    for p in running_paxes:
+        if p.pax_id == pax_id:
+            p.terminate()
+            n_terminated += 1
+        else:
+            new_running_paxes.append(p)
+    return new_running_paxes, n_terminated
 
 
 def group_by_status(plist):

@@ -33,3 +33,13 @@ class QueueTimeoutException(PaxException):
 
 class EventBlockHeapSizeExceededException(PaxException):
     pass
+
+
+class LocalPaxCrashed(PaxException):
+    """Can be raised in the host process if one of the local paxes crashes"""
+    pass
+
+
+class RemotePaxChrash(PaxException):
+    """Can be raised in the host process if one of the remote paxes in the same chain crashes"""
+    pass

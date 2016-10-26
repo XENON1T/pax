@@ -291,6 +291,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 lts = 0
             self.pipeline_status_collection.insert({'name': 'eventbuilder_info',
                                                     'time': datetime.datetime.utcnow(),
+                                                    'pax_id': self.config.get('pax_id', 'no_pax_id_set'),
                                                     'last_pulse_so_far_in_run': self.last_pulse_time,
                                                     'latest_subcollection': self.latest_subcollection,
                                                     'last_time_searched': lts,

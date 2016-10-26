@@ -43,7 +43,8 @@ def main():
     max_paxes = args.cpus
 
     while True:
-        running_paxes = parallel.check_local_processes_while_remote_processing(running_paxes, crash_fanout)
+        running_paxes = parallel.check_local_processes_while_remote_processing(running_paxes, crash_fanout,
+                                                                               terminate_host_on_crash=False)
 
         utils.refresh_status_line("[Paxmaker] Listening to %s. %s: %s paxes running, %d pax slots available." % (
             url,
