@@ -17,3 +17,5 @@ psutil
 recordclass
 mock
 rabbitpy
+boto3
+multihist

@@ -294,19 +294,20 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
             yield instr
 
 
-class WaveformSimulatorFromNEST(WaveformSimulator):
-    """Simulate waveforms from GEANT4 ROOT file with NEST-generated S1, S2 information
+class WaveformSimulatorFromMC(WaveformSimulator):
+    """Simulate waveforms from GEANT4 ROOT file with generated
+    S1, S2 information (e.g. from NEST, nSort, or other)
     """
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
-        ('x',             'Nest_x',     0.1),
-        ('y',             'Nest_y',     0.1),
-        ('z',             'Nest_z',     0.1),
-        ('s1_photons',    'Nest_nph',   1),
-        ('s2_electrons',  'Nest_nel',   1),
-        ('t',             'Nest_t',     10 ** 9),
-        ('recoil_type',   'Nest_nr',    1),
+        ('x',             'Fax_x',     0.1),
+        ('y',             'Fax_y',     0.1),
+        ('z',             'Fax_z',     0.1),
+        ('s1_photons',    'Fax_nph',   1),
+        ('s2_electrons',  'Fax_nel',   1),
+        ('t',             'Fax_t',     10 ** 9),
+        ('recoil_type',   'Fax_nr',    1),
     )
 
     def startup(self):

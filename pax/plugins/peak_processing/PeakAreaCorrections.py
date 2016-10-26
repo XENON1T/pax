@@ -39,7 +39,6 @@ class S2SaturationCorrection(plugin.TransformPlugin):
     def startup(self):
         self.s2_patterns = self.processor.simulator.s2_patterns
         self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
-        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', True)
 
     def transform_event(self, event):
 
@@ -53,17 +52,15 @@ class S2SaturationCorrection(plugin.TransformPlugin):
             except ValueError:
                 self.log.debug("Could not find any position from the chosen algorithms")
                 continue
-            if self.s2_patterns is not None and self.do_saturation_correction:
-                # if self.s2_patterns.expected_pattern((xy.x, xy.y)):
-                try:
-                    peak.s2_saturation_correction *= saturation_correction(
-                        peak=peak,
-                        channels_in_pattern=self.config['channels_top'],
-                        expected_pattern=self.s2_patterns.expected_pattern((xy.x, xy.y)),
-                        confused_channels=np.union1d(peak.saturated_channels, self.zombie_pmts_s2),
-                        log=self.log)
-                except exceptions.CoordinateOutOfRangeException:
-                    self.log.debug("Expected light pattern at coordinates "
-                                   "(%f, %f) consists of only zeros!" % (xy.x, xy.y))
+            try:
+                peak.s2_saturation_correction *= saturation_correction(
+                    peak=peak,
+                    channels_in_pattern=self.config['channels_top'],
+                    expected_pattern=self.s2_patterns.expected_pattern((xy.x, xy.y)),
+                    confused_channels=np.union1d(peak.saturated_channels, self.zombie_pmts_s2),
+                    log=self.log)
+            except exceptions.CoordinateOutOfRangeException:
+                self.log.debug("Expected light pattern at coordinates "
+                               "(%f, %f) consists of only zeros!" % (xy.x, xy.y))
 
         return event

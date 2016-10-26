@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 from six.moves import input
+from operator import attrgetter
 
 # Init stuff for 3d plotting
 # Please do not remove, although it appears to be unused, 3d plotting won't work without it
@@ -98,6 +99,71 @@ class PlotBase(plugin.OutputPlugin):
         plt.close()
         self.skip_counter = self.config['plot_every'] - 1
 
+    def annotation_filter(self, event, nsamples):
+
+        annotation_filter_list = self.config['annotation_filter']
+        # Period needed to know how many peaks are in a single period
+        num_of_sections = self.config['num_of_sections']
+        period = nsamples // (num_of_sections * 100)
+        section_list = [[] for x in range(num_of_sections)]
+        annotation_list = []
+
+        # If we want largest peaks of a certain type we need to put them in the right section of the event
+        if 'largest' in annotation_filter_list or \
+                'largest_s1s' in annotation_filter_list or 'largest_s2s' in annotation_filter_list:
+            for peak in event.peaks:
+                x = peak.index_of_maximum * self.samples_to_us
+                counter = period
+                while counter < nsamples:
+                    if counter < x:
+                        counter += period
+                        continue
+                    else:
+                        counter -= period
+                        break
+                section_list[int(counter / period)].append(peak)
+
+        # For each section, only annotate the largest one (here defined by height)
+        if 'largest' in annotation_filter_list:
+            for section in section_list:
+                if len(section) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # Same as above but only checks s1s
+        if 'largest_s1s' in annotation_filter_list:
+            for section in section_list:
+                s1s = [p for p in section if p.type == 's1']
+                if len(s1s) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # Same again, only s2s , there must be a better way to combine these
+        if 'largest_s2s' in annotation_filter_list:
+            for section in section_list:
+                s2s = [p for p in section if p.type == 's2']
+                if len(s2s) >= 1:
+                    biggest_peak = max(section, key=attrgetter('height'))
+                    annotation_list.append(biggest_peak)
+        # If you want to annotate EVERY s1
+        if 'all_s1s' in annotation_filter_list:
+            all_s1s = [p for p in event.peaks if p.type == 's1']
+            for i in all_s1s:
+                print(i.type)
+            annotation_list.extend(all_s1s)
+        # If you want to annotate EVERY s2
+        if 'all_s2s' in annotation_filter_list:
+            all_s2s = [p for p in event.peaks if p.type == 's2']
+            annotation_list.extend(all_s2s)
+        # Always annotate the main S1 and S2 if they are there
+        if event.main_s1 is not None:
+            annotation_list.append(event.main_s1)
+        if event.main_s2 is not None:
+            annotation_list.append(event.main_s2)
+
+        if not annotation_list:
+            self.log.debug("Either filter is not set up right or no peaks at all in this event, which would be weird")
+
+        return annotation_list
+
     def plot_waveform(self, event,
                       left=0, right=None, pad=0,
                       show_peaks=False, show_legend=True, log_y_axis=False,
@@ -156,9 +222,19 @@ class PlotBase(plugin.OutputPlugin):
             # Possibly the waveform is highest outside a peak.
             max_y = max([p.height for p in event.peaks])
 
+            # Setting less_black to True in config file will make sure the annotated peaks don't become a black blob
+            annotation_filter = self.config['annotation_filter']
+
+            if annotation_filter is not None:
+                annotation_list = self.annotation_filter(event, nsamples)
+                print(annotation_filter)
             for peak in event.peaks:
                 if self.config.get('hide_peak_info') or peak.type == 'lone_hit':
                     continue
+                if annotation_filter is not None:
+                    # Go to next peak if not in annotation list, otherwise annotate!
+                    if peak not in annotation_list:
+                        continue
                 textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
                 x = peak.index_of_maximum * self.samples_to_us
@@ -179,6 +255,7 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
+
                 ax.annotate('%s:%0.1f' % (peak.type, peak.area),
                             xy=(x, y),
                             xytext=(x, ytext),
@@ -239,14 +316,19 @@ class PlotBase(plugin.OutputPlugin):
     def plot_hitpattern(self, peak, array='top', ax=None):
         if ax is None:
             ax = plt.gca()
-        pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
+        if self.config.get('show_all_pmts', True):
+            pmts_hit = self.pmts[array]
+            if self.config.get('pmt_0_is_fake'):
+                pmts_hit = [x for x in pmts_hit if x != 0]
+        else:
+            pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
         q = ax.scatter(*self.pmt_locations[pmts_hit].T,
                        c=peak.area_per_channel[pmts_hit],
                        norm=matplotlib.colors.LogNorm(),
                        vmin=self.hitpattern_limits[0],
                        vmax=self.hitpattern_limits[1],
                        alpha=0.4,
-                       s=250)
+                       s=200)
 
         # Plot the PMT numbers
         for pmt in pmts_hit:
@@ -277,10 +359,8 @@ class PlotSumWaveformMainS2(PlotBase):
             plt.title('No S2 in event')
             return
 
-        self.plot_waveform(event, left=peak.left, right=peak.right,
-                           pad=200 if peak.height > 100 else 50,
-                           show_legend=show_legend,
-                           log_y_axis=self.config['log_scale_s2'])
+        self.plot_waveform(event, left=peak.left, right=peak.right, pad=200 if peak.height > 100 else 50,
+                           show_legend=show_legend, log_y_axis=self.config['log_scale_s2'])
         plt.title("S2 at %.1f us" % (peak.index_of_maximum * self.samples_to_us))
 
 
@@ -293,9 +373,7 @@ class PlotSumWaveformMainS1(PlotBase):
             plt.title('No S1 in event')
             return
 
-        self.plot_waveform(event, left=peak.left, right=peak.right,
-                           pad=10,
-                           show_legend=show_legend,
+        self.plot_waveform(event, left=peak.left, right=peak.right, pad=10, show_legend=show_legend,
                            log_y_axis=self.config['log_scale_s1'])
         plt.title("S1 at %.1f us" % (peak.index_of_maximum * self.samples_to_us))
 
@@ -303,11 +381,8 @@ class PlotSumWaveformMainS1(PlotBase):
 class PlotSumWaveformEntireEvent(PlotBase):
 
     def plot_event(self, event, show_legend=True, ax=None):
-        self.plot_waveform(event,
-                           show_peaks=True,
-                           show_legend=show_legend,
-                           log_y_axis=self.config['log_scale_entire_event'],
-                           ax=ax)
+        self.plot_waveform(event, show_peaks=True, show_legend=show_legend,
+                           log_y_axis=self.config['log_scale_entire_event'], ax=ax)
 
 
 class PlottingHitPattern(PlotBase):
@@ -751,8 +826,8 @@ class PeakViewer(PlotBase):
 
         # Update peak waveforms
         peak_padding = self.config.get('peak_padding_samples', 30)
-        self.plot_waveform(self.event, left=peak.left, right=peak.right,
-                           pad=peak_padding, show_legend=False, log_y_axis=False, ax=self.peak_sumwv_ax)
+        self.plot_waveform(self.event, left=peak.left, right=peak.right, pad=peak_padding, show_legend=False,
+                           log_y_axis=False, ax=self.peak_sumwv_ax)
         self.peak_chwvs_ax.set_xlim((peak.left - peak_padding) * self.chwvs_2s_time_scale,
                                     (peak.right + peak_padding) * self.chwvs_2s_time_scale)
         self.peak_sumwv_ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=4))
