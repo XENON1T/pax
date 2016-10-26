@@ -32,7 +32,7 @@ class PullFromQueue(plugin.InputPlugin):
         self.pushers = []
 
         # If no message has been received for this amount of seconds, crash.
-        self.timeout_after_sec = self.config.get('timeout_after_sec', 120)
+        self.timeout_after_sec = self.config.get('timeout_after_sec', float('inf'))
         self.max_blocks_on_heap = self.config.get('max_blocks_on_heap', 1000)
 
     def get_block(self):
