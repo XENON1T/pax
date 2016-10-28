@@ -12,6 +12,14 @@ pax.trigger_plugins.ClassifySignals module
     :undoc-members:
     :show-inheritance:
 
+pax.trigger_plugins.DeadTimeTally module
+----------------------------------------
+
+.. automodule:: pax.trigger_plugins.DeadTimeTally
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.trigger_plugins.DecideTriggers module
 -----------------------------------------
 
@@ -48,6 +56,14 @@ pax.trigger_plugins.SaveSignals module
 --------------------------------------
 
 .. automodule:: pax.trigger_plugins.SaveSignals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.SortData module
+-----------------------------------
+
+.. automodule:: pax.trigger_plugins.SortData
     :members:
     :undoc-members:
     :show-inheritance:

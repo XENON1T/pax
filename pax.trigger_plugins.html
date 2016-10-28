@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins package &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.trigger_plugins package &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -41,221 +41,32 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.ClassifySignals">
-<span id="pax-trigger-plugins-classifysignals-module"></span><h2>pax.trigger_plugins.ClassifySignals module<a class="headerlink" href="#module-pax.trigger_plugins.ClassifySignals" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.ClassifySignals.ClassifySignals">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.ClassifySignals.</code><code class="descname">ClassifySignals</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/ClassifySignals.html#ClassifySignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.ClassifySignals.ClassifySignals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.ClassifySignals.ClassifySignals.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/ClassifySignals.html#ClassifySignals.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.ClassifySignals.ClassifySignals.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.ClassifySignals.classify_signals">
-<code class="descclassname">pax.trigger_plugins.ClassifySignals.</code><code class="descname">classify_signals</code><a class="reference internal" href="_modules/pax/trigger_plugins/ClassifySignals.html#classify_signals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.ClassifySignals.classify_signals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the type field of signals to 0 (unknown), 1 (s1) or 2 (s2). Modifies signals in-place.</p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-classifysignals-module">
+<h2>pax.trigger_plugins.ClassifySignals module<a class="headerlink" href="#pax-trigger-plugins-classifysignals-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.DecideTriggers">
-<span id="pax-trigger-plugins-decidetriggers-module"></span><h2>pax.trigger_plugins.DecideTriggers module<a class="headerlink" href="#module-pax.trigger_plugins.DecideTriggers" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.DecideTriggers.</code><code class="descname">AnyPulseFromDetectorTrigger</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#AnyPulseFromDetectorTrigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<p>Make a triggering signal for EVERY individual pulse in a particular detector</p>
-<dl class="method">
-<dt id="pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#AnyPulseFromDetectorTrigger.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.AnyPulseFromDetectorTrigger.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.trigger_plugins.DecideTriggers.DecideTriggers">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.DecideTriggers.</code><code class="descname">DecideTriggers</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#DecideTriggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.DecideTriggers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.DecideTriggers.DecideTriggers.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#DecideTriggers.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.DecideTriggers.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.trigger_plugins.DecideTriggers.DecideTriggers.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#DecideTriggers.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.DecideTriggers.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.DecideTriggers.flag_triggers">
-<code class="descclassname">pax.trigger_plugins.DecideTriggers.</code><code class="descname">flag_triggers</code><a class="reference internal" href="_modules/pax/trigger_plugins/DecideTriggers.html#flag_triggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.DecideTriggers.flag_triggers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decide which signals trigger, modifying signals in-place.
-p_matrix[signal_type][n_pulses] is the probability of a signal of type signal_type and n_pulses pulses to trigger
-The last entry of each signal type is used for signals with more pulses than the matrix is wide.</p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-deadtimetally-module">
+<h2>pax.trigger_plugins.DeadTimeTally module<a class="headerlink" href="#pax-trigger-plugins-deadtimetally-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.FindSignals">
-<span id="pax-trigger-plugins-findsignals-module"></span><h2>pax.trigger_plugins.FindSignals module<a class="headerlink" href="#module-pax.trigger_plugins.FindSignals" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.FindSignals.FindSignals">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.FindSignals.</code><code class="descname">FindSignals</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/FindSignals.html#FindSignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.FindSignals.FindSignals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="attribute">
-<dt id="pax.trigger_plugins.FindSignals.FindSignals.dark_monitor_saves">
-<code class="descname">dark_monitor_saves</code><em class="property"> = 0</em><a class="headerlink" href="#pax.trigger_plugins.FindSignals.FindSignals.dark_monitor_saves" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.trigger_plugins.FindSignals.FindSignals.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/FindSignals.html#FindSignals.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.FindSignals.FindSignals.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.trigger_plugins.FindSignals.FindSignals.save_dark_monitor_data">
-<code class="descname">save_dark_monitor_data</code><span class="sig-paren">(</span><em>last_time=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/FindSignals.html#FindSignals.save_dark_monitor_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.FindSignals.FindSignals.save_dark_monitor_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.trigger_plugins.FindSignals.FindSignals.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/FindSignals.html#FindSignals.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.FindSignals.FindSignals.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.trigger_plugins.FindSignals.signal_finder">
-<code class="descclassname">pax.trigger_plugins.FindSignals.</code><code class="descname">signal_finder</code><span class="sig-paren">(</span><em>times</em>, <em>signal_separation</em>, <em>signal_buffer</em>, <em>next_save_time</em>, <em>dark_rate_save_interval</em>, <em>all_pulses_tally</em>, <em>lone_pulses_tally</em>, <em>coincidence_tally</em>, <em>gain_conversion_factors</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/FindSignals.html#signal_finder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.FindSignals.signal_finder" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Fill signal_buffer with signals in times. Other arguments:</dt>
-<dd><ul class="first last simple">
-<li>signal_separation: group pulses into signals separated by signal_separation.</li>
-<li>coincidence_tally: nxn matrix of zero where n is number of channels,used to store 2-pmt coincidences
-(with 1-pmt, i.e. dark rate, on diagonal)</li>
-<li>next_save_time: next time (in ns since start of run) the dark rate should be saved</li>
-<li>dark_rate_save_interval: yield SAVE_DARK_MONITOR every dark_rate_save_interval</li>
-</ul>
-</dd>
-</dl>
-<p>Raises &#8220;interrupts&#8221; (yield numbers) to communicate with caller.
-Online RMS algorithm is Knuth/Welford: <a class="reference external" href="https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance">https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance</a></p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-decidetriggers-module">
+<h2>pax.trigger_plugins.DecideTriggers module<a class="headerlink" href="#pax-trigger-plugins-decidetriggers-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.GroupTriggers">
-<span id="pax-trigger-plugins-grouptriggers-module"></span><h2>pax.trigger_plugins.GroupTriggers module<a class="headerlink" href="#module-pax.trigger_plugins.GroupTriggers" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.GroupTriggers.GroupTriggers">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.GroupTriggers.</code><code class="descname">GroupTriggers</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/GroupTriggers.html#GroupTriggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.GroupTriggers.GroupTriggers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<p>Find event ranges corresponding to trigger_times,
-grouping nearby triggers and applying left and right extension</p>
-<dl class="method">
-<dt id="pax.trigger_plugins.GroupTriggers.GroupTriggers.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/GroupTriggers.html#GroupTriggers.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.GroupTriggers.GroupTriggers.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.trigger_plugins.GroupTriggers.split_on_gap">
-<code class="descclassname">pax.trigger_plugins.GroupTriggers.</code><code class="descname">split_on_gap</code><span class="sig-paren">(</span><em>a</em>, <em>threshold</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/GroupTriggers.html#split_on_gap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.GroupTriggers.split_on_gap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Split a into list of arrays, each separated by threshold or more</p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-findsignals-module">
+<h2>pax.trigger_plugins.FindSignals module<a class="headerlink" href="#pax-trigger-plugins-findsignals-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.HandleEdgeThings">
-<span id="pax-trigger-plugins-handleedgethings-module"></span><h2>pax.trigger_plugins.HandleEdgeThings module<a class="headerlink" href="#module-pax.trigger_plugins.HandleEdgeThings" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">HandleEdgePulses</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgePulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgePulses.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.saved_pulses">
-<code class="descname">saved_pulses</code><em class="property"> = array([],        dtype=[('time', '&lt;i8'), ('pmt', '&lt;i4'), ('area', '&lt;f8'), ('_detector', '&lt;i2')])</em><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgePulses.saved_pulses" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">HandleEdgeSignals</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgeSignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#HandleEdgeSignals.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.saved_signals">
-<code class="descname">saved_signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.HandleEdgeSignals.saved_signals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.HandleEdgeThings.find_last_break">
-<code class="descclassname">pax.trigger_plugins.HandleEdgeThings.</code><code class="descname">find_last_break</code><a class="reference internal" href="_modules/pax/trigger_plugins/HandleEdgeThings.html#find_last_break"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.HandleEdgeThings.find_last_break" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the last index in times after which there is a gap &gt;= break_time.
-If the last entry in times is further than signal_separation from last_time,
-that last index in times is returned.
-Returns -1 if no break exists anywhere in times.</p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-grouptriggers-module">
+<h2>pax.trigger_plugins.GroupTriggers module<a class="headerlink" href="#pax-trigger-plugins-grouptriggers-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.SaveSignals">
-<span id="pax-trigger-plugins-savesignals-module"></span><h2>pax.trigger_plugins.SaveSignals module<a class="headerlink" href="#module-pax.trigger_plugins.SaveSignals" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.SaveSignals.SaveSignals">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.SaveSignals.</code><code class="descname">SaveSignals</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/SaveSignals.html#SaveSignals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.SaveSignals.SaveSignals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.trigger_plugins.SaveSignals.SaveSignals.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/SaveSignals.html#SaveSignals.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.SaveSignals.SaveSignals.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.trigger_plugins.SaveSignals.group_signals">
-<code class="descclassname">pax.trigger_plugins.SaveSignals.</code><code class="descname">group_signals</code><a class="reference internal" href="_modules/pax/trigger_plugins/SaveSignals.html#group_signals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.SaveSignals.group_signals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fill signal_indices_buffer with array of (left, right) indices
-indicating which signals belong in which event range.
-is_in_event will be set to True is a signal is in an event.</p>
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-handleedgethings-module">
+<h2>pax.trigger_plugins.HandleEdgeThings module<a class="headerlink" href="#pax-trigger-plugins-handleedgethings-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.trigger_plugins.TimedTrigger">
-<span id="pax-trigger-plugins-timedtrigger-module"></span><h2>pax.trigger_plugins.TimedTrigger module<a class="headerlink" href="#module-pax.trigger_plugins.TimedTrigger" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger">
-<em class="property">class </em><code class="descclassname">pax.trigger_plugins.TimedTrigger.</code><code class="descname">SaveEverythingTrigger</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/TimedTrigger.html#SaveEverythingTrigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.trigger.TriggerPlugin" title="pax.trigger.TriggerPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.trigger.TriggerPlugin</span></code></a></p>
-<p>Segment the data in consecutive ranges of event_separation duration.
-Optionally only make such events between start_at and stop_at.
-NB: This will save a lot of data!!</p>
-<dl class="method">
-<dt id="pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger.process">
-<code class="descname">process</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/TimedTrigger.html#SaveEverythingTrigger.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger.process" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger_plugins/TimedTrigger.html#SaveEverythingTrigger.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger_plugins.TimedTrigger.SaveEverythingTrigger.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-trigger-plugins-savesignals-module">
+<h2>pax.trigger_plugins.SaveSignals module<a class="headerlink" href="#pax-trigger-plugins-savesignals-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-trigger-plugins-sortdata-module">
+<h2>pax.trigger_plugins.SortData module<a class="headerlink" href="#pax-trigger-plugins-sortdata-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-trigger-plugins-timedtrigger-module">
+<h2>pax.trigger_plugins.TimedTrigger module<a class="headerlink" href="#pax-trigger-plugins-timedtrigger-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.trigger_plugins">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.trigger_plugins" title="Permalink to this headline">¶</a></h2>
@@ -272,13 +83,15 @@ NB: This will save a lot of data!!</p>
   <ul>
 <li><a class="reference internal" href="#">pax.trigger_plugins package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.ClassifySignals">pax.trigger_plugins.ClassifySignals module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.DecideTriggers">pax.trigger_plugins.DecideTriggers module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.FindSignals">pax.trigger_plugins.FindSignals module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.GroupTriggers">pax.trigger_plugins.GroupTriggers module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.HandleEdgeThings">pax.trigger_plugins.HandleEdgeThings module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.SaveSignals">pax.trigger_plugins.SaveSignals module</a></li>
-<li><a class="reference internal" href="#module-pax.trigger_plugins.TimedTrigger">pax.trigger_plugins.TimedTrigger module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-classifysignals-module">pax.trigger_plugins.ClassifySignals module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-deadtimetally-module">pax.trigger_plugins.DeadTimeTally module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-decidetriggers-module">pax.trigger_plugins.DecideTriggers module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-findsignals-module">pax.trigger_plugins.FindSignals module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-grouptriggers-module">pax.trigger_plugins.GroupTriggers module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-handleedgethings-module">pax.trigger_plugins.HandleEdgeThings module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-savesignals-module">pax.trigger_plugins.SaveSignals module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-sortdata-module">pax.trigger_plugins.SortData module</a></li>
+<li><a class="reference internal" href="#pax-trigger-plugins-timedtrigger-module">pax.trigger_plugins.TimedTrigger module</a></li>
 <li><a class="reference internal" href="#module-pax.trigger_plugins">Module contents</a></li>
 </ul>
 </li>

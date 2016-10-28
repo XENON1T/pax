@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -44,10 +44,12 @@
 <span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="kn">import</span> <span class="n">InvalidConfigurationError</span>
 
 
-<div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">maybe_call_mongo</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load pax configuration using configuration data. See the docstring of Processor for more info.</span>
+<span class="sd">    :param: maybe_call_mongo: if True, at the end of loading the config (but before applying config_dict)</span>
 <span class="sd">    :return: nested dictionary of evaluated configuration values, use as: config[section][key].</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">config_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -154,8 +156,49 @@
             <span class="c1"># Eval value in a context where all units are defined</span>
             <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">visible_variables</span><span class="p">)</span>
 
-    <span class="c1"># Apply the config_dict</span>
+    <span class="c1"># Apply the config dict.</span>
     <span class="n">evaled_config</span> <span class="o">=</span> <span class="n">combine_configs</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">maybe_call_mongo</span> <span class="ow">and</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;look_for_config_in_runs_db&#39;</span><span class="p">):</span>
+        <span class="c1"># Connect to MongoDB. Do import here, since someone may wish to run pax without mongo</span>
+        <span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="kn">import</span> <span class="n">ClientMaker</span>         <span class="c1"># noqa</span>
+        <span class="n">run_collection</span> <span class="o">=</span> <span class="n">ClientMaker</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;MongoDB&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span><span class="s1">&#39;run&#39;</span><span class="p">)[</span><span class="s1">&#39;run&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s1">&#39;runs_new&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Get the run document, either by explicitly specified run number, or by the input name</span>
+        <span class="c1"># The last option is a bit of a hack... if you don&#39;t like it, think of some way to always pass</span>
+        <span class="c1"># the run number explicitly. By the way, let&#39;s hope nobody tries to reprocess run 0..</span>
+        <span class="k">if</span> <span class="n">evaled_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;run_number&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">run_number</span> <span class="o">=</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;run_number&#39;</span><span class="p">]</span>
+            <span class="n">run_doc</span> <span class="o">=</span> <span class="n">run_collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="n">run_number</span><span class="p">})</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">run_doc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidConfigurationError</span><span class="p">(</span><span class="s2">&quot;Unable to find run number </span><span class="si">%d</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">run_number</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="s1">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;pax&#39;</span><span class="p">]:</span>
+            <span class="n">run_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;pax&#39;</span><span class="p">][</span><span class="s1">&#39;input_name&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">run_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_MV&quot;</span><span class="p">):</span>
+                <span class="n">run_doc</span> <span class="o">=</span> <span class="n">run_collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">run_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">],</span>
+                                                   <span class="s1">&#39;detector&#39;</span><span class="p">:</span> <span class="s1">&#39;muon_veto&#39;</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">run_doc</span> <span class="o">=</span> <span class="n">run_collection</span><span class="o">.</span><span class="n">find_one</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">run_name</span><span class="p">,</span>
+                                                   <span class="s1">&#39;detector&#39;</span><span class="p">:</span> <span class="s1">&#39;tpc&#39;</span><span class="p">})</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">run_doc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidConfigurationError</span><span class="p">(</span><span class="s2">&quot;Unable to find a run named </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">run_name</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidConfigurationError</span><span class="p">(</span><span class="s2">&quot;Cannot get configuration from runs db: give run_number or input_name!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># The run doc settings act as (but do not override) config_dict</span>
+        <span class="n">mongo_conf</span> <span class="o">=</span> <span class="n">fix_sections_from_mongo</span><span class="p">(</span><span class="n">run_doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;processor&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">config_dict</span> <span class="o">=</span> <span class="n">combine_configs</span><span class="p">(</span><span class="n">mongo_conf</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
+
+        <span class="c1"># Add run number and run name to the config_dict</span>
+        <span class="n">config_dict</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">config_dict</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;run_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span>
+        <span class="n">config_dict</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;run_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+        <span class="n">evaled_config</span> <span class="o">=</span> <span class="n">combine_configs</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
 
     <span class="c1"># Make sure [DEFAULT] is at least present</span>
     <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaled_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span>
@@ -165,15 +208,23 @@
     <span class="k">return</span> <span class="n">evaled_config</span>
 
 </div>
-<div class="viewcode-block" id="combine_configs"><a class="viewcode-back" href="../../pax.html#pax.configuration.combine_configs">[docs]</a><span class="k">def</span> <span class="nf">combine_configs</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">override</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Apply overrides to config, then returns config.</span>
-<span class="sd">    Config and overrides must be configuration dictionaries, i.e. have at most one level of sections.</span>
-<span class="sd">    Settings in overrides override settings in config (as you might have guessed).</span>
+<div class="viewcode-block" id="combine_configs"><a class="viewcode-back" href="../../pax.html#pax.configuration.combine_configs">[docs]</a><span class="k">def</span> <span class="nf">combine_configs</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Combines a series of configuration dictionaries; later ones have higher priority.</span>
+<span class="sd">    Each argument must be a pax configuration dictionary, i.e. have at most one level of sections.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">config</span><span class="p">,</span> <span class="n">override</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">combine_configs</span><span class="p">(</span><span class="n">combine_configs</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
     <span class="k">for</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">section_config</span> <span class="ow">in</span> <span class="n">override</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">section_name</span><span class="p">,</span> <span class="p">{})</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">section_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;COnfiguration dictionary should be a dictionary of dictionaries.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Configuration dictionary should be a dictionary of dictionaries.&quot;</span><span class="p">)</span>
         <span class="n">config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">section_config</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">config</span>
 

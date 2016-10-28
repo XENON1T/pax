@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
@@ -41,53 +41,8 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.interaction_processing.BuildInteractions">
-<span id="pax-plugins-interaction-processing-buildinteractions-module"></span><h2>pax.plugins.interaction_processing.BuildInteractions module<a class="headerlink" href="#module-pax.plugins.interaction_processing.BuildInteractions" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties">
-<em class="property">class </em><code class="descclassname">pax.plugins.interaction_processing.BuildInteractions.</code><code class="descname">BasicInteractionProperties</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Compute basic properties of each interaction
-S1 and S2 x, y, z corrections, S1 hitpattern fit</p>
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions">
-<em class="property">class </em><code class="descclassname">pax.plugins.interaction_processing.BuildInteractions.</code><code class="descname">BuildInteractions</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<dl class="docutils">
-<dt>Construct interactions from combinations of S1 and S2, as long as</dt>
-<dd><ul class="first last simple">
-<li>The S2 occurs after the S1</li>
-<li>The S2 is larger than s2_pairing_threshold (avoids single electrons)</li>
-</ul>
-</dd>
-</dl>
-<p>Mo more than pair_n_s2s S2s and pair_n_s1s S1s will be paired with each other
-Pairing will start from the largest S1 and S2, then move down S2s in area and eventually down S1s in area</p>
-<p>xy_posrec_preference = [&#8216;algo1&#8217;, &#8216;algo2&#8217;, ...]</p>
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-interaction-processing-buildinteractions-module">
+<h2>pax.plugins.interaction_processing.BuildInteractions module<a class="headerlink" href="#pax-plugins-interaction-processing-buildinteractions-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.interaction_processing">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.interaction_processing" title="Permalink to this headline">¶</a></h2>
@@ -104,7 +59,7 @@ Pairing will start from the largest S1 and S2, then move down S2s in area and ev
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.interaction_processing package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.interaction_processing.BuildInteractions">pax.plugins.interaction_processing.BuildInteractions module</a></li>
+<li><a class="reference internal" href="#pax-plugins-interaction-processing-buildinteractions-module">pax.plugins.interaction_processing.BuildInteractions module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.interaction_processing">Module contents</a></li>
 </ul>
 </li>
