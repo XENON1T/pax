@@ -194,7 +194,9 @@ def multiprocess_locally(n_cpus, **kwargs):
         if len(p_by_status['crashed']):
             for p in running_workers:
                 p.terminate()
-                raise RuntimeError("Pax multiprocessing crashed due to exception in one of the workers")
+            exctype, traceback = get_exception_from_process(p_by_status['crashed'][0])
+            raise exctype("Pax multiprocessing crashed due to exception in one of the workers. Dumping traceback:\n" +
+                          traceback)
 
         status_line(running_workers, processing_queue, output_queue)
 
@@ -265,28 +267,26 @@ def check_local_processes_while_remote_processing(running_paxes, crash_fanout, t
     # This will inform everyone connected to the server (including ourselves, on the next iteration)
     for crashed_w in p_by_status['crashed']:
         pax_id = crashed_w.pax_id
-        traceb = crashed_w.shared_dict.get('traceback', "No traceback reported.")
+        exctype, traceb = get_exception_from_process(p_by_status['crashed'][0])
         print("Pax %s crashed!\nDumping exception traceback:\n\n%s\n\nNotifying crash fanout." % (
             pax_id, format_exception_dump(traceb)
         ))
+        crash_fanout.put((pax_id, exctype, traceb))
 
-        crash_fanout.put((pax_id, traceb))
         running_paxes, _ = terminate_paxes_with_id(running_paxes, pax_id)
         if terminate_host_on_crash:
-            raise exceptions.LocalPaxCrashed("Pax %s crashed! Traceback:\n %s" % (
-                pax_id, format_exception_dump(traceb)))
+            raise exctype("Pax %s crashed! Traceback:\n %s" % (pax_id, format_exception_dump(traceb)))
 
     # If any of the remote paxes crashed, we will learn about it from the crash fanout.
     try:
-        pax_id, traceb = crash_fanout.get()
+        pax_id, exctype, traceb = crash_fanout.get()
         print("Remote crash notification for pax %s.\n"
               "Remote exception traceback dump:\n\n%s\n.Terminating paxes with id %s." % (
                 pax_id, format_exception_dump(traceb), pax_id))
 
         running_paxes, n_terminated = terminate_paxes_with_id(running_paxes, pax_id)
         if n_terminated > 0 and terminate_host_on_crash:
-            raise exceptions.RemotePaxChrash("Pax %s crashed! Traceback:\n %s" % (
-                pax_id, format_exception_dump(traceb)))
+            raise exctype("Pax %s crashed! Traceback:\n %s" % (pax_id, format_exception_dump(traceb)))
 
     except Empty:
         pass
@@ -340,10 +340,22 @@ def safe_processor(shared_dict, **kwargs):
         # import os
         # cProfile.runctx('Processor(**kwargs)', globals(), locals(), 'profile-%s.out' % os.getpid())
         Processor(**kwargs)
-    except Exception:
+    except Exception as e:
+        shared_dict['exception_type'] = e.__class__.__name__
         shared_dict['traceback'] = traceback.format_exc()
         raise
 
 
 def format_exception_dump(traceb):
     return '\t\t'.join(traceb.splitlines(True))
+
+
+def get_exception_from_process(p):
+    crdict = p.shared_dict
+    try:
+        exc_type = eval(crdict.get('exception_type', 'UnknownPropagatedException'),
+                        exceptions.__dict__)
+    except NameError:
+        exc_type = exceptions.UnknownPropagatedException
+    traceb = crdict.get('traceback', 'No traceback reported')
+    return exc_type, traceb

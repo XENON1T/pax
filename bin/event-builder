@@ -207,7 +207,7 @@ def main():
             if not args.secret_mode:
                 mark_run_errored(run_doc, runs)
                 stop_acquisition(clientmaker)
-                communicate_alert(clientmaker, e, log, run_doc, priority=1)
+                communicate_alert(clientmaker, e, log, run_doc, priority=2)
 
         except Exception as e:
             # A new type of exception occurred.

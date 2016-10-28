@@ -35,11 +35,8 @@ class EventBlockHeapSizeExceededException(PaxException):
     pass
 
 
-class LocalPaxCrashed(PaxException):
-    """Can be raised in the host process if one of the local paxes crashes"""
-    pass
-
-
-class RemotePaxChrash(PaxException):
-    """Can be raised in the host process if one of the remote paxes in the same chain crashes"""
+class UnknownPropagatedException(Exception):
+    """For re-raising an exception of an unknown type in a host process.
+    Do NOT subclass PaxException! We don't know where this exception came from.
+    """
     pass
