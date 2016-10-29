@@ -9,6 +9,7 @@ from . import utils, exceptions
 from .core import Processor
 from .configuration import combine_configs
 
+import psutil
 import rabbitpy
 
 try:
@@ -180,8 +181,10 @@ def multiprocess_locally(n_cpus, **kwargs):
                                          processing_queue_kwargs=dict(queue=processing_queue),
                                          output_queue_kwargs=dict(queue=output_queue))
 
-    for _, config_kwargs in configs:
-        running_workers.append(start_safe_processor(manager, **config_kwargs))
+    for process_type, config_kwargs in configs:
+        w = start_safe_processor(manager, **config_kwargs)
+        w.process_type = process_type
+        running_workers.append()
 
     # Check the health / status of the workers every second.
     while len(running_workers):
@@ -246,6 +249,10 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
 
 
 def status_line(local_processes, processing_queue, output_queue):
+    usage_per_type = defaultdict(float)
+    for w in local_processes:
+        usage_per_type[w.process_type] += get_mem_usage(w.pid) if w.pid else float('nan')
+    print(usage_per_type)
     utils.refresh_status_line("[Pax multiprocessing]: %d local processes, "
                               "%d messages in processing queue, %d in output queue" %
                               (len(local_processes), processing_queue.qsize(), output_queue.qsize()))
@@ -359,3 +366,14 @@ def get_exception_from_process(p):
         exc_type = exceptions.UnknownPropagatedException
     traceb = crdict.get('traceback', 'No traceback reported')
     return exc_type, traceb
+
+
+def get_mem_usage(pid):
+    """Return memory usage in MB for process with PID pid.
+    Returns 0 if process does not exist (anymore).
+    Maintains a cache to make sure this is not polled more than once per second
+    """
+    try:
+        return psutil.Process(pid).memory_info().rss / 1e6
+    except psutil.NoSuchProcess:
+        return 0
