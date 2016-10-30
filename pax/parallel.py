@@ -184,7 +184,7 @@ def multiprocess_locally(n_cpus, **kwargs):
     for process_type, config_kwargs in configs:
         w = start_safe_processor(manager, **config_kwargs)
         w.process_type = process_type
-        running_workers.append()
+        running_workers.append(w)
 
     # Check the health / status of the workers every second.
     while len(running_workers):
