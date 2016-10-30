@@ -115,7 +115,8 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                    encoder_plugin=None,
                                    decoder_plugin=None,
                                    output='Queues.PushToQueue'),
-                          Queues=processing_queue_kwargs)
+                          Queues=dict(timeout_after_sec=120,
+                                      **processing_queue_kwargs))
 
     worker_override = {'pax': dict(input='Queues.PullFromQueue',
                                    output='Queues.PushToQueue',
@@ -133,6 +134,7 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                     events_to_process=None,
                                     input='Queues.PullFromQueue'),
                            Queues=dict(ordered_pull=True,
+                                       timeout_after_sec=120,
                                        **output_queue_kwargs))
 
     overrides = [('input', input_override)] + [('worker', worker_override)] * n_cpus + [('output', output_override)]
@@ -249,13 +251,14 @@ def multiprocess_remotely(n_cpus=2, pax_id=None, url=DEFAULT_RABBIT_URI,
 
 
 def status_line(local_processes, processing_queue, output_queue):
-    usage_per_type = defaultdict(float)
+    # Uncomment to diagnose memory leak issues. Don't give me the lecture about commented code being unnecessary
+    # due to version control.
+    usage = 0
     for w in local_processes:
-        usage_per_type[w.process_type] += get_mem_usage(w.pid) if w.pid else float('nan')
-    print(usage_per_type)
-    utils.refresh_status_line("[Pax multiprocessing]: %d local processes, "
-                              "%d messages in processing queue, %d in output queue" %
-                              (len(local_processes), processing_queue.qsize(), output_queue.qsize()))
+        usage += get_mem_usage(w.pid) if w.pid else float('nan')
+    utils.refresh_status_line("[Pax]: %d local processes, %d messages in processing queue, %d in output queue, "
+                              "%0.1f MB RAM used" %
+                              (len(local_processes), processing_queue.qsize(), output_queue.qsize(), usage))
 
 
 def check_local_processes_while_remote_processing(running_paxes, crash_fanout, terminate_host_on_crash=False):

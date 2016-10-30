@@ -1,7 +1,7 @@
 import time
 import heapq
 
-from pax import plugin, utils, exceptions
+from pax import plugin, utils, exceptions, datastructure
 from pax.parallel import queue, RabbitQueue, NO_MORE_EVENTS, REGISTER_PUSHER, PUSHER_DONE, DEFAULT_RABBIT_URI
 
 
@@ -57,13 +57,13 @@ class PullFromQueue(plugin.InputPlugin):
             # We're in a many-push to one-pull situation.
             # One of the pushers has just announced itself.
             self.pushers.append(body)
-            self.log.info("Registered new pusher: %s" % body)
+            self.log.debug("Registered new pusher: %s" % body)
             return self.get_block()
 
         elif head == PUSHER_DONE:
             # A pusher just proclaimed it will no longer push events
             self.pushers.remove(body)
-            self.log.info("Removed pusher: %s. %d remaining pushers" % (body, len(self.pushers)))
+            self.log.debug("Removed pusher: %s. %d remaining pushers" % (body, len(self.pushers)))
             if not len(self.pushers):
                 # No pushers left, stop processing once there are no more events.
                 # This assumes all pushers will register before the first one is done!
@@ -72,11 +72,19 @@ class PullFromQueue(plugin.InputPlugin):
 
         else:
             block_id, event_block = head, body
-            # Annotate each event with the block id.
-            # If the output is a queue push plugin, we need it to use the same block id
-            # (else block_id's may get duplicated)
+            # Annotate each event with the block id. This information must be preserved inside the events, because
+            # if the output is a queue push plugin, we need it to use the same block id.
+            # (else block_id's may get duplicated, causing halts/crashes/mayhem).
+            new_block = []
             for e in event_block:
-                e.block_id = block_id
+                if isinstance(e, datastructure.EventProxy):
+                    # Namedtuples are immutable, so we need to create a new event proxy with the same raw data
+                    e2 = datastructure.make_event_proxy(e, data=e.data, block_id=block_id)
+                else:
+                    e.block_id = block_id
+                    e2 = e
+                new_block.append(e2)
+            event_block = new_block
 
         return block_id, event_block
 
@@ -100,9 +108,9 @@ class PullFromQueue(plugin.InputPlugin):
                                 "We have received over %d blocks without receiving the next block id (%d) in order. "
                                 "Likely one of the block producers has died without telling anyone." % (
                                     self.max_blocks_on_heap, block_id + 1))
-                        self.log.info("Just got block %d, heap is now %d blocks long" % (
+                        self.log.debug("Just got block %d, heap is now %d blocks long" % (
                             new_block[0], len(block_heap)))
-                        self.log.info("Earliest block: %d, looking for block %s" % (block_heap[0][0], block_id + 1))
+                        self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0], block_id + 1))
 
                     # If we get here, we have the event block we need sitting at the top of the heap
                     block_id, event_block = heapq.heappop(block_heap)
@@ -123,6 +131,9 @@ class PullFromQueue(plugin.InputPlugin):
                 # The queue is empty so we must wait for the next event / The event we wan't hasn't arrived on the heap.
                 self.log.debug("Found empty queue, no more events is %s, len block heap is %s, sleeping for 1 sec" % (
                     self.no_more_events, len(block_heap)))
+                if len(block_heap) > 0.3 * self.max_blocks_on_heap:
+                    self.log.warning("%d blocks on heap, will crash if more than %d" % (len(block_heap),
+                                                                                        self.max_blocks_on_heap))
 
                 time.sleep(1)
                 self.processor.timer.last_t = time.time()    # Time spent idling shouldn't count for the timing report
@@ -160,7 +171,7 @@ class PushToQueue(plugin.OutputPlugin):
 
         # If we can't push a message due to a full queue for more than this number of seconds, crash
         # since probably the process responsible for pulling from the queue has died.
-        self.timeout_after_sec = self.config.get('timeout_after_sec', 120)
+        self.timeout_after_sec = self.config.get('timeout_after_sec', float('inf'))
 
         if self.many_to_one:
             # Generate random name and tell the puller we're in town
