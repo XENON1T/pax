@@ -72,19 +72,6 @@ class PullFromQueue(plugin.InputPlugin):
 
         else:
             block_id, event_block = head, body
-            # Annotate each event with the block id. This information must be preserved inside the events, because
-            # if the output is a queue push plugin, we need it to use the same block id.
-            # (else block_id's may get duplicated, causing halts/crashes/mayhem).
-            new_block = []
-            for e in event_block:
-                if isinstance(e, datastructure.EventProxy):
-                    # Namedtuples are immutable, so we need to create a new event proxy with the same raw data
-                    e2 = datastructure.make_event_proxy(e, data=e.data, block_id=block_id)
-                else:
-                    e.block_id = block_id
-                    e2 = e
-                new_block.append(e2)
-            event_block = new_block
 
         return block_id, event_block
 
@@ -183,6 +170,7 @@ class PushToQueue(plugin.OutputPlugin):
 
     def write_event(self, event):
         if self.preserve_ids:
+            # Someone else already set the block ids. Good for us.
             assert event.block_id >= 0    # Datastructure default is -1, if we see that here we are in big doodoo
             if event.block_id != self.current_block_id:
                 # A change in the block id must always be just after sending a block
@@ -191,8 +179,14 @@ class PushToQueue(plugin.OutputPlugin):
                 self.current_block_id = event.block_id
 
         else:
-            # We have to set the block id's.
-            event.block_id = self.current_block_id
+            # We are responsible for setting the block id's.
+            # This is a bit convoluted because events could be either Events or EventProxy's, but the latter
+            # are immutable namedtuples.
+            if isinstance(event, datastructure.EventProxy):
+                # Namedtuples are immutable, so we need to create a new event proxy with the same raw data
+                event = datastructure.make_event_proxy(event, data=event.data, block_id=self.current_block_id)
+            else:
+                event.block_id = self.current_block_id
 
         self.current_block.append(event)
         # Send events once the max block size is reached. Do not wait until event with next id arrives:

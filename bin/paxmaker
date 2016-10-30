@@ -4,10 +4,10 @@ import time
 import argparse
 import multiprocessing
 
-from pax import core, parallel, utils
+from pax import parallel, utils
+
 
 def main():
-
     parser = argparse.ArgumentParser(description="Listen to a RabbitMQ server for instructions to create pax instances",)
 
     parser.add_argument('--cpus', default=2, type=int,
@@ -46,9 +46,9 @@ def main():
         running_paxes = parallel.check_local_processes_while_remote_processing(running_paxes, crash_fanout,
                                                                                terminate_host_on_crash=False)
 
-        utils.refresh_status_line("[Paxmaker] Listening to %s. %s: %s paxes running, %d pax slots available." % (
+        utils.refresh_status_line("[Paxmaker] %s: Listening to %s. %d paxes running, %d open slots." % (
+            datetime.now().strftime('%m/%d %H:%M:%S'),
             url,
-            datetime.now(),
             len(running_paxes),
             max_paxes - len(running_paxes),
         ))

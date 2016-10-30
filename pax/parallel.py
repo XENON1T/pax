@@ -1,5 +1,6 @@
 from copy import deepcopy
 from collections import defaultdict
+from datetime import datetime
 import multiprocessing
 import time
 import traceback
@@ -256,9 +257,12 @@ def status_line(local_processes, processing_queue, output_queue):
     usage = 0
     for w in local_processes:
         usage += get_mem_usage(w.pid) if w.pid else float('nan')
-    utils.refresh_status_line("[Pax]: %d local processes, %d messages in processing queue, %d in output queue, "
+    utils.refresh_status_line("[Pax] %s: "
+                              "%d local paxes, %d messages in processing queue, %d in output queue, "
                               "%0.1f MB RAM used" %
-                              (len(local_processes), processing_queue.qsize(), output_queue.qsize(), usage))
+                              (datetime.now().strftime('%m/%d %H:%M:%S'),
+                               len(local_processes), processing_queue.qsize(), output_queue.qsize(),
+                               usage))
 
 
 def check_local_processes_while_remote_processing(running_paxes, crash_fanout, terminate_host_on_crash=False):
