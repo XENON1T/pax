@@ -379,10 +379,13 @@ def find_class_names(filename):
     return classnames
 
 
-def load_event_class_code(class_code, lock_breaking_timeout=300):
+def load_event_class_code(class_code, lock_breaking_timeout=None):
     """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
     """
+    # Default is not in header, since this is called from several places with config.get()
+    if lock_breaking_timeout is None:
+        lock_breaking_timeout = 300
     checksum = hashlib.md5(class_code.encode()).hexdigest()
     class_filename = 'pax_event_class-%s.cpp' % checksum
     libfile = get_libname(class_filename)
