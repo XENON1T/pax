@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -157,7 +157,7 @@
             <span class="c1"># Is there an input plugin? If so, try to use the input plugin&#39;s input name without extension.</span>
             <span class="c1"># This will give problems when both input and output have no extension (e.g. directories, databases),</span>
             <span class="c1"># but is very convenient otherwise.</span>
-            <span class="c1"># Appending e.g. &#39;_procesed&#39; inevitably leads to &#39;_processed_processed_...&#39;</span>
+            <span class="c1"># Appending e.g. &#39;_processed&#39; inevitably leads to &#39;_processed_processed_...&#39;</span>
             <span class="n">ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">input_plugin</span>
             <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="s1">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;input_name&#39;</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -94,7 +94,7 @@
         <span class="n">output</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_truth_peaks</span><span class="p">)</span>
         <span class="n">output</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;truth_file_name&#39;</span><span class="p">],</span> <span class="n">index_label</span><span class="o">=</span><span class="s1">&#39;fax_truth_peak_id&#39;</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="WaveformSimulator.store_true_peak"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">[docs]</a>    <span class="k">def</span> <span class="nf">store_true_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">electron_times</span><span class="o">=</span><span class="p">()):</span>
+<div class="viewcode-block" id="WaveformSimulator.store_true_peak"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">[docs]</a>    <span class="k">def</span> <span class="nf">store_true_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">g4_id</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">electron_times</span><span class="o">=</span><span class="p">()):</span>
         <span class="sd">&quot;&quot;&quot; Saves the truth information about a peak (s1 or s2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">true_peak</span> <span class="o">=</span> <span class="p">{</span>
@@ -102,6 +102,7 @@
             <span class="s1">&#39;repetition&#39;</span><span class="p">:</span>       <span class="bp">self</span><span class="o">.</span><span class="n">current_repetition</span><span class="p">,</span>
             <span class="s1">&#39;event&#39;</span><span class="p">:</span>            <span class="bp">self</span><span class="o">.</span><span class="n">current_event</span><span class="p">,</span>
             <span class="s1">&#39;peak_type&#39;</span><span class="p">:</span>        <span class="n">peak_type</span><span class="p">,</span>
+            <span class="s1">&#39;g4_id&#39;</span><span class="p">:</span>          <span class="n">g4_id</span><span class="p">,</span>
             <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">z</span><span class="p">,</span>
             <span class="s1">&#39;t_interaction&#39;</span><span class="p">:</span>     <span class="n">t</span><span class="p">,</span>
         <span class="p">}</span>
@@ -125,18 +126,18 @@
                 <span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">truth_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">true_peak</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="WaveformSimulator.s2"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">[docs]</a>    <span class="k">def</span> <span class="nf">s2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulator.s2"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">[docs]</a>    <span class="k">def</span> <span class="nf">s2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons</span><span class="p">,</span> <span class="n">g4_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="n">electron_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">s2_electrons</span><span class="p">(</span><span class="n">electrons_generated</span><span class="o">=</span><span class="n">electrons</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">electron_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="n">photon_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">s2_scintillation</span><span class="p">(</span><span class="n">electron_times</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">electron_times</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="n">g4_id</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">electron_times</span><span class="p">)</span>
         <span class="c1"># Generate S2 hitpattern &quot;at the anode&quot;: cue for  simulator to use the S2 LCE map</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">queue_signal</span><span class="p">(</span><span class="n">photon_times</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">])</span>
 </div>
-<div class="viewcode-block" id="WaveformSimulator.s1"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">[docs]</a>    <span class="k">def</span> <span class="nf">s1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulator.s1"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">[docs]</a>    <span class="k">def</span> <span class="nf">s1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">g4_id</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param photons: total # of photons generated in the S1</span>
 <span class="sd">        :param recoil_type: &#39;ER&#39; for electronic recoil, &#39;NR&#39; for nuclear recoil</span>
@@ -147,7 +148,7 @@
         <span class="n">photon_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">s1_photons</span><span class="p">(</span><span class="n">photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="n">g4_id</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">queue_signal</span><span class="p">(</span><span class="n">photon_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WaveformSimulator.s2_after_pulses"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2_after_pulses">[docs]</a>    <span class="k">def</span> <span class="nf">s2_after_pulses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -237,10 +238,12 @@
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;s1_photons&#39;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="p">(</span><span class="n">photons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;s1_photons&#39;</span><span class="p">]),</span>
                         <span class="n">recoil_type</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;recoil_type&#39;</span><span class="p">],</span>
+                        <span class="n">g4_id</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">],</span>
                         <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]),</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;s2_electrons&#39;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">(</span><span class="n">electrons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;s2_electrons&#39;</span><span class="p">]),</span>
+                        <span class="n">g4_id</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">],</span>
                         <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;t&#39;</span><span class="p">]),</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
 
         <span class="c1"># Based on the generated photon timing</span>
@@ -301,6 +304,7 @@
         <span class="n">instruction_number</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">instruction</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruction_reader</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># create fake g4_id=-1 for csv input</span>
             <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
                 <span class="n">p</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;random&#39;</span>
             <span class="k">else</span><span class="p">:</span>
@@ -330,22 +334,23 @@
             <span class="k">yield</span> <span class="n">instr</span>
 
 </div></div>
-<div class="viewcode-block" id="WaveformSimulatorFromNEST"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">[docs]</a><span class="k">class</span> <span class="nc">WaveformSimulatorFromNEST</span><span class="p">(</span><span class="n">WaveformSimulator</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Simulate waveforms from GEANT4 ROOT file with NEST-generated S1, S2 information</span>
+<div class="viewcode-block" id="WaveformSimulatorFromMC"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromMC">[docs]</a><span class="k">class</span> <span class="nc">WaveformSimulatorFromMC</span><span class="p">(</span><span class="n">WaveformSimulator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simulate waveforms from GEANT4 ROOT file with generated</span>
+<span class="sd">    S1, S2 information (e.g. from NEST, nSort, or other)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">variables</span> <span class="o">=</span> <span class="p">(</span>
         <span class="c1"># Fax name        #Root name    #Conversion factor (multiplicative)</span>
-        <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>             <span class="s1">&#39;Nest_x&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span>             <span class="s1">&#39;Nest_y&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span>             <span class="s1">&#39;Nest_z&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;s1_photons&#39;</span><span class="p">,</span>    <span class="s1">&#39;Nest_nph&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;s2_electrons&#39;</span><span class="p">,</span>  <span class="s1">&#39;Nest_nel&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span>             <span class="s1">&#39;Nest_t&#39;</span><span class="p">,</span>     <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">),</span>
-        <span class="p">(</span><span class="s1">&#39;recoil_type&#39;</span><span class="p">,</span>   <span class="s1">&#39;Nest_nr&#39;</span><span class="p">,</span>    <span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>             <span class="s1">&#39;Fax_x&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span>             <span class="s1">&#39;Fax_y&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span>             <span class="s1">&#39;Fax_z&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;s1_photons&#39;</span><span class="p">,</span>    <span class="s1">&#39;Fax_nph&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;s2_electrons&#39;</span><span class="p">,</span>  <span class="s1">&#39;Fax_nel&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">,</span>             <span class="s1">&#39;Fax_t&#39;</span><span class="p">,</span>     <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;recoil_type&#39;</span><span class="p">,</span>   <span class="s1">&#39;Fax_nr&#39;</span><span class="p">,</span>    <span class="mi">1</span><span class="p">),</span>
     <span class="p">)</span>
 
-<div class="viewcode-block" id="WaveformSimulatorFromNEST.startup"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulatorFromMC.startup"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromMC.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;add_to_z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;This plugin is completely untested and will probably crash!&#39;</span><span class="p">)</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;input_name&#39;</span><span class="p">]</span>
@@ -355,7 +360,7 @@
         <span class="n">WaveformSimulator</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntries</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;event_repetitions&#39;</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="WaveformSimulatorFromNEST.get_instructions_for_next_event"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_instructions_for_next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulatorFromMC.get_instructions_for_next_event"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromMC.get_instructions_for_next_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_instructions_for_next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">event_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntry</span><span class="p">(</span><span class="n">event_i</span><span class="p">)</span>
 
@@ -369,6 +374,7 @@
             <span class="n">interaction_instructions</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">npeaks</span><span class="p">):</span>
                 <span class="n">interaction_instructions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;instruction&#39;</span><span class="p">:</span> <span class="n">event_i</span><span class="p">})</span>
+                <span class="n">interaction_instructions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;g4_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">eventid</span>
                 <span class="k">for</span> <span class="p">(</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">conversion_factor</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
                     <span class="n">interaction_instructions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">variable_name</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">conversion_factor</span>
 
@@ -416,6 +422,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntry</span><span class="p">(</span><span class="n">event_i</span><span class="p">)</span>
             <span class="n">instructions</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">instructions</span><span class="p">[</span><span class="s1">&#39;instruction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_i</span>
+            <span class="n">instructions</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">eventid</span>
             <span class="c1"># fill instructions to look like this:</span>
             <span class="c1"># {[photon_hit_pmt_ids], [photon_arriving_times]}</span>
             <span class="k">for</span> <span class="p">(</span>

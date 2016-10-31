@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -52,7 +52,7 @@
 <span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
-<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span>
+<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span>
 <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY3</span><span class="p">:</span>
     <span class="nb">long</span> <span class="o">=</span> <span class="nb">int</span>
 
@@ -433,7 +433,7 @@
             <span class="k">return</span> <span class="bp">False</span>
 
 </div></div>
-<div class="viewcode-block" id="Pulse"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse">[docs]</a><span class="k">class</span> <span class="nc">Pulse</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+<div class="viewcode-block" id="Pulse"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse">[docs]</a><span class="k">class</span> <span class="nc">Pulse</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A region of raw digitizer data.</span>
 <span class="sd">    For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.</span>
 
@@ -490,7 +490,7 @@
 <span class="sd">         - raw_data (numpy array of samples)</span>
 <span class="sd">         - right (last index)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">StrictModel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">Model</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">==</span> <span class="n">INT_NAN</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify channel to init Pulse&quot;</span><span class="p">)</span>
@@ -533,7 +533,7 @@
     <span class="n">drift_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c1">#: z position (cm) calculated from drift time.</span>
-    <span class="c1">#: This is simply - drift time * drift velocity</span>
+    <span class="c1">#: This - (drift time - drift time of gate) * drift velocity</span>
     <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c1">#: r position (cm)</span>
@@ -606,6 +606,9 @@
     <span class="c1">#: A nonnegative integer that uniquely identifies the event within the dataset.</span>
     <span class="n">event_number</span> <span class="o">=</span> <span class="mi">0</span>
 
+    <span class="c1">#: Internal number used for multiprocessing, no physical meaning.</span>
+    <span class="n">block_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
     <span class="c1">#: Total number of channels in the event (whether or not they see anything).</span>
     <span class="c1">#: Has to be the same as n_channels in config, provided here for deserialization ease.</span>
     <span class="n">n_channels</span> <span class="o">=</span> <span class="n">INT_NAN</span>
@@ -654,6 +657,12 @@
     <span class="c1">#: referring to the index of a pulse in this field.</span>
     <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
+    <span class="c1">#: Number of pulses per channel</span>
+    <span class="n">n_pulses_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+    <span class="c1">#: Total number of pulses</span>
+    <span class="n">n_pulses</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="c1">#: Number of noise pulses (pulses without any hits found) per channel</span>
     <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
@@ -695,6 +704,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Nonpositive event duration </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">())</span>
 
         <span class="c1"># Initialize numpy arrays -- need to have n_channels and self.length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_pulses_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -819,7 +829,13 @@
 <span class="c1"># other code will be fooled into treating it as a normal event</span>
 <span class="c1"># (except the explicit event class checks in ProcessPlugin of course,</span>
 <span class="c1">#  these have to be disabled by as needed using do_output_check and do_input_check)</span></div></div>
-<span class="n">EventProxy</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;EventProxy&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;event_number&#39;</span><span class="p">])</span>
+<span class="n">EventProxy</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;EventProxy&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;event_number&#39;</span><span class="p">,</span> <span class="s1">&#39;block_id&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="make_event_proxy"><a class="viewcode-back" href="../../pax.html#pax.datastructure.make_event_proxy">[docs]</a><span class="k">def</span> <span class="nf">make_event_proxy</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">block_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">block_id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">block_id</span>
+    <span class="k">return</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">event_number</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="n">block_id</span><span class="p">)</span></div>
 </pre></div>
 
           </div>

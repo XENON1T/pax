@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.CheckPulses &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.plugins.signal_processing.CheckPulses &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -97,16 +97,16 @@
         <span class="k">return</span> <span class="n">event</span>
 
 </div></div>
-<div class="viewcode-block" id="CheckBounds"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBounds">[docs]</a><span class="k">class</span> <span class="nc">CheckBounds</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="CheckBoundsAndCount"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount">[docs]</a><span class="k">class</span> <span class="nc">CheckBoundsAndCount</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Check if pulses extend beyond event bounds</span>
 <span class="sd">    If so, truncate them or raise exception, depending on config</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="CheckBounds.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBounds.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="CheckBoundsAndCount.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">truncate_pulses_partially_outside</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;truncate_pulses_partially_outside&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allow_pulse_completely_outside</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allow_pulse_completely_outside&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="CheckBounds.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBounds.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="CheckBoundsAndCount.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
         <span class="c1"># Sanity check for sample_duration</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">:</span>
@@ -126,7 +126,6 @@
             <span class="c1">##</span>
             <span class="c1">#  Pulse bounds checking / truncation (see issue 43)</span>
             <span class="c1">##</span>
-
             <span class="n">overhang</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="p">(</span><span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">start_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">end_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">overhang</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -164,15 +163,30 @@
                     <span class="n">end_index</span> <span class="o">=</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span>
 
                 <span class="c1"># Update the pulse data, so hit finder won&#39;t look at old un-truncated pulse</span>
-                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">pulse_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
-                                                            <span class="n">right</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span>
-                                                            <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+                <span class="c1"># Explicit casts necessary since we&#39;ve disabled type checking for pulse class for speed in event builder</span>
+                <span class="c1"># and otherwise numpy ints would get in and break e.g. BSON output</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">pulse_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">start_index</span><span class="p">),</span>
+                                                            <span class="n">right</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">end_index</span><span class="p">),</span>
+                                                            <span class="n">channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span>
                                                             <span class="n">raw_data</span><span class="o">=</span><span class="n">pulse_wave</span><span class="p">)</span>
 
         <span class="c1"># Remove the to-be-ignored-pulses</span>
         <span class="n">event</span><span class="o">.</span><span class="n">pulses</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p_i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)</span> <span class="k">if</span> <span class="n">p_i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pulses_to_ignore</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">event</span></div></div>
+        <span class="c1"># Count the number of pulses per channel. Must be done at the end, since pulses can be ignored (see above)</span>
+        <span class="c1"># Since we now use pickle as a raw data format, the events are no longer init&#39;ed when they are loaded</span>
+        <span class="c1"># from raw data. That means this field never gets the right length set (in datastructure.py it is inited as</span>
+        <span class="c1"># an empty array) for data created with an old version of pax. So, let&#39;s init it ourselves...</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">n_pulses_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">:</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">n_pulses_per_channel</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">n_pulses</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">n_pulses_per_channel</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+
+<span class="c1"># Alias for old configs</span></div></div>
+<span class="n">CheckBounds</span> <span class="o">=</span> <span class="n">CheckBoundsAndCount</span>
 </pre></div>
 
           </div>

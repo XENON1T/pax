@@ -51,7 +51,7 @@
 <span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">Memoize</span>
 
 
-<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Data modelling base class -- use for subclassing.</span>
 <span class="sd">    Features:</span>
 <span class="sd">      - set attribute values by passing dict or kwargs to init</span>
@@ -135,7 +135,7 @@
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Model.get_fields_data"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_fields_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_fields_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.get_fields_data"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.get_fields_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_fields_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterator over (key, value) tuples of all user-specified fields</span>
 <span class="sd">        Returns keys in lexical order</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -163,7 +163,7 @@
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">value_in_class</span><span class="p">)</span>
 </div>
     <span class="nd">@classmethod</span>
-<div class="viewcode-block" id="Model.get_dtype"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_dtype">[docs]</a>    <span class="k">def</span> <span class="nf">get_dtype</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.get_dtype"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.get_dtype">[docs]</a>    <span class="k">def</span> <span class="nf">get_dtype</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a dtype for a numpy structured array equivalent to the class</span>
 <span class="sd">        Works only for flat classes (no list fields) containing int, float, and bool</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -179,7 +179,7 @@
                 <span class="n">dtype</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">field_name</span><span class="p">,</span> <span class="n">type_mapping</span><span class="p">[</span><span class="n">value_type</span><span class="p">]))</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                 <span class="n">use_decimal</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">fields_to_ignore</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -213,22 +213,22 @@
                 <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
         <span class="k">return</span> <span class="n">result</span>
 </div>
-<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s1">&#39;list&#39;</span><span class="p">,</span>
                                        <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">,</span>
                                        <span class="n">nan_to_none</span><span class="o">=</span><span class="n">nan_to_none</span><span class="p">))</span>
 </div>
-<div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
                                              <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">,</span>
                                              <span class="n">nan_to_none</span><span class="o">=</span><span class="n">nan_to_none</span><span class="p">))</span>
 </div>
     <span class="nd">@classmethod</span>
-<div class="viewcode-block" id="Model.from_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_json">[docs]</a>    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.from_json"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.from_json">[docs]</a>    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 </div>
     <span class="nd">@classmethod</span>
-<div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
             <span class="c1"># Hack for python 2: may work in py3 too, but it&#39;s definitely not the standard way!</span>
             <span class="n">reader</span> <span class="o">=</span> <span class="n">bson</span><span class="o">.</span><span class="n">decode_file_iter</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -247,14 +247,14 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.data_model.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">Model</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model collections must specify a type&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
 
 </div>
-<div class="viewcode-block" id="StrictModel"><a class="viewcode-back" href="../../pax.html#pax.data_model.StrictModel">[docs]</a><span class="k">class</span> <span class="nc">StrictModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="StrictModel"><a class="viewcode-back" href="../../pax.html#pax.datastructure.StrictModel">[docs]</a><span class="k">class</span> <span class="nc">StrictModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Model which enforces additional restrictions:</span>
 <span class="sd">      - can&#39;t add new attributes: have to be fixed at class declaration</span>
 <span class="sd">      - attributes can&#39;t change type or numpy dtype once set.</span>

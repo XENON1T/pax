@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -47,10 +47,12 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-
+<span class="kn">import</span> <span class="nn">multihist</span>    <span class="c1"># noqa   # Not explicitly used, but pickle of gas gap warping map is in this format</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">datastructure</span>
 <span class="kn">from</span> <span class="nn">pax.PatternFitter</span> <span class="kn">import</span> <span class="n">PatternFitter</span>
@@ -84,21 +86,6 @@
         <span class="n">efield</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;drift_field&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">V</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">))</span>
         <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="o">/</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">20</span> <span class="o">+</span> <span class="mf">0.41</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.009</span> <span class="o">*</span> <span class="n">efield</span><span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Inferred s1_ER_recombination_time </span><span class="si">%s</span><span class="s1"> ns&#39;</span> <span class="o">%</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_ER_recombination_time&#39;</span><span class="p">])</span>
-
-        <span class="c1"># Calculate particle number density in the gas (ideal gas law)</span>
-        <span class="n">number_density_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">boltzmannConstant</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">])</span>
-
-        <span class="c1"># electric field in the gas</span>
-        <span class="c1"># Formula from xenon:xenon100:analysis:jacob:s2gain_v2</span>
-        <span class="n">e_in_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;anode_voltage&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">+</span>
-            <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Reduced electric field in the gas</span>
-        <span class="n">c</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_in_gas</span> <span class="o">/</span> <span class="n">number_density_gas</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Inferred a reduced electric field of </span><span class="si">%s</span><span class="s2"> Td in the gas&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Td</span><span class="p">))</span>
 
         <span class="c1"># Which channels stand to receive any photons?</span>
         <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">]</span>
@@ -153,6 +140,74 @@
                                              <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_gain_error&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c1">##</span>
+        <span class="c1"># Luminescence time distribution precomputation</span>
+        <span class="c1">##</span>
+
+        <span class="c1"># For which gas gaps do we have to compute the luminescence time distribution?</span>
+        <span class="n">gas_gap_warping_map</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;gas_gap_warping_map&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">base_dg</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">gas_gap_warping_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">gas_gap_warping_map</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+                <span class="n">mh</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas_gap_length</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">base_dg</span> <span class="o">+</span> <span class="n">mh</span><span class="o">.</span><span class="n">lookup</span><span class="p">([</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters_dgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">mh</span><span class="o">.</span><span class="n">histogram</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+                                                           <span class="n">mh</span><span class="o">.</span><span class="n">histogram</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+                                                           <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;n_luminescence_time_converters&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span> <span class="o">+</span> <span class="n">base_dg</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gas_gap_length</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">base_dg</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters_dgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">base_dg</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Calculate particle number density in the gas (ideal gas law)</span>
+        <span class="n">number_density_gas</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">boltzmannConstant</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Slope of the drift velocity vs field relation</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">number_density_gas</span>
+
+        <span class="nd">@np.vectorize</span>
+        <span class="k">def</span> <span class="nf">yield_per_dr</span><span class="p">(</span><span class="n">E</span><span class="p">):</span>
+            <span class="c1"># Gives something proportional to the yield, not the yield itself!</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">E</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">kV</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">bar</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">rA</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;anode_field_domination_distance&#39;</span><span class="p">]</span>
+        <span class="n">rW</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">dg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters_dgs</span><span class="p">:</span>
+            <span class="n">dl</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">dg</span>
+            <span class="n">rL</span> <span class="o">=</span> <span class="n">dg</span>
+
+            <span class="c1"># Voltage over the gas gap</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;anode_voltage&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">dl</span><span class="o">/</span><span class="n">dg</span><span class="o">/</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;lxe_dielectric_constant&#39;</span><span class="p">])</span>  <span class="c1"># From eq1 in se note, * dg</span>
+
+            <span class="c1"># Field in the gas gap. r is distance from anode center: start at r=rL</span>
+            <span class="n">E0</span> <span class="o">=</span> <span class="n">V</span><span class="o">/</span><span class="p">(</span><span class="n">rL</span> <span class="o">-</span> <span class="n">rA</span> <span class="o">+</span> <span class="n">rA</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rA</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rW</span><span class="p">)))</span>
+
+            <span class="nd">@np.vectorize</span>
+            <span class="k">def</span> <span class="nf">Er</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="n">rW</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">rW</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="n">rA</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">E0</span> <span class="o">*</span> <span class="n">rA</span> <span class="o">/</span> <span class="n">r</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">E0</span>
+
+            <span class="c1"># Small numeric calculation to get emission time cdf</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">rL</span><span class="p">,</span> <span class="n">rW</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="n">Er</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+            <span class="n">RDOT</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">E</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">R</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">RDOT</span><span class="p">)</span>     <span class="c1"># dt = dx / v</span>
+            <span class="n">yield_density</span> <span class="o">=</span> <span class="n">yield_per_dr</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">RDOT</span>    <span class="c1"># density/dt = density/dx * dx/dt</span>
+            <span class="n">yield_density</span> <span class="o">/=</span> <span class="n">yield_density</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="c1"># Invert CDF using interpolator</span>
+            <span class="n">uniform_to_emission_time</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">yield_density</span><span class="p">),</span> <span class="n">T</span><span class="p">,</span>
+                                                <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uniform_to_emission_time</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_signals_queue</span><span class="p">()</span>
 
@@ -312,7 +367,12 @@
                 <span class="n">current_wave</span><span class="p">[</span><span class="n">left_index</span><span class="p">:</span> <span class="n">righter_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">generated_pulse</span>
 
             <span class="c1"># Did you order some Gaussian current noise with that?</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigma&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigmas&#39;</span><span class="p">]:</span>
+                <span class="c1"># if the baseline fluc. is defined for each channel</span>
+                <span class="c1"># use that in prior</span>
+                <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
+                <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_sigma_current</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigma&#39;</span><span class="p">]:</span>
                 <span class="c1"># / dt is for charge -&gt; current conversion, as in pmt_pulse_current</span>
                 <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gauss_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
                 <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_sigma_current</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
@@ -383,10 +443,8 @@
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating an s2 from </span><span class="si">%s</span><span class="s2"> electrons...&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
 
-        <span class="c1"># Average drift time, taking faster drift velocity after gate into account</span>
-        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> \
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span> \
-            <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid_above_gate&#39;</span><span class="p">]</span>
+        <span class="c1"># Average drift time of the electrons</span>
+        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;drift_time_gate&#39;</span><span class="p">]</span>
 
         <span class="c1"># Diffusion model from Sorensen 2011</span>
         <span class="n">drift_time_stdev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;diffusion_constant_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">drift_time_mean</span><span class="p">)</span>
@@ -485,7 +543,7 @@
         <span class="c1"># How many photons does each electron make?</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
         <span class="n">photons_produced</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span>
-            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_secondary_sc_gain_density&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_secondary_sc_gain&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_light_yield_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">electron_arrival_times</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="n">total_photons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">)</span>
@@ -496,7 +554,7 @@
         <span class="c1"># Find the photon production times</span>
         <span class="c1"># Assume luminescence probability ~ electric field</span>
         <span class="n">s2_pe_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
-            <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_luminescence_times</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_luminescence_times</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t0</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">electron_arrival_times</span><span class="p">)</span>
         <span class="p">])</span>
 
@@ -522,38 +580,15 @@
             <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_singlets</span><span class="p">)</span>
         <span class="p">])</span>
 </div>
-<div class="viewcode-block" id="Simulator.get_luminescence_times"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.get_luminescence_times">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulator.get_luminescence_times"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.get_luminescence_times">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="c1"># Get the gas gap width at this point</span>
+        <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_gap_length</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
-        <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
+        <span class="c1"># Retrieve the closest uniform -&gt; luminescence time converter we precomputed, then use it</span>
+        <span class="n">conv_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters_dgs</span> <span class="o">-</span> <span class="n">dg</span><span class="p">))</span>
+        <span class="n">uniform_to_luminescence_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters</span><span class="p">[</span><span class="n">conv_i</span><span class="p">]</span>
 
-        <span class="c1"># Distance between liquid level and uniform -&gt; line field crossover point</span>
-        <span class="n">du</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;anode_field_domination_distance&#39;</span><span class="p">]</span>
-
-        <span class="c1"># Distance between liquid level and anode wire</span>
-        <span class="n">dw</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
-
-        <span class="c1"># How many photons are produced in the uniform part?</span>
-        <span class="n">n_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="n">du</span> <span class="o">*</span>
-                                               <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">))))</span>
-
-        <span class="c1"># Sample the luminescence times in the uniform part</span>
-        <span class="n">pos_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">du</span><span class="p">,</span> <span class="n">n_uniform</span><span class="p">)</span>
-
-        <span class="c1"># Sample the luminescence positions in the non-uniform part</span>
-        <span class="n">FTilde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="n">n_uniform</span><span class="p">)</span>
-        <span class="n">pos_non_uniform</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">FTilde</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)</span> <span class="o">**</span> <span class="n">FTilde</span>
-
-        <span class="c1"># Convert to luminescence times</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
-            <span class="n">pos_uniform</span><span class="p">,</span>
-            <span class="n">pos_non_uniform</span>
-            <span class="c1"># To take electron speedup near anode into account, replace line above with:</span>
-            <span class="c1"># (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))</span>
-            <span class="c1"># NB: does not take electron bending towards anode into account, so probably worse!</span>
-        <span class="p">))</span>
-        <span class="n">result</span> <span class="o">*=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;reduced_e_in_gas&#39;</span><span class="p">])</span>
-
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">uniform_to_luminescence_time</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="Simulator.pmt_pulse_current"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.pmt_pulse_current">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_pulse_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="c1"># Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching</span>

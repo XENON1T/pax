@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger_plugins.SaveSignals &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.trigger_plugins.SaveSignals &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" />
    
   
@@ -46,6 +46,13 @@
 
 <div class="viewcode-block" id="SaveSignals"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.SaveSignals.SaveSignals">[docs]</a><span class="k">class</span> <span class="nc">SaveSignals</span><span class="p">(</span><span class="n">TriggerPlugin</span><span class="p">):</span>
 
+<div class="viewcode-block" id="SaveSignals.startup"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.SaveSignals.SaveSignals.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;save_signals&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;trigger_signals_histogram_bins&#39;</span><span class="p">,</span>
+                                       <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                        <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="p">[</span><span class="s1">&#39;trigger_signals_histogram_bins&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span>
+</div>
 <div class="viewcode-block" id="SaveSignals.process"><a class="viewcode-back" href="../../../pax.trigger_plugins.html#pax.trigger_plugins.SaveSignals.SaveSignals.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="n">is_in_event</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
@@ -61,21 +68,19 @@
                 <span class="n">signals_by_event</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">[</span><span class="n">sig_idx</span><span class="p">[</span><span class="n">event_i</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span><span class="n">sig_idx</span><span class="p">[</span><span class="n">event_i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
             <span class="n">data</span><span class="o">.</span><span class="n">signals_by_event</span> <span class="o">=</span> <span class="n">signals_by_event</span>
 
-        <span class="n">save_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;save_signals&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">save_mode</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_mode</span><span class="p">:</span>
             <span class="n">sigs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">signals</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;only_save_signals_outside_events&#39;</span><span class="p">):</span>
                 <span class="n">sigs</span> <span class="o">=</span> <span class="n">sigs</span><span class="p">[</span><span class="bp">True</span> <span class="o">^</span> <span class="n">is_in_event</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">save_mode</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_mode</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span><span class="p">:</span>
                 <span class="n">sigs</span> <span class="o">=</span> <span class="n">sigs</span><span class="p">[</span><span class="n">sigs</span><span class="p">[</span><span class="s1">&#39;n_pulses&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;signals_save_threshold&#39;</span><span class="p">]]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigs</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Storing </span><span class="si">%d</span><span class="s2"> signals in trigger data&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigs</span><span class="p">))</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;trigger_signals&#39;</span><span class="p">,</span> <span class="n">sigs</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">save_mode</span> <span class="o">==</span> <span class="s1">&#39;2d_histogram&#39;</span><span class="p">:</span>
-                <span class="n">hist</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">sigs</span><span class="p">[</span><span class="s1">&#39;n_pulses&#39;</span><span class="p">]),</span>
-                                            <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">sigs</span><span class="p">[</span><span class="s1">&#39;time_rms&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-                                            <span class="n">bins</span><span class="o">=</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
-                                                  <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_mode</span> <span class="o">==</span> <span class="s1">&#39;2d_histogram&#39;</span><span class="p">:</span>
+                <span class="n">hist</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">sigs</span><span class="p">[</span><span class="s1">&#39;n_pulses&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+                                            <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">sigs</span><span class="p">[</span><span class="s1">&#39;time_rms&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+                                            <span class="n">bins</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ts_bins</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">save_monitor_data</span><span class="p">(</span><span class="s1">&#39;trigger_signals_histogram&#39;</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
 
 </div></div>

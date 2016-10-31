@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 5.6.4 documentation</title>
+    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 6.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '5.6.4',
+        VERSION:     '6.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 5.6.4 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -51,7 +51,7 @@
 
 <span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">input</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">plugin</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">EventProxy</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">make_event_proxy</span>
 
 
 <div class="viewcode-block" id="InputFromFolder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder">[docs]</a><span class="k">class</span> <span class="nc">InputFromFolder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
@@ -355,7 +355,9 @@
 
 <div class="viewcode-block" id="ReadZippedDecoder.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_event</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_event</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">block_id</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">block_id</span>
+        <span class="k">return</span> <span class="n">event</span>
 </div>
 <div class="viewcode-block" id="ReadZippedDecoder.decode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.decode_event">[docs]</a>    <span class="k">def</span> <span class="nf">decode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -371,14 +373,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;compresslevel&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteZippedEncoder.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="n">event_number</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span><span class="p">)</span>
-        <span class="c1"># Add start and stop time to the data, for use in MongoDBClearUntriggered</span>
-        <span class="k">return</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">blob</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
-                                    <span class="n">start_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
-                                    <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">),</span>
-                          <span class="n">event_number</span><span class="o">=</span><span class="n">event_number</span><span class="p">)</span>
+        <span class="c1"># We also add start and stop time to the data, for use in MongoDBClearUntriggered</span>
+        <span class="k">return</span> <span class="n">make_event_proxy</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">blob</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                                                 <span class="n">start_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                                                 <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="WriteZippedEncoder.encode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
