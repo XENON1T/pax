@@ -27,11 +27,13 @@
     <link rel="next" title="Contributing" href="contributing.html" />
     <link rel="prev" title="Event builder" href="eventbuilder.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -50,7 +52,7 @@
 <h2>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
 <p><strong>Case 1: use all of the simulator to make waveforms.</strong> For this, use pax with <cite>–config XENON100 Simulation –input your_instructions.csv</cite> (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.</p>
 <p><strong>Case 2: use just a small part of the simulator library</strong>, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to make your own script with:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span>
 <span class="n">mypax</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Processor</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pax&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;plugin_group_names&#39;</span><span class="p">:[]}})</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">mypax</span><span class="o">.</span><span class="n">simulator</span>
 </pre></div>
@@ -504,8 +506,8 @@ The truth file produced by this input plugin will be empty (as WaveformSimulator
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
       |
       <a href="_sources/simulator.txt"

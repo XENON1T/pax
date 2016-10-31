@@ -26,11 +26,13 @@
     <link rel="top" title="Processor for Analyzing XENON1T 6.0.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -38,7 +40,7 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.plugins.io.XED</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">These plugins read &amp; write raw waveform data from a Xenon100 XED file.</span>
 <span class="sd">The XED file format is documented in Guillaume Plante&#39;s PhD thesis.</span>
 <span class="sd">This is code does not use the libxdio C-library though.</span>
@@ -108,12 +110,12 @@
             <span class="n">fmd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">xedfile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;first_event_number&#39;</span><span class="p">],</span>
                     <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-                    <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">])</span>
-</div>
+                    <span class="n">fmd</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">])</span></div>
+
 <div class="viewcode-block" id="ReadXED.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="ReadXED.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens an XED file so we can start reading events&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
@@ -136,8 +138,8 @@
                  <span class="s2">&quot;Is this the last XED file of a dataset?&quot;</span><span class="p">)</span> <span class="o">%</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;event_index_size&#39;</span><span class="p">])</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]]</span>
-</div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;events_in_file&#39;</span><span class="p">]]</span></div>
+
 <div class="viewcode-block" id="ReadXED.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.ReadXED.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
         <span class="n">dataset_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;dataset_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
 
@@ -229,9 +231,9 @@
                                        <span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s1">&#39;event_number&#39;</span><span class="p">]),</span>
                                        <span class="n">should_be_at_pos</span><span class="p">,</span> <span class="n">current_pos</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="DecodeXED"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.DecodeXED">[docs]</a><span class="k">class</span> <span class="nc">DecodeXED</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
 
@@ -311,9 +313,9 @@
 
                         <span class="n">sample_position</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_pulse</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">event</span>
+        <span class="k">return</span> <span class="n">event</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="WriteXED"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED">[docs]</a><span class="k">class</span> <span class="nc">WriteXED</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The XED is written &#39;inside out&#39; in memory, then written to disk</span>
@@ -325,8 +327,8 @@
 <div class="viewcode-block" id="WriteXED.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span></div>
+
 <div class="viewcode-block" id="WriteXED.skip_control_word"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.skip_control_word">[docs]</a>    <span class="k">def</span> <span class="nf">skip_control_word</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_skip</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">to_skip</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;to_skip must be even, you gave </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">to_skip</span><span class="p">)</span>
@@ -337,15 +339,15 @@
             <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
             <span class="k">return</span> <span class="n">q</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
-</div>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">to_skip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="WriteXED.data_control_word"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.data_control_word">[docs]</a>    <span class="k">def</span> <span class="nf">data_control_word</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_length</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data_length</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data length must be even, you gave </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">data_length</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">data_length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data length cannot be 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">+</span> <span class="n">data_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
-</div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">+</span> <span class="n">data_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;&lt;u4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="WriteXED.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -419,8 +421,8 @@
         <span class="n">event_header_arr</span> <span class="o">=</span> <span class="n">_dict_to_numpy_recarray</span><span class="p">(</span><span class="n">event_data_dict</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_event_header</span><span class="p">)</span>
         <span class="n">event_data</span> <span class="o">=</span> <span class="n">event_header_arr</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">channel_mask</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="o">+</span> <span class="n">event_data</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event_data</span><span class="p">)</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event_data</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="WriteXED.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># Write file header</span>
@@ -446,9 +448,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span></div></div>
 
-</div></div>
+
 <span class="k">def</span> <span class="nf">_dict_to_numpy_recarray</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Why is this so difficult? Stackoverflow says np.array(dict.items(), dtype=dt) should work, but it doesn&#39;t...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -491,8 +493,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

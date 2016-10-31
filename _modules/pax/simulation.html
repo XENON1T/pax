@@ -26,11 +26,13 @@
     <link rel="top" title="Processor for Analyzing XENON1T 6.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -38,7 +40,7 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.simulation</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Waveform simulator (&quot;FaX&quot;) - physics backend</span>
 <span class="sd">The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -214,8 +216,8 @@
 <div class="viewcode-block" id="Simulator.clear_signals_queue"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.clear_signals_queue">[docs]</a>    <span class="k">def</span> <span class="nf">clear_signals_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Prepares the waveform simulator for a new event.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="p">{</span><span class="n">ch</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">])}</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="p">{</span><span class="n">ch</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">])}</span></div>
+
 <div class="viewcode-block" id="Simulator.queue_signal"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.queue_signal">[docs]</a>    <span class="k">def</span> <span class="nf">queue_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photon_timings</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a signal due to isotropic light emission to the waveform simulator</span>
 <span class="sd">            photon_timings: list of photon emission times (ns) since start of the event.</span>
@@ -243,8 +245,8 @@
         <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">channel_i</span><span class="p">,</span> <span class="n">photon_times</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">q</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="p">[</span><span class="n">channel_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="p">[</span><span class="n">channel_i</span><span class="p">],</span>
-                                                                        <span class="n">photon_times</span><span class="p">))</span>
-</div>
+                                                                        <span class="n">photon_times</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="Simulator.make_pax_event"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.make_pax_event">[docs]</a>    <span class="k">def</span> <span class="nf">make_pax_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Simulate PMT response to the queued photon signals</span>
 <span class="sd">        Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix</span>
@@ -427,8 +429,8 @@
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Simulated pax event of </span><span class="si">%s</span><span class="s2"> samples length and </span><span class="si">%s</span><span class="s2"> pulses &quot;</span>
                   <span class="s2">&quot;created.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_signals_queue</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">event</span>
-</div>
+        <span class="k">return</span> <span class="n">event</span></div>
+
 <div class="viewcode-block" id="Simulator.s2_electrons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s2_electrons">[docs]</a>    <span class="k">def</span> <span class="nf">s2_electrons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons_generated</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a list of electron arrival times in the ELR region caused by an S2 process.</span>
 
@@ -464,8 +466,8 @@
         <span class="n">e_arrival_times</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;electron_trapping_time&#39;</span><span class="p">],</span> <span class="n">electrons_seen</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">drift_time_stdev</span><span class="p">:</span>
             <span class="n">e_arrival_times</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">drift_time_mean</span><span class="p">,</span> <span class="n">drift_time_stdev</span><span class="p">,</span> <span class="n">electrons_seen</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">e_arrival_times</span>
-</div>
+        <span class="k">return</span> <span class="n">e_arrival_times</span></div>
+
 <div class="viewcode-block" id="Simulator.s1_photons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s1_photons">[docs]</a>    <span class="k">def</span> <span class="nf">s1_photons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a list of photon detection times at the PMT caused by an S1 emitting n_photons.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -536,8 +538,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Recoil type must be ER, NR, alpha or LED, not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">timings</span> <span class="o">+</span> <span class="n">t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timings</span><span class="p">))</span>
-</div>
+        <span class="k">return</span> <span class="n">timings</span> <span class="o">+</span> <span class="n">t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timings</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="Simulator.s2_scintillation"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s2_scintillation">[docs]</a>    <span class="k">def</span> <span class="nf">s2_scintillation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electron_arrival_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Given a list of electron arrival times, returns photon production times&quot;&quot;&quot;</span>
         <span class="c1"># How many photons does each electron make?</span>
@@ -564,8 +566,8 @@
             <span class="n">t1</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;singlet_lifetime_gas&#39;</span><span class="p">],</span>
             <span class="n">t3</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;triplet_lifetime_gas&#39;</span><span class="p">],</span>
             <span class="n">singlet_ratio</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;singlet_fraction_gas&#39;</span><span class="p">]</span>
-        <span class="p">)</span>
-</div>
+        <span class="p">)</span></div>
+
 <div class="viewcode-block" id="Simulator.singlet_triplet_delays"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.singlet_triplet_delays">[docs]</a>    <span class="k">def</span> <span class="nf">singlet_triplet_delays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t3</span><span class="p">,</span> <span class="n">singlet_ratio</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a list of eximer formation times, returns excimer decay times.</span>
@@ -578,8 +580,8 @@
         <span class="k">return</span> <span class="n">times</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
             <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">n_singlets</span><span class="p">),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_singlets</span><span class="p">)</span>
-        <span class="p">])</span>
-</div>
+        <span class="p">])</span></div>
+
 <div class="viewcode-block" id="Simulator.get_luminescence_times"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.get_luminescence_times">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="c1"># Get the gas gap width at this point</span>
         <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gas_gap_length</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
@@ -588,8 +590,8 @@
         <span class="n">conv_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters_dgs</span> <span class="o">-</span> <span class="n">dg</span><span class="p">))</span>
         <span class="n">uniform_to_luminescence_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters</span><span class="p">[</span><span class="n">conv_i</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">uniform_to_luminescence_time</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
-</div>
+        <span class="k">return</span> <span class="n">uniform_to_luminescence_time</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="Simulator.pmt_pulse_current"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.pmt_pulse_current">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_pulse_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="c1"># Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching</span>
         <span class="k">return</span> <span class="n">gain</span> <span class="o">*</span> <span class="n">pmt_pulse_current_raw</span><span class="p">(</span>
@@ -599,8 +601,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_rise_time&#39;</span><span class="p">],</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_fall_time&#39;</span><span class="p">],</span>
-        <span class="p">)</span>
-</div>
+        <span class="p">)</span></div>
+
 <div class="viewcode-block" id="Simulator.distribute_photons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.distribute_photons">[docs]</a>    <span class="k">def</span> <span class="nf">distribute_photons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)</span>
 <span class="sd">        :return: numpy array of length == sim.config[&#39;n_channels&#39;] with photon count per channel</span>
@@ -631,8 +633,8 @@
             <span class="c1"># Use the S1 pattern information</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">])</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons_by_pattern</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
-</div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribute_photons_by_pattern</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="Simulator.distribute_photons_by_pattern"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.distribute_photons_by_pattern">[docs]</a>    <span class="k">def</span> <span class="nf">distribute_photons_by_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">pattern_fitter</span><span class="p">,</span> <span class="n">coordinate_tuple</span><span class="p">):</span>
         <span class="c1"># TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)</span>
         <span class="c1"># Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked</span>
@@ -640,8 +642,8 @@
         <span class="n">lces</span> <span class="o">=</span> <span class="n">pattern_fitter</span><span class="o">.</span><span class="n">expected_pattern</span><span class="p">(</span><span class="n">coordinate_tuple</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">n_photons</span><span class="p">,</span>
                                                     <span class="n">channels</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lces</span><span class="p">)),</span>
-                                                    <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="n">lces</span><span class="p">)</span>
-</div>
+                                                    <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="n">lces</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Simulator.randomize_photons_over_channels"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.randomize_photons_over_channels">[docs]</a>    <span class="k">def</span> <span class="nf">randomize_photons_over_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Distribute photon_timings over channels according to relative_lce_per_channel</span>
 
@@ -688,7 +690,7 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s2">&quot;</span>
                                <span class="s2">&quot;Hitpattern has wrong number of photons &quot;</span>
                                <span class="s2">&quot;(</span><span class="si">%d</span><span class="s2">, should be </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="n">n_photons</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">hitp</span>
+        <span class="k">return</span> <span class="n">hitp</span></div></div>
 
 
 <span class="c1">##</span>
@@ -697,7 +699,7 @@
 
 <span class="c1"># I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument</span>
 <span class="c1"># There&#39;s still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below</span>
-</div></div>
+
 <span class="nd">@Memoize</span>
 <span class="k">def</span> <span class="nf">pmt_pulse_current_raw</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">samples_before</span><span class="p">,</span> <span class="n">samples_after</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">tf</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">exp_pulse</span><span class="p">(</span>
@@ -781,8 +783,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

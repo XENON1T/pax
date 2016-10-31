@@ -26,11 +26,13 @@
     <link rel="top" title="Processor for Analyzing XENON1T 6.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -38,7 +40,7 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.FolderIO</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;I/O plugin base classes for input to/from folders or zipfiles</span>
+<span></span><span class="sd">&quot;&quot;&quot;I/O plugin base classes for input to/from folders or zipfiles</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">errno</span>
 <span class="kn">import</span> <span class="nn">glob</span>
@@ -107,8 +109,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">select_file</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Set the number of total events</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">fr</span><span class="p">[</span><span class="s1">&#39;n_events&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">fr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_data_files</span><span class="p">])</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">fr</span><span class="p">[</span><span class="s1">&#39;n_events&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">fr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_data_files</span><span class="p">])</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.init_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.init_file">[docs]</a>    <span class="k">def</span> <span class="nf">init_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Find out the first and last event contained in filename</span>
 <span class="sd">        Appends {&#39;filename&#39;: ..., &#39;first_event&#39;: ..., &#39;last_event&#39;:..., &#39;n_events&#39;:...} to self.raw_data_files</span>
@@ -118,8 +120,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">raw_data_files</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
                                     <span class="s1">&#39;first_event&#39;</span><span class="p">:</span> <span class="n">first_event</span><span class="p">,</span>
                                     <span class="s1">&#39;last_event&#39;</span><span class="p">:</span> <span class="n">last_event</span><span class="p">,</span>
-                                    <span class="s1">&#39;n_events&#39;</span><span class="p">:</span> <span class="n">n_events</span><span class="p">})</span>
-</div>
+                                    <span class="s1">&#39;n_events&#39;</span><span class="p">:</span> <span class="n">n_events</span><span class="p">})</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.select_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.select_file">[docs]</a>    <span class="k">def</span> <span class="nf">select_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Selects the ith file from self.raw_data_files for reading</span>
 <span class="sd">        Will be called by get_single_event (and once by startup)</span>
@@ -142,13 +144,13 @@
                                                                 <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data_files</span><span class="p">)))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_filename</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers_in_current_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_event_numbers_in_current_file</span><span class="p">()</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers_in_current_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_event_numbers_in_current_file</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.shutdown"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># hasattr check is needed to prevent extra error if pax crashes before the plugin runs</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;current_file&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.get_events"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate through all events in the file / folder&quot;&quot;&quot;</span>
         <span class="c1"># We must keep track of time ourselves, BasePlugin.timeit is a function decorator,</span>
@@ -157,8 +159,8 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file_number</span> <span class="o">!=</span> <span class="n">file_i</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">select_file</span><span class="p">(</span><span class="n">file_i</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_events_in_current_file</span><span class="p">():</span>
-                <span class="k">yield</span> <span class="n">event</span>
-</div>
+                <span class="k">yield</span> <span class="n">event</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.get_single_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a single event, automatically selecting the right file&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span> <span class="o">&lt;=</span> <span class="n">event_number</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span><span class="p">:</span>
@@ -183,10 +185,10 @@
                                                                            <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span><span class="p">,</span>
                                                                            <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers_in_current_file</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span></div>
 
     <span class="c1"># If reading in from a folder-of-files format not written by FolderIO,</span>
-    <span class="c1"># you&#39;ll probably have to overwrite this. (e.g. ReadXED does)</span></div>
+    <span class="c1"># you&#39;ll probably have to overwrite this. (e.g. ReadXED does)</span>
 <div class="viewcode-block" id="InputFromFolder.get_event_number_info"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_event_number_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_number_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the first, last and total event numbers in file specified by filename&quot;&quot;&quot;</span>
         <span class="n">stuff</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
@@ -199,31 +201,31 @@
             <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">first_event</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">last_event</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_events</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid file name: </span><span class="si">%s</span><span class="s2">. Should be tpcname-something-firstevent-lastevent-nevents.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
+                <span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span></div>
 
     <span class="c1">##</span>
     <span class="c1"># Child class should override these</span>
     <span class="c1">##</span>
-</div>
+
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
 <div class="viewcode-block" id="InputFromFolder.open"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens the file specified by filename for reading&quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="InputFromFolder.close"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+        <span class="k">pass</span></div>
 
     <span class="c1">##</span>
     <span class="c1"># Override this if you support non-continuous event numbers</span>
-    <span class="c1">##</span></div>
+    <span class="c1">##</span>
 <div class="viewcode-block" id="InputFromFolder.get_event_numbers_in_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_event_numbers_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_numbers_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
 
     <span class="c1">##</span>
     <span class="c1"># Override this if you support random access</span>
-    <span class="c1">##</span></div>
+    <span class="c1">##</span>
 <div class="viewcode-block" id="InputFromFolder.get_single_event_in_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Uses iteration to emulate random access to events</span>
 <span class="sd">        This does not check if the event actually exist: get_events is supposed to do that.</span>
@@ -232,17 +234,17 @@
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span> <span class="o">==</span> <span class="n">event_number</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">event</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Current file has no event </span><span class="si">%d</span><span class="s2">, and some check didn&#39;t pick this up.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                           <span class="s2">&quot;Either the file is very nasty, or the reader is bugged!&quot;</span> <span class="o">%</span> <span class="n">event_number</span><span class="p">)</span>
+                           <span class="s2">&quot;Either the file is very nasty, or the reader is bugged!&quot;</span> <span class="o">%</span> <span class="n">event_number</span><span class="p">)</span></div>
 
     <span class="c1">##</span>
     <span class="c1"># Override this if you DO NOT support random access, or if random access is slower than iteration</span>
-    <span class="c1">##</span></div>
+    <span class="c1">##</span>
 <div class="viewcode-block" id="InputFromFolder.get_all_events_in_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder.get_all_events_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_events_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Uses random access to iterate over all events&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">event_number</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers_in_current_file</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="WriteToFolder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder">[docs]</a><span class="k">class</span> <span class="nc">WriteToFolder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Write to a folder containing several small files, each containing &lt;= a fixed number of events&quot;&quot;&quot;</span>
 
@@ -284,16 +286,16 @@
                           <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
 
         <span class="c1"># Start the temporary file. Events will first be written here, until events_per_file is reached</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;temp.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">)</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;temp.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.open_new_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.open_new_file">[docs]</a>    <span class="k">def</span> <span class="nf">open_new_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_event_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens a new file, closing any old open ones&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">close_current_file</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">first_event_in_current_file</span> <span class="o">=</span> <span class="n">first_event_number</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events_written_to_current_file</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span><span class="p">)</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.write_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write one more event to the folder, opening/closing files as needed&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span> <span class="ow">is</span> <span class="bp">None</span> \
@@ -303,8 +305,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">write_event_to_current_file</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">events_written_to_current_file</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.close_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.close_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">close_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Closes the currently open file, if there is one. Also handles temporary file renaming. &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -321,35 +323,35 @@
                                                             <span class="bp">self</span><span class="o">.</span><span class="n">first_event_in_current_file</span><span class="p">,</span>
                                                             <span class="bp">self</span><span class="o">.</span><span class="n">last_event_written</span><span class="p">,</span>
                                                             <span class="bp">self</span><span class="o">.</span><span class="n">events_written_to_current_file</span><span class="p">,</span>
-                                                            <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">)))</span>
-</div>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">)))</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.shutdown"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Attempt to shutdown </span><span class="si">%s</span><span class="s2"> twice!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">close_current_file</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close_current_file</span><span class="p">()</span></div>
 
     <span class="c1">##</span>
     <span class="c1"># Child class should override these</span>
     <span class="c1">##</span>
-</div>
+
     <span class="n">file_extension</span> <span class="o">=</span> <span class="bp">None</span>
 
 <div class="viewcode-block" id="WriteToFolder.open"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.write_event_to_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
 <div class="viewcode-block" id="WriteToFolder.close"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteToFolder.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 
 
 <span class="c1">##</span>
 <span class="c1"># Encoders for zipfiles of events</span>
 <span class="c1"># Zipfile readers themselves are in plugins/io/Zip.py</span>
 <span class="c1"># (they have to be in /pax/plugins/... to be found)</span>
-<span class="c1">##</span></div></div>
+<span class="c1">##</span>
 <div class="viewcode-block" id="ReadZippedDecoder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder">[docs]</a><span class="k">class</span> <span class="nc">ReadZippedDecoder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
 
@@ -357,12 +359,12 @@
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_event</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">event</span><span class="o">.</span><span class="n">block_id</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">block_id</span>
-        <span class="k">return</span> <span class="n">event</span>
-</div>
-<div class="viewcode-block" id="ReadZippedDecoder.decode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.decode_event">[docs]</a>    <span class="k">def</span> <span class="nf">decode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">return</span> <span class="n">event</span></div>
 
-</div></div>
+<div class="viewcode-block" id="ReadZippedDecoder.decode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.decode_event">[docs]</a>    <span class="k">def</span> <span class="nf">decode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
 <div class="viewcode-block" id="WriteZippedEncoder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder">[docs]</a><span class="k">class</span> <span class="nc">WriteZippedEncoder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Encode and compress an event for entry into a zipfile.</span>
 <span class="sd">    Note we use zlib, not zip&#39;s deflate, for compression.</span>
@@ -370,16 +372,16 @@
     <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">False</span>
 
 <div class="viewcode-block" id="WriteZippedEncoder.startup"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;compresslevel&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;compresslevel&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="WriteZippedEncoder.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span><span class="p">)</span>
         <span class="c1"># We also add start and stop time to the data, for use in MongoDBClearUntriggered</span>
         <span class="k">return</span> <span class="n">make_event_proxy</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">blob</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
                                                  <span class="n">start_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
-                                                 <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">))</span>
-</div>
+                                                 <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="WriteZippedEncoder.encode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 </pre></div>
@@ -418,8 +420,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

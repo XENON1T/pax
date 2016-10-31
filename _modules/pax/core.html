@@ -26,11 +26,13 @@
     <link rel="top" title="Processor for Analyzing XENON1T 6.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -38,7 +40,7 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.core</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;The backbone of pax - the Processor class</span>
+<span></span><span class="sd">&quot;&quot;&quot;The backbone of pax - the Processor class</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">logging</span>
@@ -241,8 +243,8 @@
 
         <span class="c1"># Don&#39;t look in __pychache__ folders</span>
         <span class="n">plugin_search_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">plugin_search_paths</span> <span class="k">if</span> <span class="s1">&#39;__pycache__&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">plugin_search_paths</span>
-</div>
+        <span class="k">return</span> <span class="n">plugin_search_paths</span></div>
+
 <div class="viewcode-block" id="Processor.instantiate_plugin"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.instantiate_plugin">[docs]</a>    <span class="k">def</span> <span class="nf">instantiate_plugin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Take plugin class name and build class from it</span>
 
@@ -282,8 +284,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Instantiated </span><span class="si">%s</span><span class="s1"> succesfully&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">instance</span>
-</div>
+        <span class="k">return</span> <span class="n">instance</span></div>
+
 <div class="viewcode-block" id="Processor.get_plugin_by_name"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.get_plugin_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_plugin_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return plugin by class name. Use for testing.&quot;&quot;&quot;</span>
         <span class="n">plugins_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">}</span>
@@ -292,8 +294,8 @@
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">plugins_by_name</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">plugins_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No plugin named </span><span class="si">%s</span><span class="s2"> has been initialized.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-</div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No plugin named </span><span class="si">%s</span><span class="s2"> has been initialized.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Processor.get_metadata"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.get_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Remove any &#39;queue&#39; arguments from the &quot;config&quot;,</span>
         <span class="c1"># they are used to pass queue objects (which we certainly can&#39;t serialize!</span>
@@ -305,8 +307,8 @@
                     <span class="n">file_builder_name</span><span class="o">=</span><span class="s1">&#39;pax&#39;</span><span class="p">,</span>
                     <span class="n">file_builder_version</span><span class="o">=</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
                     <span class="n">timestamp</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
-                    <span class="n">configuration</span><span class="o">=</span><span class="n">cleaned_conf</span><span class="p">)</span>
-</div>
+                    <span class="n">configuration</span><span class="o">=</span><span class="n">cleaned_conf</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="Processor.process_event"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process one event with all action plugins. Returns processed event.&quot;&quot;&quot;</span>
         <span class="n">total_plugins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">)</span>
@@ -319,8 +321,8 @@
         <span class="c1"># Uncomment to diagnose memory leaks</span>
         <span class="c1"># gc.collect()  # don&#39;t care about stuff that would be garbage collected properly</span>
         <span class="c1"># objgraph.show_growth(limit=5)</span>
-        <span class="k">return</span> <span class="n">event</span>
-</div>
+        <span class="k">return</span> <span class="n">event</span></div>
+
 <div class="viewcode-block" id="Processor.run"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clean_shutdown</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)</span>
 
@@ -362,8 +364,8 @@
 
         <span class="c1"># Shutdown all plugins now -- don&#39;t wait until this Processor instance gets deleted</span>
         <span class="k">if</span> <span class="n">clean_shutdown</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-</div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="Processor.make_timing_report"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.make_timing_report">[docs]</a>    <span class="k">def</span> <span class="nf">make_timing_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_actually_processed</span><span class="p">):</span>
         <span class="n">all_plugins</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span>
         <span class="n">timing_report</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">([</span><span class="s1">&#39;Plugin&#39;</span><span class="p">,</span>
@@ -409,8 +411,8 @@
                                    <span class="mi">0</span><span class="p">,</span>
                                    <span class="s1">&#39;n/a&#39;</span><span class="p">,</span>
                                    <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Timing report:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timing_report</span><span class="p">))</span>
-</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Timing report:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timing_report</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="Processor.shutdown"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Call shutdown on all plugins&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
@@ -421,9 +423,9 @@
         <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Shutting down </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="n">ap</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="n">ap</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-            <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span></div></div>
 
-</div></div>
+
 <div class="viewcode-block" id="setup_logging"><a class="viewcode-back" href="../../pax.html#pax.core.setup_logging">[docs]</a><span class="k">def</span> <span class="nf">setup_logging</span><span class="p">(</span><span class="n">level_str</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;processor&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">level_str</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">level_str</span> <span class="o">=</span> <span class="s1">&#39;INFO&#39;</span>
@@ -475,8 +477,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 
