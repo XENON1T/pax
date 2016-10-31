@@ -4,6 +4,11 @@ History
 -------
 
 ------------------
+6.0.2 (2016-10-31)
+------------------
+* Jelle just wrote "Oops".  Patch release on same day as last one.
+
+------------------
 6.0.1 (2016-10-31)
 ------------------
 * Fixed memory leak
