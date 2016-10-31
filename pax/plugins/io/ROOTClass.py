@@ -64,7 +64,7 @@ class EncodeROOTClass(plugin.TransformPlugin):
             # Only master (in standalone mode) and processing_0 (in multiprocessing mode) are allowed to compile the lib
             # to avoid race conditions / clashes
             self.class_code = OVERALL_HEADER + self._build_model_class(event)
-            load_event_class_code(self.class_code)
+            load_event_class_code(self.class_code, self.config.get('lock_breaking_timeout'))
 
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
@@ -250,7 +250,7 @@ class WriteROOTClass(plugin.OutputPlugin):
     def write_event(self, event_proxy):
         if not self.tree_created:
             # Load the event class code, ships with event_proxy
-            load_event_class_code(event_proxy.data['class_code'])
+            load_event_class_code(event_proxy.data['class_code'], self.config.get('lock_breaking_timeout'))
 
             # Store the event class code in pax_event_class
             ROOT.TNamed('pax_event_class', event_proxy.data['class_code']).Write()
@@ -379,7 +379,7 @@ def find_class_names(filename):
     return classnames
 
 
-def load_event_class_code(class_code):
+def load_event_class_code(class_code, lock_breaking_timeout=300):
     """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
     """
@@ -394,7 +394,7 @@ def load_event_class_code(class_code):
         Breaks locks older than 90 seconds"""
         while os.path.exists(lockfile):
             age = time.time() - os.path.getmtime(lockfile)
-            if age > 90:
+            if age > lock_breaking_timeout:
                 log.warning("Breaking lockfile %s as it is %d seconds old" % (lockfile, age))
                 break
             log.debug("Waiting for %s to compile the pax event class." % pid_for_message)

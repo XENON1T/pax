@@ -116,7 +116,7 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                    encoder_plugin=None,
                                    decoder_plugin=None,
                                    output='Queues.PushToQueue'),
-                          Queues=dict(timeout_after_sec=120,
+                          Queues=dict(timeout_after_sec=300,
                                       **processing_queue_kwargs))
 
     worker_override = {'pax': dict(input='Queues.PullFromQueue',
@@ -135,7 +135,7 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                     events_to_process=None,
                                     input='Queues.PullFromQueue'),
                            Queues=dict(ordered_pull=True,
-                                       timeout_after_sec=120,
+                                       timeout_after_sec=300,
                                        **output_queue_kwargs))
 
     overrides = [('input', input_override)] + [('worker', worker_override)] * n_cpus + [('output', output_override)]

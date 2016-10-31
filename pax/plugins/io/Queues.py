@@ -205,7 +205,7 @@ class PushToQueue(plugin.OutputPlugin):
         seconds_slept_with_queue_full = 0
         if len(self.current_block):
             while self.queue.qsize() >= self.max_queue_blocks:
-                self.log.info("Max queue size %d reached, waiting to push block")
+                self.log.info("Max queue size %d reached, waiting to push block" % self.max_queue_blocks)
                 seconds_slept_with_queue_full += 1
                 time.sleep(1)
                 if seconds_slept_with_queue_full >= self.timeout_after_sec:
