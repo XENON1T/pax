@@ -162,7 +162,7 @@ class Model(object):
                     if use_decimal:
                         result[k] = [decimal.Decimal("%f" % a) if isinstance(a, float) else a for a in v.tolist()]
                     else:
-                        result[k] = [a for a in v.tolist()]
+                        result[k] = v.tolist()
                 elif convert_numpy_arrays_to == 'bytes':
                     result[k] = bson.Binary(v.tostring())
                 else:
