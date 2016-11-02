@@ -159,8 +159,10 @@ class Model(object):
                                         use_decimal=use_decimal) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
                 if convert_numpy_arrays_to == 'list':
-                    result[k] = [decimal.Decimal("%f" % a) if isinstance(a, float) else a for a in v.tolist()]
-                    result[k]
+                    if use_decimal:
+                        result[k] = [decimal.Decimal("%f" % a) if isinstance(a, float) else a for a in v.tolist()]
+                    else:
+                        result[k] = v.tolist()
                 elif convert_numpy_arrays_to == 'bytes':
                     result[k] = bson.Binary(v.tostring())
                 else:
