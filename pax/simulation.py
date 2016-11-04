@@ -477,13 +477,13 @@ class Simulator(object):
             )
 
         elif recoil_type.lower() == 'alpha':
-
+            print("This is an alpha")
             # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
             # Hence, we don't care about primary & secondary excimers at all:
             timings = self.singlet_triplet_delays(
                 np.zeros(n_photons),
-                t1=self.config['alpha_singlet_lifetime_liquid'],
-                t3=self.config['alpha_triplet_lifetime_liquid'],
+                t1=self.config['singlet_lifetime_liquid'],
+                t3=self.config['triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
             )
 
