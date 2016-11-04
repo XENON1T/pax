@@ -341,11 +341,15 @@ class WaveformSimulatorFromMC(WaveformSimulator):
             for p in interaction_instructions:
                 # Correct the z-coordinate system
                 p['z'] += self.config['add_to_z']
-                # Fix ER / NR label
-                if p['recoil_type'] != 0:
+                # Fix ER / NR /alpha label
+                if p['recoil_type'] == 1:
                     p['recoil_type'] = 'NR'
-                else:
+                elif p['recoil_type'] == 0:
                     p['recoil_type'] = 'ER'
+                elif p['recoil_type']==9:
+                    p['recoil_type'] = 'alpha'
+                else:
+                    raise ValueError("Type of events unknown!")
             # Sort by time
             interaction_instructions.sort(key=lambda p: p['t'])
 
