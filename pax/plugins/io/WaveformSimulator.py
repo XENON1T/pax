@@ -2,6 +2,8 @@
 Plugins to interface with the integrated waveform simulator (FaX)
 This is I/O stuff only: truth file writing, instruction reading, etc.
 There is no physics here, all that is in pax.simulation.
+Added by Qing: Sorry there's a little physics (S2 after pulses)
+is implemented here for it is easier.
 """
 
 import os
