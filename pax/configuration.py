@@ -134,7 +134,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
                 raise InvalidConfigurationError("Unable to find run number %d!" % run_number)
 
         elif 'input_name' in evaled_config['pax']:
-            run_name = os.path.basename(evaled_config['pax']['input_name'])
+            run_name = os.path.splitext(os.path.basename(evaled_config['pax']['input_name']))[0]
 
             if run_name.endswith("_MV"):
                 run_doc = run_collection.find_one({'name': run_name[:-3],

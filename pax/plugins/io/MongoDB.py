@@ -606,6 +606,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
+        self.collections_from_which_we_rescued_aqm_pulses = []
+
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
             return event_proxy
@@ -691,7 +693,13 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def drop_collection_named(self, db, collection_name):
         """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
         if db is self.aqm_db:
-            self.rescue_acquisition_monitor_pulses(db[collection_name])
+            # We need to check that we did not rescue pulses from this collection earlier.
+            # Otherwise, it's possible this gets called a second time in the final cleanup stage
+            # if a collection is slow to drop. In that case, moreover, we'd run the risk of crashing
+            # since we'd be running operations on a collection that is being dropped.
+            if collection_name not in self.collections_from_which_we_rescued_aqm_pulses:
+                self.rescue_acquisition_monitor_pulses(db[collection_name])
+                self.collections_from_which_we_rescued_aqm_pulses.append(collection_name)
         db.drop_collection(collection_name)
 
 
