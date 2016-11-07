@@ -55,13 +55,15 @@ class ClientMaker:
                 pass
 
         if monary:
-            self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
+            # Be careful enabling this debug log statement, it's useful but prints the password in the uri
+            # self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
             client = Monary(uri, **kwargs)
             self.log.debug("Succesfully connected via monary (probably...)")
             return client
 
         else:
-            self.log.debug("Connecting to Mongo using uri %s" % uri)
+            # Be careful enabling this debug log statement, it's useful but prints the password in the uri
+            # self.log.debug("Connecting to Mongo using uri %s" % uri)
             client = pymongo.MongoClient(uri, **kwargs)
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
             self.log.debug("Successfully pinged client")
