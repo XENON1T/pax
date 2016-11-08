@@ -348,7 +348,7 @@ class WaveformSimulatorFromMC(WaveformSimulator):
                     p['recoil_type'] = 'NR'
                 elif p['recoil_type'] == 0:
                     p['recoil_type'] = 'ER'
-                elif p['recoil_type']==9:
+                elif p['recoil_type'] == 9:
                     p['recoil_type'] = 'alpha'
                 else:
                     raise ValueError("Type of events unknown!")

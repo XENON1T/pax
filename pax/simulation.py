@@ -262,7 +262,7 @@ class Simulator(object):
                     n_afterpulses = np.random.binomial(n=len(photon_detection_times),
                                                        p=ap_data['p'])
                     if not n_afterpulses:
-                        continue                  
+                        continue
                     # Find the time and gain of the afterpulses
                     dist_kwargs = ap_data['time_parameters']
                     dist_kwargs['size'] = n_afterpulses
