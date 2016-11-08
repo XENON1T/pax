@@ -12,7 +12,7 @@ import pandas
 
 from pax import plugin, units, utils
 
-import root_pandas
+import root_pandas # noqa
 
 def uniform_circle_rv(radius, n_samples=None):
     """Sample n_samples from x,y uniformly in a circle with radius"""
