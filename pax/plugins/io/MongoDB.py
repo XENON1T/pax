@@ -606,6 +606,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
+        self.already_rescued_collections = []
+
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
             return event_proxy
@@ -633,6 +635,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def shutdown(self):
         if self.config['delete_data']:
+
+            # Wait for any slow drops to complete
+            self.executor.shutdown()
 
             remaining_collections = set()
             for db in self.dbs:
@@ -704,7 +709,11 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         shutdown() while there are still collections being rescued.
         """
         if self.aqm_db is not None:
-            self.rescue_acquisition_monitor_pulses(self.aqm_db[collection_name])
+            if collection_name not in self.already_rescued_collections:
+                self.already_rescued_collections.append(collection_name)
+                self.rescue_acquisition_monitor_pulses(self.aqm_db[collection_name])
+            else:
+                self.log.warning("Duplicated call to drop collection %s!" % collection_name)
         for db in self.dbs:
             if executor is None:
                 db.drop_collection(collection_name)
