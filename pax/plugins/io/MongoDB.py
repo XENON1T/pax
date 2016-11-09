@@ -651,7 +651,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
             if len(pulses_in_remaining_collections):
                 self.log.info("Remaining collections with pulse counts: %s. Clearing these now." % (
-                                  len(pulses_in_remaining_collections),
                                   str(pulses_in_remaining_collections)))
 
                 for colname in pulses_in_remaining_collections.keys():
