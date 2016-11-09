@@ -9,6 +9,8 @@ class PulseProperties(plugin.TransformPlugin):
     Optionally, deletes the part of the raw data used for computing these from each pulse for large events
     (to reduce the data size).
     Note the raw data of the pulse is not otherwise modified (i.e. no baseline substraction is applied).
+
+    If the raw data already has the pulse properties pre-computed, no action is taken.
     """
 
     def transform_event(self, event):
@@ -20,7 +22,8 @@ class PulseProperties(plugin.TransformPlugin):
 
         for pulse_i, pulse in enumerate(event.pulses):
             if not np.isnan(pulse.minimum):
-                raise RuntimeError("Caught attempt to re-compute pulse properties!")
+                self.log.debug("Pulse properties have been pre-computed, doing nothing")
+                return event
 
             # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
             w = pulse.raw_data.astype(np.float64)
