@@ -637,21 +637,25 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         if self.config['delete_data']:
 
             # Wait for any slow drops to complete
+            self.log.info("Waiting for slow collection drops to complete...")
             self.executor.shutdown()
+            self.log.info("Collection drops should be complete. Checking for remaining collections.")
 
             remaining_collections = set()
+            pulses_in_remaining_collections = 0
             for db in self.dbs:
                 for coll_name in db.collection_names():
                     if not coll_name.startswith(self.run_doc['name']):
                         continue
                     remaining_collections.add(coll_name)
+                    pulses_in_remaining_collections += db[coll_name].count()
 
             if len(remaining_collections):
-                self.log.info("%d collections remained (across all database hosts)"
-                              ", clearing now" % len(remaining_collections))
+                self.log.info("%d collections remained (across all database hosts) with a total of %d pulses. "
+                              ", clearing now." % (len(remaining_collections), pulses_in_remaining_collections))
 
                 for colname in remaining_collections:
-                    self.drop_collection_named(coll_name)
+                    self.drop_collection_named(colname)
                 self.log.info("Completed.")
 
             else:
