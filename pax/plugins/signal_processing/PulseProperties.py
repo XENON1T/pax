@@ -12,6 +12,7 @@ class PulseProperties(plugin.TransformPlugin):
 
     If the raw data already has the pulse properties pre-computed, no action is taken.
     """
+    warning_given = False
 
     def transform_event(self, event):
         # Local variables are marginally faster to access in inner loop, so we don't put these in startup.
@@ -19,10 +20,13 @@ class PulseProperties(plugin.TransformPlugin):
         n_baseline = self.config.get('baseline_samples', 50)
         baseline_cutting_threshold = self.config.get('baseline_cutting_threshold', float('inf'))
         n_pulses = len(event.pulses)
+        warning_given = self.warning_given
 
         for pulse_i, pulse in enumerate(event.pulses):
             if not np.isnan(pulse.minimum):
-                self.log.debug("Pulse properties have been pre-computed, doing nothing")
+                if not warning_given:
+                    self.log.warning("Pulse properties have been pre-computed, doing nothing.")
+                    self.warning_given = warning_given = True
                 return event
 
             # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
