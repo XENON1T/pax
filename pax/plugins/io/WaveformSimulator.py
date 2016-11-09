@@ -16,6 +16,7 @@ import root_pandas  # noqa
 
 def uniform_circle_rv(radius, n_samples=None):
     """Sample n_samples from x,y uniformly in a circle with radius"""
+    
     if n_samples is None:
         just_give_one = True
         n_samples = 1
