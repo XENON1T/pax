@@ -26,7 +26,7 @@ class PulseProperties(plugin.TransformPlugin):
             if not np.isnan(pulse.minimum):
                 if not warning_given:
                     self.log.warning("Pulse properties have been pre-computed, doing nothing.")
-                    self.warning_given = warning_given = True
+                    self.warning_given = True
                 return event
 
             # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
