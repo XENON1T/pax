@@ -606,8 +606,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
-        self.collections_from_which_we_rescued_aqm_pulses = []
-
     def transform_event(self, event_proxy):
         if not self.config['delete_data']:
             return event_proxy
@@ -618,10 +616,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
             while coll_number > self.last_subcollection_not_yet_deleted:
                 self.log.info("Seen event at subcollection %d, clearing subcollection %d" % (
                     coll_number, self.last_subcollection_not_yet_deleted))
-                for db in self.dbs:
-                    self.executor.submit(self.drop_collection_named,
-                                         db,
-                                         self.subcollection_name(self.last_subcollection_not_yet_deleted))
+                self.drop_collection_named(self.subcollection_name(self.last_subcollection_not_yet_deleted),
+                                           self.executor)
                 self.last_subcollection_not_yet_deleted += 1
         else:
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
@@ -638,14 +634,23 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def shutdown(self):
         if self.config['delete_data']:
 
-            self.log.info("Dropping all remaining collections from this run")
-
+            remaining_collections = set()
             for db in self.dbs:
                 for coll_name in db.collection_names():
                     if not coll_name.startswith(self.run_doc['name']):
                         continue
-                    self.drop_collection_named(db, coll_name)
-            self.log.info("Completed.")
+                    remaining_collections.add(coll_name)
+
+            if len(remaining_collections):
+                self.log.info("%d collections remained (across all database hosts)"
+                              ", clearing now" % len(remaining_collections))
+
+                for colname in remaining_collections:
+                    self.drop_collection_named(coll_name)
+                self.log.info("Completed.")
+
+            else:
+                self.log.info("All collections have already been cleaned, great.")
 
             # Update the run doc to remove the 'untriggered' entry
             # since we just deleted the last of the untriggered data
@@ -690,17 +695,21 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         self.rescue_acquisition_monitor_pulses(collection, query)
         collection.delete_many(query)
 
-    def drop_collection_named(self, db, collection_name):
-        """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first"""
-        if db is self.aqm_db:
-            # We need to check that we did not rescue pulses from this collection earlier.
-            # Otherwise, it's possible this gets called a second time in the final cleanup stage
-            # if a collection is slow to drop. In that case, moreover, we'd run the risk of crashing
-            # since we'd be running operations on a collection that is being dropped.
-            if collection_name not in self.collections_from_which_we_rescued_aqm_pulses:
-                self.rescue_acquisition_monitor_pulses(db[collection_name])
-                self.collections_from_which_we_rescued_aqm_pulses.append(collection_name)
-        db.drop_collection(collection_name)
+    def drop_collection_named(self, collection_name, executor=None):
+        """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first.
+        if executor is passed, will execute the drop command via the pool it represents.
+
+        This function is NOT parallelizable itself, don't pass it to an executor!
+        We need to block while rescuing acquisition monitor pulses: otherwise, we would get to the final cleanup in
+        shutdown() while there are still collections being rescued.
+        """
+        if self.aqm_db is not None:
+            self.rescue_acquisition_monitor_pulses(self.aqm_db[collection_name])
+        for db in self.dbs:
+            if executor is None:
+                db.drop_collection(collection_name)
+            else:
+                executor.submit(db.drop_collection, collection_name)
 
 
 def pax_to_human_time(num):
