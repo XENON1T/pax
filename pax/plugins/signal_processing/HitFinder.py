@@ -12,7 +12,7 @@ from pax.dsputils import find_intervals_above_threshold
 
 class FindHits(plugin.TransformPlugin):
     """Finds hits in pulses
-    First, the baseline is computed as the mean of the first initial_baseline_samples in the pulse.
+    First, the waveform is baseline-corrected (with baseline as determined by PulseProperties.PulseProperties).
     Next, hits are found based on a high and low threshold:
      - A hit starts/ends when it passes the low_threshold
      - A hit has to pass the high_threshold somewhere.
@@ -68,8 +68,8 @@ class FindHits(plugin.TransformPlugin):
     def startup(self):
         c = self.config
 
-        self.initial_baseline_samples = c.get('initial_baseline_samples', 50)
         self.max_hits_per_pulse = c['max_hits_per_pulse']
+        self.reference_baseline = self.config['digitizer_reference_baseline']
 
         self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
         self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
@@ -81,7 +81,7 @@ class FindHits(plugin.TransformPlugin):
     def transform_event(self, event):
         dt = self.config['sample_duration']
         hits_per_pulse = []
-        reference_baseline = self.config['digitizer_reference_baseline']
+
         dynamic_low_threshold_coeff = self.config['dynamic_low_threshold_coeff']
 
         # Allocate numpy arrays to hold numba hitfinder results
@@ -95,16 +95,15 @@ class FindHits(plugin.TransformPlugin):
             channel = pulse.channel
             pmt_gain = self.config['gains'][channel]
 
+            # Check the pulse properties have been computed
+            if np.isnan(pulse.minimum):
+                raise RuntimeError("Attempt to perform hitfinding on pulses whose properties have not been computed!")
+
             # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
             w = pulse.raw_data.astype(np.float64)
 
-            # Subtract reference baseline, invert (so hits point up from baseline)
-            # This is convenient so we don't have to reinterpret min, max, etc
-            w = reference_baseline - w
-
-            _results = compute_pulse_properties(w, self.initial_baseline_samples)
-            pulse.baseline, pulse.baseline_increase, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
-
+            # Subtract the baseline and invert(so hits point up from baseline)
+            w = self.reference_baseline - w
             w -= pulse.baseline
 
             # Don't do hitfinding in dead channels, pulse property computation was enough
@@ -119,7 +118,7 @@ class FindHits(plugin.TransformPlugin):
             # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
             # 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported
             # Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different
-            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline - 0.5
+            is_saturated = pulse.maximum >= self.reference_baseline - pulse.baseline - 0.5
 
             # Compute thresholds based on noise level
             high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
@@ -308,56 +307,3 @@ def build_hits(w, hit_bounds,
         hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe
         hits_buffer[hit_i].index_of_maximum = start + left + argmax
         hits_buffer[hit_i].n_saturated = saturation_count
-
-
-@numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
-           nopython=True)
-def compute_pulse_properties(w, baseline_samples):
-    """Compute basic pulse properties quickly
-    :param w: Raw pulse waveform in ADC counts
-    :param baseline_samples: number of samples to use for baseline computation at start and end of pulse
-    :return: (baseline, baseline_increase, noise_sigma, min, max);
-      baseline is the largest baseline of the bl computed at the start and the bl computed at the end
-      baseline_increase = baseline_after - baseline_before
-      min and max relative to baseline
-      noise_sigma is the std of samples below baseline
-    Does not modify w. Does not assume anything about inversion of w!!
-    """
-    # Compute the baseline before and after the self-trigger
-    baseline_before = 0.0
-    baseline_samples = min(baseline_samples, len(w))
-    for x in w[:baseline_samples]:
-        baseline_before += x
-    baseline_before /= baseline_samples
-
-    baseline_after = 0.0
-    for x in w[-baseline_samples:]:
-        baseline_after += x
-    baseline_after /= baseline_samples
-
-    baseline = max(baseline_before, baseline_after)
-    baseline_increase = baseline_after - baseline_before
-
-    # Now compute mean, noise, and min
-    n = 0           # Running count of samples included in noise sample
-    m2 = 0          # Running sum of squares of differences from the baseline
-    max_a = -1.0e6  # Running max amplitude
-    min_a = 1.0e6   # Running min amplitude
-
-    for x in w:
-        if x > max_a:
-            max_a = x
-        if x < min_a:
-            min_a = x
-        if x < baseline:
-            delta = x - baseline
-            n += 1
-            m2 += delta*(x-baseline)
-
-    if n == 0:
-        # Should only happen if w = baseline everywhere
-        noise = 0
-    else:
-        noise = (m2/n)**0.5
-
-    return baseline, baseline_increase, noise, min_a - baseline, max_a - baseline
