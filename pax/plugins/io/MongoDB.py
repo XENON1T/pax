@@ -651,8 +651,12 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                     pulses_in_remaining_collections += db[coll_name].count()
 
             if len(remaining_collections):
-                self.log.info("%d collections remained (across all database hosts) with a total of %d pulses. "
-                              ", clearing now." % (len(remaining_collections), pulses_in_remaining_collections))
+                self.log.info("%d collections remained (across all database hosts) with a total of %d pulses: %s."
+                              "Clearing these now." % (
+                                  len(remaining_collections),
+                                  pulses_in_remaining_collections,
+                                  str(remaining_collections)
+                                  ))
 
                 for colname in remaining_collections:
                     self.drop_collection_named(colname)
