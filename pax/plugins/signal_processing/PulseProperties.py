@@ -37,6 +37,8 @@ class PulseProperties(plugin.TransformPlugin):
 
             if n_pulses > baseline_cutting_threshold:
                 pulse.raw_data = pulse.raw_data[n_baseline:-n_baseline]
+                pulse.left += n_baseline
+                pulse.right -= n_baseline
 
         return event
 
