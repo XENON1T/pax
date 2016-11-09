@@ -70,7 +70,7 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib=1.5.1 pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib=1.5.1 pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
   - pip install coveralls nose coverage
 
