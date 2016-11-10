@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin,  datastructure, exceptions
+from pax import plugin, exceptions
 
 
 class SortPulses(plugin.TransformPlugin):

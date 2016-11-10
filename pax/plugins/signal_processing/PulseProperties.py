@@ -25,7 +25,7 @@ class PulseProperties(plugin.TransformPlugin):
         for pulse_i, pulse in enumerate(event.pulses):
             if not np.isnan(pulse.minimum):
                 if not warning_given:
-                    self.log.warning("Pulse properties have been pre-computed, doing nothing.")
+                    self.log.info("Pulse properties have been pre-computed, doing nothing.")
                     self.warning_given = True
                 return event
 
@@ -45,10 +45,10 @@ class PulseProperties(plugin.TransformPlugin):
                 pulse.left += n_baseline
                 pulse.right -= n_baseline
 
-                # Store the six "advanced" pulse properties as ints rather than floats to save space
+                # Store some "advanced" pulse properties as ints rather than floats to save space
+                # Do NOT store noise sigma as an int, it could come out to 0, and precision matters here
                 pulse.maximum = int(pulse.maximum)
                 pulse.minimum = int(pulse.minimum)
-                pulse.noise_sigma = int(pulse.noise_sigma)
                 pulse.baseline = int(pulse.baseline)
                 pulse.baseline_increase = int(pulse.baseline_increase)
 
