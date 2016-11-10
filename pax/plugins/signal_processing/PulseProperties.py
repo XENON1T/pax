@@ -18,7 +18,7 @@ class PulseProperties(plugin.TransformPlugin):
         # Local variables are marginally faster to access in inner loop, so we don't put these in startup.
         reference_baseline = self.config['digitizer_reference_baseline']
         n_baseline = self.config.get('baseline_samples', 50)
-        baseline_cutting_threshold = self.config.get('baseline_cutting_threshold', float('inf'))
+        shrink_data_threshold = self.config.get('shrink_data_threshold', float('inf'))
         n_pulses = len(event.pulses)
         warning_given = self.warning_given
 
@@ -39,10 +39,18 @@ class PulseProperties(plugin.TransformPlugin):
             _results = compute_pulse_properties(w, n_baseline)
             pulse.baseline, pulse.baseline_increase, pulse.noise_sigma, pulse.minimum, pulse.maximum = _results
 
-            if n_pulses > baseline_cutting_threshold:
+            if n_pulses > shrink_data_threshold:
+                # Remove the pieces of raw data used for baselining
                 pulse.raw_data = pulse.raw_data[n_baseline:-n_baseline]
                 pulse.left += n_baseline
                 pulse.right -= n_baseline
+
+                # Store the six "advanced" pulse properties as ints rather than floats to save space
+                pulse.maximum = int(pulse.maximum)
+                pulse.minimum = int(pulse.minimum)
+                pulse.noise_sigma = int(pulse.noise_sigma)
+                pulse.baseline = int(pulse.baseline)
+                pulse.baseline_increase = int(pulse.baseline_increase)
 
         return event
 

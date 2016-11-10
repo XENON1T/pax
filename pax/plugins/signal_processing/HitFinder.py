@@ -99,7 +99,7 @@ class FindHits(plugin.TransformPlugin):
             if np.isnan(pulse.minimum):
                 raise RuntimeError("Attempt to perform hitfinding on pulses whose properties have not been computed!")
 
-            # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
+            # Retrieve waveform as floats: needed to subtract baseline (which can be in-between ADC counts)
             w = pulse.raw_data.astype(np.float64)
 
             # Subtract the baseline and invert(so hits point up from baseline)
@@ -130,8 +130,8 @@ class FindHits(plugin.TransformPlugin):
 
             # Call the numba hit finder -- see its docstring for description
             n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(w,
-                                                                               high_threshold,
-                                                                               low_threshold,
+                                                                               float(high_threshold),
+                                                                               float(low_threshold),
                                                                                hit_bounds_buffer,
                                                                                dynamic_low_threshold_coeff)
 
