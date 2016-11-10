@@ -235,6 +235,7 @@ def get_aliases():
         # Zipped formats -- allow arbitrary event numbering
         ('zpickle', ('Pickle.EncodeZPickle', 'Zip.WriteZipped')),
         ('zbson',   ('BSON.EncodeZBSON', 'Zip.WriteZipped')),
+        ('zmpk',   ('MessagePack.EncodeMessagePack', 'Zip.WriteZipped')),
 
         # Non-zipped formats
         ('json',  'BSON.WriteJSON'),
@@ -253,6 +254,7 @@ def get_aliases():
         # Zipped formats
         ('zbson',   ('Zip.ReadZipped', 'BSON.DecodeZBSON')),
         ('zpickle', ('Zip.ReadZipped', 'Pickle.DecodeZPickle')),
+        ('zmpk',    ('Zip.WriteZipped', 'MessagePack.DecodeMessagePack')),
 
         # Nonzipped formats
         ('json',    'BSON.ReadJSON'),
