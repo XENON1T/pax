@@ -47,10 +47,10 @@ class PulseProperties(plugin.TransformPlugin):
 
                 # Store some "advanced" pulse properties as ints rather than floats to save space
                 # Do NOT store noise sigma as an int, it could come out to 0, and precision matters here
-                pulse.maximum = int(pulse.maximum)
-                pulse.minimum = int(pulse.minimum)
-                pulse.baseline = int(pulse.baseline)
-                pulse.baseline_increase = int(pulse.baseline_increase)
+                pulse.maximum = int(round(pulse.maximum))
+                pulse.minimum = int(round(pulse.minimum))
+                pulse.baseline = int(round(pulse.baseline))
+                pulse.baseline_increase = int(round(pulse.baseline_increase))
 
         return event
 

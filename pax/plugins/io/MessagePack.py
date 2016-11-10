@@ -1,4 +1,4 @@
-"""Output to Apache's messagepack format"""
+"""Output to the messagepack format. See msgpack.org"""
 
 import msgpack
 from pax import datastructure
