@@ -97,13 +97,15 @@
                 <span class="k">pass</span>
 
         <span class="k">if</span> <span class="n">monary</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Connecting to Mongo via monary using uri </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">uri</span><span class="p">)</span>
+            <span class="c1"># Be careful enabling this debug log statement, it&#39;s useful but prints the password in the uri</span>
+            <span class="c1"># self.log.debug(&quot;Connecting to Mongo via monary using uri %s&quot; % uri)</span>
             <span class="n">client</span> <span class="o">=</span> <span class="n">Monary</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Succesfully connected via monary (probably...)&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">client</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Connecting to Mongo using uri </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">uri</span><span class="p">)</span>
+            <span class="c1"># Be careful enabling this debug log statement, it&#39;s useful but prints the password in the uri</span>
+            <span class="c1"># self.log.debug(&quot;Connecting to Mongo using uri %s&quot; % uri)</span>
             <span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">client</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s1">&#39;ping&#39;</span><span class="p">)</span>        <span class="c1"># raises pymongo.errors.ConnectionFailure on failure</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Successfully pinged client&quot;</span><span class="p">)</span>

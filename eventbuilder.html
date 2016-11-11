@@ -135,8 +135,12 @@ both in mongo time units (not pax units!).</p>
 
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named">
-<code class="descname">drop_collection_named</code><span class="sig-paren">(</span><em>db</em>, <em>collection_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.drop_collection_named"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drop the collection named collection_name from db, rescueing acquisition monitor pulses first</p>
+<code class="descname">drop_collection_named</code><span class="sig-paren">(</span><em>collection_name</em>, <em>executor=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.drop_collection_named"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drop the collection named collection_name from db, rescueing acquisition monitor pulses first.
+if executor is passed, will execute the drop command via the pool it represents.</p>
+<p>This function is NOT parallelizable itself, don&#8217;t pass it to an executor!
+We need to block while rescuing acquisition monitor pulses: otherwise, we would get to the final cleanup in
+shutdown() while there are still collections being rescued.</p>
 </dd></dl>
 
 <dl class="attribute">

@@ -48,6 +48,7 @@
 <span class="sd">must be run on the data and will result in triggered data.  Input and output</span>
 <span class="sd">classes are provided for MongoDB access.  More information is in the docstrings.</span>
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
@@ -646,7 +647,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">aqm_module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">][</span><span class="n">some_ch_from_aqm</span><span class="p">][</span><span class="s1">&#39;digitizer&#39;</span><span class="p">][</span><span class="s1">&#39;module&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquisition monitor (module </span><span class="si">%d</span><span class="s2">) pulses will be saved to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">aqm_module</span><span class="p">,</span> <span class="n">aqm_file_path</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">aqm_output_handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">aqm_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aqm_output_handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">aqm_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">already_rescued_collections</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="MongoDBClearUntriggered.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;delete_data&#39;</span><span class="p">]:</span>
@@ -658,10 +661,8 @@
             <span class="k">while</span> <span class="n">coll_number</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seen event at subcollection </span><span class="si">%d</span><span class="s2">, clearing subcollection </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">coll_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drop_collection_named</span><span class="p">,</span>
-                                         <span class="n">db</span><span class="p">,</span>
-                                         <span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">drop_collection_named</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subcollection_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">last_subcollection_not_yet_deleted</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">time_since_start</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_time_deleted</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;batch_window&#39;</span><span class="p">]:</span>
@@ -678,14 +679,28 @@
 <div class="viewcode-block" id="MongoDBClearUntriggered.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;delete_data&#39;</span><span class="p">]:</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dropping all remaining collections from this run&quot;</span><span class="p">)</span>
+            <span class="c1"># Wait for any slow drops to complete</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Waiting for slow collection drops to complete...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Collection drops should be complete. Checking for remaining collections.&quot;</span><span class="p">)</span>
 
+            <span class="n">pulses_in_remaining_collections</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">coll_name</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">collection_names</span><span class="p">():</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">coll_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]):</span>
                         <span class="k">continue</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">drop_collection_named</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">coll_name</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Completed.&quot;</span><span class="p">)</span>
+                    <span class="n">pulses_in_remaining_collections</span><span class="p">[</span><span class="n">coll_name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">db</span><span class="p">[</span><span class="n">coll_name</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pulses_in_remaining_collections</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Remaining collections with pulse counts: </span><span class="si">%s</span><span class="s2">. Clearing these now.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                                  <span class="nb">str</span><span class="p">(</span><span class="n">pulses_in_remaining_collections</span><span class="p">)))</span>
+
+                <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">pulses_in_remaining_collections</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">drop_collection_named</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Completed.&quot;</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All collections have already been cleaned, great.&quot;</span><span class="p">)</span>
 
             <span class="c1"># Update the run doc to remove the &#39;untriggered&#39; entry</span>
             <span class="c1"># since we just deleted the last of the untriggered data</span>
@@ -730,11 +745,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rescue_acquisition_monitor_pulses</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
         <span class="n">collection</span><span class="o">.</span><span class="n">delete_many</span><span class="p">(</span><span class="n">query</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MongoDBClearUntriggered.drop_collection_named"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named">[docs]</a>    <span class="k">def</span> <span class="nf">drop_collection_named</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Drop the collection named collection_name from db, rescueing acquisition monitor pulses first&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="bp">self</span><span class="o">.</span><span class="n">aqm_db</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rescue_acquisition_monitor_pulses</span><span class="p">(</span><span class="n">db</span><span class="p">[</span><span class="n">collection_name</span><span class="p">])</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">collection_name</span><span class="p">)</span></div></div>
+<div class="viewcode-block" id="MongoDBClearUntriggered.drop_collection_named"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named">[docs]</a>    <span class="k">def</span> <span class="nf">drop_collection_named</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">,</span> <span class="n">executor</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Drop the collection named collection_name from db, rescueing acquisition monitor pulses first.</span>
+<span class="sd">        if executor is passed, will execute the drop command via the pool it represents.</span>
+
+<span class="sd">        This function is NOT parallelizable itself, don&#39;t pass it to an executor!</span>
+<span class="sd">        We need to block while rescuing acquisition monitor pulses: otherwise, we would get to the final cleanup in</span>
+<span class="sd">        shutdown() while there are still collections being rescued.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aqm_db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">collection_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">already_rescued_collections</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">already_rescued_collections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">collection_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rescue_acquisition_monitor_pulses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aqm_db</span><span class="p">[</span><span class="n">collection_name</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Duplicated call to drop collection </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">collection_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dbs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">executor</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">(</span><span class="n">collection_name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">drop_collection</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="pax_to_human_time"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.pax_to_human_time">[docs]</a><span class="k">def</span> <span class="nf">pax_to_human_time</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
