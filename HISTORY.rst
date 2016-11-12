@@ -4,6 +4,17 @@ History
 -------
 
 ------------------
+6.1.0 (2016-11-11)
+------------------
+* Improved clustering (#450)
+* Make processed data smaller (#456)
+* Write fax output to its own ROOT file (#453)
+* Neural network update (#457)
+* Fix for acquisition monitor pulse rescue logic (#454)
+* Bug related to decimal types in datastructure (#447)
+* Assorted event builder improvements after major changes
+
+------------------
 6.0.2 (2016-10-31)
 ------------------
 * More lenient timeouts for batch queue processing

@@ -14,9 +14,12 @@ import pandas
 
 from pax import plugin, units, utils
 
+import root_pandas  # noqa
+
 
 def uniform_circle_rv(radius, n_samples=None):
     """Sample n_samples from x,y uniformly in a circle with radius"""
+
     if n_samples is None:
         just_give_one = True
         n_samples = 1
@@ -54,7 +57,8 @@ class WaveformSimulator(plugin.InputPlugin):
     def shutdown(self):
         self.log.debug("Write the truth peaks to %s" % self.config['truth_file_name'])
         output = pandas.DataFrame(self.all_truth_peaks)
-        output.to_csv(self.config['truth_file_name'], index_label='fax_truth_peak_id')
+        output.to_csv(self.config['truth_file_name']+".csv", index_label='fax_truth_peak_id')
+        output.to_root(self.config['truth_file_name']+".root", 'fax_truth')
 
     def store_true_peak(self, peak_type, g4_id, t, x, y, z, photon_times, electron_times=()):
         """ Saves the truth information about a peak (s1 or s2)

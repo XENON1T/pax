@@ -273,6 +273,7 @@ class WriteROOTClass(plugin.OutputPlugin):
 
     def shutdown(self):
         if self.tree_created:
+            self.f.cd()
             self.event_tree.Write()
             self.f.Close()
 
