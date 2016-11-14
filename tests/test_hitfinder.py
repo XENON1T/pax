@@ -11,7 +11,7 @@ import HitFinder  # flake8: noqa
 class TestHitFinder(unittest.TestCase):
 
     def peak_at(self, i, amplitude=10, width=1):
-        w = np.zeros(100)
+        w = np.zeros(200)
         w[i:i + width] = amplitude
         return w
 
@@ -22,18 +22,19 @@ class TestHitFinder(unittest.TestCase):
                                   config_dict={
                                       'pax': {
                                           'plugin_group_names': ['test'],
+                                          'encoder_plugin': None,
                                           'test':               'HitFinder.FindHits'}})
         plugin = self.pax.get_plugin_by_name('FindHits')
-        for test_w, hit_bounds, pulse_min, pulse_baseline, pulse_max in (
-            [np.zeros(100), [], 0, 0, 0],
-            [np.ones(100), [], 0, 1, 0],
-            [-3 * np.ones(100), [], 0, -3, 0],
+        for test_w, hit_bounds, pulse_min, pulse_max in (
             # Keep in mind the hitfinder flips the pulse...
-            [self.peak_at(70, amplitude=-100, width=4), [[70, 73]], 0, 0, 100],
+            [np.zeros(100), [], 0, 0],
+            [np.ones(100), [], 0, 0],
+            [-3 * np.ones(100), [], 0, 0],
+            [self.peak_at(70, amplitude=-100, width=4), [[70, 73]], 0, 100],
             [self.peak_at(70, amplitude=-100, width=4) + self.peak_at(80, amplitude=10, width=4),
-             [[70, 73]], -10, 0, 100],
+             [[70, 73]], -10, 100],
             [self.peak_at(70, amplitude=-100, width=4) + self.peak_at(80, amplitude=-100, width=4),
-             [[70, 73], [80, 83]], 0, 0, 100],
+             [[70, 73], [80, 83]], 0, 100],
         ):
             e = datastructure.Event(n_channels=plugin.config['n_channels'],
                                     start_time=0,
@@ -83,13 +84,16 @@ class TestHitFinder(unittest.TestCase):
             [42],
         ):
             w = np.array(w, dtype=np.float64)
-            baseline, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, initial_baseline_samples=10)
-            bl_should_be = np.mean(w[:min(len(w), 10)])
-            self.assertEqual(baseline, bl_should_be)
-            self.assertEqual(min_w, np.min(w) - baseline)
-            self.assertEqual(max_w, np.max(w) - baseline)
-            below_bl = w[w < baseline]
-            self.assertAlmostEqual(noise, np.sqrt(np.sum((below_bl - baseline)**2/len(below_bl))))
+            baseline, baseline_increase, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, baseline_samples=10)
+            bl_before = np.mean(w[:min(len(w), 10)])
+            bl_after = np.mean(w[-min(len(w), 10):])
+            self.assertEqual(baseline, max(bl_before, bl_after))
+            self.assertEqual(baseline_increase, bl_after - bl_before)
+            w -= baseline
+            self.assertEqual(min_w, np.min(w))
+            self.assertEqual(max_w, np.max(w))
+            below_bl = w[w < 0]
+            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2/len(below_bl))))
 
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center
@@ -102,8 +106,8 @@ class TestHitFinder(unittest.TestCase):
             [[0, 14]]
         ):
             raw_hits = np.array(raw_hits, dtype=np.int64)
-            # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i
-            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0)
+            # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold
+            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0, 0)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]
                 self.assertAlmostEqual(hits['area'][i], np.sum(hitw))

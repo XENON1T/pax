@@ -1,7 +1,6 @@
 import numpy as np
 
 from pax import plugin
-from pax.recarray_tools import fields_view
 
 
 class RejectNoiseHits(plugin.TransformPlugin):
@@ -74,14 +73,10 @@ class RejectNoiseHits(plugin.TransformPlugin):
         # Delete any peaks which have gone empty
         event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]
 
-        # Set the is_rejected flag for the hits in event.all_hits (needed for sumwaveform and plotting)
-        # Assume found_in_pulse + left uniquely identifies each hit
-        # First collect indices, then set, as advanced indexing would return a view
+        # Rebuild the event.all_hits field.
         if len(rejected_hits):
             rejected_hits = np.array(rejected_hits)
-            rejected_hit_indices = np.where(np.in1d(fields_view(event.all_hits, ('found_in_pulse', 'left')),
-                                                    fields_view(rejected_hits,  ('found_in_pulse', 'left'))))[0]
-            for hit_i in rejected_hit_indices:
-                event.all_hits[hit_i]['is_rejected'] = True
+            rejected_hits['is_rejected'] = True
+            event.all_hits = np.concatenate([rejected_hits] + [p.hits for p in event.peaks])
 
         return event

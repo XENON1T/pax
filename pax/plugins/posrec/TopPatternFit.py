@@ -14,7 +14,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         self.statistic = self.config['statistic']
         self.confidence_levels = self.config['confidence_levels']
         self.plot_position = self.config['plot_position']
-        self.is_pmt_alive = np.array(self.config['gains']) > 0
+        self.is_pmt_alive = np.array(self.config['gains']) > 1
 
         # Load the S2 hitpattern fitter
         self.pf = self.processor.simulator.s2_patterns

@@ -14,3 +14,7 @@ h5py
 six
 numexpr
 psutil
+mock
+rabbitpy
+boto3
+multihist

@@ -54,7 +54,7 @@ class WaveformSimulator(plugin.InputPlugin):
         output = pandas.DataFrame(self.all_truth_peaks)
         output.to_csv(self.config['truth_file_name'], index_label='fax_truth_peak_id')
 
-    def store_true_peak(self, peak_type, t, x, y, z, photon_times, electron_times=()):
+    def store_true_peak(self, peak_type, g4_id, t, x, y, z, photon_times, electron_times=()):
         """ Saves the truth information about a peak (s1 or s2)
         """
         true_peak = {
@@ -62,6 +62,7 @@ class WaveformSimulator(plugin.InputPlugin):
             'repetition':       self.current_repetition,
             'event':            self.current_event,
             'peak_type':        peak_type,
+            'g4_id':          g4_id,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
         }
@@ -85,18 +86,18 @@ class WaveformSimulator(plugin.InputPlugin):
                 })
         self.truth_peaks.append(true_peak)
 
-    def s2(self, electrons, t=0., x=0., y=0., z=0.):
+    def s2(self, electrons, g4_id=-1, t=0., x=0., y=0., z=0.):
         electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
         if not len(electron_times):
             return None
         photon_times = self.simulator.s2_scintillation(electron_times, x, y)
         if not len(photon_times):
             return None
-        self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
+        self.store_true_peak('s2', g4_id, t, x, y, z, photon_times, electron_times)
         # Generate S2 hitpattern "at the anode": cue for  simulator to use the S2 LCE map
         return self.simulator.queue_signal(photon_times, x, y, z=-self.config['gate_to_anode_distance'])
 
-    def s1(self, photons, recoil_type, t=0., x=0., y=0., z=0.):
+    def s1(self, photons, recoil_type, g4_id=-1, t=0., x=0., y=0., z=0.):
         """
         :param photons: total # of photons generated in the S1
         :param recoil_type: 'ER' for electronic recoil, 'NR' for nuclear recoil
@@ -107,7 +108,7 @@ class WaveformSimulator(plugin.InputPlugin):
         photon_times = self.simulator.s1_photons(photons, recoil_type, x, y, z, t)
         if not len(photon_times):
             return None
-        self.store_true_peak('s1', t, x, y, z, photon_times)
+        self.store_true_peak('s1', g4_id, t, x, y, z, photon_times)
         return self.simulator.queue_signal(photon_times, x=x, y=y, z=z)
 
     def s2_after_pulses(self):
@@ -197,10 +198,12 @@ class WaveformSimulator(plugin.InputPlugin):
             if int(q['s1_photons']):
                 self.s1(photons=int(q['s1_photons']),
                         recoil_type=q['recoil_type'],
+                        g4_id=q['g4_id'],
                         t=float(q['t']), x=x, y=y, z=z)
 
             if int(q['s2_electrons']):
                 self.s2(electrons=int(q['s2_electrons']),
+                        g4_id=q['g4_id'],
                         t=float(q['t']), x=x, y=y, z=z)
 
         # Based on the generated photon timing
@@ -261,6 +264,7 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         instruction_number = 0
         instruction = []
         for p in self.instruction_reader:
+            p['g4_id'] = -1  # create fake g4_id=-1 for csv input
             if p['depth'] == 'random':
                 p['z'] = 'random'
             else:
@@ -290,19 +294,20 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
             yield instr
 
 
-class WaveformSimulatorFromNEST(WaveformSimulator):
-    """Simulate waveforms from GEANT4 ROOT file with NEST-generated S1, S2 information
+class WaveformSimulatorFromMC(WaveformSimulator):
+    """Simulate waveforms from GEANT4 ROOT file with generated
+    S1, S2 information (e.g. from NEST, nSort, or other)
     """
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
-        ('x',             'Nest_x',     0.1),
-        ('y',             'Nest_y',     0.1),
-        ('z',             'Nest_z',     0.1),
-        ('s1_photons',    'Nest_nph',   1),
-        ('s2_electrons',  'Nest_nel',   1),
-        ('t',             'Nest_t',     10 ** 9),
-        ('recoil_type',   'Nest_nr',    1),
+        ('x',             'Fax_x',     0.1),
+        ('y',             'Fax_y',     0.1),
+        ('z',             'Fax_z',     0.1),
+        ('s1_photons',    'Fax_nph',   1),
+        ('s2_electrons',  'Fax_nel',   1),
+        ('t',             'Fax_t',     10 ** 9),
+        ('recoil_type',   'Fax_nr',    1),
     )
 
     def startup(self):
@@ -311,7 +316,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         filename = self.config['input_name']
         import ROOT
         self.f = ROOT.TFile(utils.data_file_name(filename))
-        self.t = self.f.Get("t1")  # For Xerawdp use T1, for MC t1
+        self.t = self.f.Get("events/events")  # new MC structure, 160622
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
@@ -329,6 +334,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
             interaction_instructions = []
             for i in range(npeaks):
                 interaction_instructions.append({'instruction': event_i})
+                interaction_instructions[-1]['g4_id'] = self.t.eventid
                 for (variable_name, _, conversion_factor) in self.variables:
                     interaction_instructions[-1][variable_name] = values[variable_name][i] * conversion_factor
 
@@ -356,7 +362,7 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
-        ('photon_arriving_times',             'time',     1000000000.),
+        ('photon_arriving_times',             'pmthitTime',     1000000000.),
         ('photon_hit_pmt_ids',             'pmthitID',     1),
     )
 
@@ -376,6 +382,7 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
             self.t.GetEntry(event_i)
             instructions = {}
             instructions['instruction'] = event_i
+            instructions['g4_id'] = self.t.eventid
             # fill instructions to look like this:
             # {[photon_hit_pmt_ids], [photon_arriving_times]}
             for (
@@ -386,9 +393,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
                 # the two variables in this plugin are all vectors
                 values = np.reshape(
                     getattr(self.t, root_thing_name),
-                    self.t.nsteps
+                    self.t.npmthits
                     )
-                conversion_factors = [conversion_factor]*self.t.nsteps
+                conversion_factors = [conversion_factor]*self.t.npmthits
                 instructions[variable_name] = [
                     x*y for x, y in zip(values, conversion_factors)
                     ]

@@ -23,7 +23,7 @@ class ReadZipped(InputFromFolder):
     def get_single_event_in_current_file(self, event_number):
         with self.current_file.open(str(event_number)) as event_file_in_zip:
             data = event_file_in_zip.read()
-            return EventProxy(data=data, event_number=event_number)
+            return EventProxy(data=data, block_id=-1, event_number=event_number)
 
     def close(self):
         """Close the currently open file"""

@@ -10,16 +10,20 @@ class AdHocClassification1T(plugin.TransformPlugin):
             if peak.type in ('noise', 'lone_hit'):
                 continue
 
+            area = peak.area
             width = peak.range_area_decile[5]
 
-            if peak.area > 50:
-                # We don't have to worry about single electrons anymore
-                if width < 200 * units.ns:
-                    peak.type = 's1'
-                else:
-                    peak.type = 's2'
-            else:
+            if width > 0.1 * area**3:
                 peak.type = 'unknown'
+
+            elif width < 50:
+                peak.type = 's1'
+
+            else:
+                if width > 3.5e2 / area**0.1 or width > 1.5 * area:
+                    peak.type = 's2'
+                else:
+                    peak.type = 's1'
 
         return event
 

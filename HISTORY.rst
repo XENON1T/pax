@@ -4,6 +4,211 @@ History
 -------
 
 ------------------
+6.0.2 (2016-10-31)
+------------------
+* More lenient timeouts for batch queue processing
+
+------------------
+6.0.1 (2016-10-31)
+------------------
+* Fixed memory leak
+    
+------------------
+6.0.0 (2016-10-26)
+------------------
+* Remote/distributed multiprocessing (#439)
+* New S1 overall LCE maps (#436) and S2 per-pmt LCE maps (#431)
+* Amazon Dynamo support (#438)
+* Saturation correction computed, not added to total for XENON1T (#437)
+* Matched waveform simulator S2 model (#428)
+* Event display improvements (#440, #427)
+* Event builder speed improvements (#434)
+* Fax naming changes (#443)
+
+
+------------------
+5.7.0 (2016-10-07)
+------------------
+* Eventbuilder improvements
+ * Trigger base logic improvements (#407, 418)
+ * do_not_trigger option (#419)
+ * Fix for online dead time calculation (#416)
+ * Trigger monitor improvements (#412, #424, #429)
+ * Save acquisition monitor pulses (#414)
+* pulses_per_channel and n_pulses attributes added to Event class (#425, #422)
+* Fax saves GEANT4 id to ROOT file, more noise options (#426)
+
+------------------
+5.6.5 (2016-09-21)
+------------------
+
+* Screwed up release, fixed HISTORY.rst
+
+------------------
+5.6.4 (2016-09-21)
+------------------
+
+* Mistaken release
+
+------------------
+5.6.3 (2016-09-21)
+------------------
+
+* MV processing support further
+
+------------------
+5.6.2 (2016-09-01)
+------------------
+
+* MV processing support
+
+------------------
+5.6.1 (2016-09-01)
+------------------
+
+* Muon veto processing support using run database information
+
+------------------
+5.6.0 (2016-08-31)
+------------------
+
+* Deal correctly with gains almost zero but see hit (#415)
+* LCE map from Kr83m (#413)
+* Raw data from MV had suffix (#411)
+
+------------------
+5.5.1 (2016-08-15)
+------------------
+
+* Fixes for trigger (#409)
+* Adjust drift velocity (#410)
+
+
+------------------
+5.5.0 (2016-08-08)
+------------------
+
+* Muon veto integration (#406)
+
+------------------
+5.4.0 (2016-08-06)
+------------------
+
+* New raw data format
+* Reconstruction fix (#401)
+* Event builder changes (#404)
+
+------------------
+5.3.6 (2016-07-25)
+------------------
+
+* Small DAQ fixes.
+
+
+------------------
+5.3.5 (2016-07-25)
+------------------
+
+* Trying to get a DOI
+
+------------------
+5.3.4 (2016-07-25)
+------------------
+
+* Small tweak to description in setup.py (which I actually made because I want to get a DOI for pax).
+
+
+------------------
+5.3.3 (2016-07-25)
+------------------
+
+* Small DAQ fixes.
+
+------------------
+5.3.2 (2016-07-20)
+------------------
+
+* Only TPC errors can stop DAQ.
+
+------------------
+5.3.1 (2016-07-19)
+------------------
+
+* Fix MV bug in ini (#397).
+
+------------------
+5.3.0 (2016-07-19)
+------------------
+
+* Trigger changes for deadtime and acquisition monitor - no backword compatbility for new data (#395)
+* Muon veto DAQ changes (#396)
+
+------------------
+5.2.1 (2016-07-06)
+------------------
+
+* Fix release
+
+------------------
+5.2.0 (2016-07-06)
+------------------
+
+* Store acquisition monitor info (#392)
+
+------------------
+5.1.0 (2016-06-27)
+------------------
+
+* S1 relative light yield map update (#382)
+* Makefile now writes to stable branch (#379)
+* Geant4 interface simulates from below cathode if desired (#389)
+* Trigger changes with error handling (#386)
+* Trigger prevent invalid event ranges (#388)
+* Equalized gains (#387)
+
+------------------
+5.0.2 (2016-06-20)
+------------------
+
+* Unintentional release.
+
+------------------
+5.0.1 (2016-06-20)
+------------------
+
+* Minor DAQ fixes including error handling (#384)
+
+------------------
+5.0.0 (2016-06-08)
+------------------
+
+* Ready for XENON1T data
+* New clustering (#372)
+* Extended trigger window (#369)
+
+------------------
+4.11.0 (2016-06-06)
+------------------
+
+* Run database interface (#366)
+* Revive PMTs that were masked (#371)
+
+------------------
+4.10.2 (2016-06-01)
+------------------
+
+* ROOT fix (#370)
+* Configurable low-level info (#368)
+* Event builder fixes (scattered commits)
+
+------------------
+4.10.1 (2016-05-30)
+------------------
+
+* Add PMT information (#364)
+* Event builder changes (#365 plus other commits), including processing related changes.
+
+------------------
 4.10.0 (2016-05-20)
 ------------------
 

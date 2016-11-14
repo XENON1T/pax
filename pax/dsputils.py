@@ -74,7 +74,12 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
         c['pmt_circuit_load_resistor'] *
         c['external_amplification'] *
         units.electron_charge)
-    pmt_gain = c['gains'][channel]
+    try:
+        pmt_gain = c['gains'][channel]
+    except IndexError:
+        print("Attempt to request gain for channel %d, only %d channels known. "
+              "Returning reference gain instead." % (channel, len(c['gains'])))
+        return c.get('pmt_reference_gain', 2e6)
     if use_reference_gain_if_zero and pmt_gain == 0 or use_reference_gain:
         pmt_gain = c.get('pmt_reference_gain', 2e6)
     if pmt_gain == 0:
@@ -89,35 +94,6 @@ def get_detector_by_channel(config):
         for ch in chs:
             detector_by_channel[ch] = name
     return detector_by_channel
-
-
-def cluster_by_diff(x, diff_threshold, return_indices=False):
-    """Returns list of lists of indices of clusters in x,
-    making cluster boundaries whenever values are >= threshold apart.
-    """
-    x = sorted(x)
-    if len(x) == 0:
-        return []
-    clusters = []
-    current_cluster = []
-    previous_t = x[0]
-    for i, t in enumerate(x):
-        if t - previous_t > diff_threshold:
-            clusters.append(current_cluster)
-            current_cluster = []
-        current_cluster.append(i if return_indices else t)
-        previous_t = t
-    clusters.append(current_cluster)
-    return clusters
-    # Numpy solution below appears to make processor run slower!
-    # x.sort()
-    # if not isinstance(x, np.ndarray):
-    #     x = np.array(x)
-    # split_indices = np.where(np.diff(x) >= diff_threshold)[0] + 1
-    # if return_indices:
-    #     return np.split(np.arange(len(x)), split_indices)
-    # else:
-    #     return np.split(x, split_indices)
 
 
 @numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),

@@ -12,7 +12,7 @@ import numpy as np
 import six
 
 from pax import units
-from pax.data_model import StrictModel, ListField
+from pax.data_model import Model, StrictModel, ListField
 if six.PY3:
     long = int
 
@@ -99,8 +99,8 @@ class Hit(StrictModel):
     #: Weighted sum of absolute deviation (in ns) of hit waveform from hit center
     sum_absolute_deviation = 0.0
 
-    left = 0                 #: Index/sample of left bound (inclusive) of peak.
-    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of peak
+    left = 0                 #: Index/sample of left bound (inclusive) of hit in event.
+    right = 0                #: Index/sample of right bound (INCLUSIVE!!) of hit in event.
 
     @property
     def length(self):
@@ -137,7 +137,11 @@ class TriggerSignal(StrictModel):
     MongoDB.ReadUntriggeredFiller.
     """
 
-    #: "Type" of the signal. 1 for S1 candidates, 2 for S2 candidates
+    #: "Type" of the signal.
+    #:   0: unknown TPC
+    #:   1: TPC S1 candidates
+    #:   2: TPC S2 candidates
+    #:   106: muon veto
     type = 0
 
     #: Did this signal cause a trigger?
@@ -183,8 +187,9 @@ class Peak(StrictModel):
     #  Hit, area, and saturation data
     ##
 
-    #: The hits that make up this peak
-    #: To save space, we usually only store the hits for s1s.
+    #: The hits that make up this peak. To save space, we usually only store the hits for s1s in the root file.
+    #: Do not rely on the order of hits in this field!!
+    #: For the root output, this gets converted back to a list of Hit classes (then to a vector of c++ Hit objects)
     hits = np.array([], dtype=Hit.get_dtype())
 
     #: Total areas of all hits per PMT (pe).
@@ -388,7 +393,7 @@ class SumWaveform(StrictModel):
             return False
 
 
-class Pulse(StrictModel):
+class Pulse(Model):
     """A region of raw digitizer data.
     For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.
 
@@ -411,9 +416,15 @@ class Pulse(StrictModel):
     #: Raw wave data (numpy array of int16, raw ADC counts)
     raw_data = np.array([], np.int16)
 
-    #: Baseline in ADC counts relative to reference baseline -- but float!
-    #: This field is omitted in processed data (to save space)
+    #: Baseline, in ADC counts relative to reference baseline -- but float!
+    #: This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
+    #: at the start and at the end of the pulse.
+    #: Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.
     baseline = float('nan')
+
+    #: Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
+    #: E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.
+    baseline_increase = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)
     maximum = float('nan')
@@ -439,7 +450,7 @@ class Pulse(StrictModel):
          - raw_data (numpy array of samples)
          - right (last index)
         """
-        StrictModel.__init__(self, **kwargs)
+        Model.__init__(self, **kwargs)
 
         if self.channel == INT_NAN:
             raise ValueError("Must specify channel to init Pulse")
@@ -482,7 +493,7 @@ class Interaction(StrictModel):
     drift_time = float('nan')
 
     #: z position (cm) calculated from drift time.
-    #: This is simply - drift time * drift velocity
+    #: This - (drift time - drift time of gate) * drift velocity
     z = float('nan')
 
     #: r position (cm)
@@ -555,6 +566,9 @@ class Event(StrictModel):
     #: A nonnegative integer that uniquely identifies the event within the dataset.
     event_number = 0
 
+    #: Internal number used for multiprocessing, no physical meaning.
+    block_id = -1
+
     #: Total number of channels in the event (whether or not they see anything).
     #: Has to be the same as n_channels in config, provided here for deserialization ease.
     n_channels = INT_NAN
@@ -588,7 +602,8 @@ class Event(StrictModel):
     trigger_signals = np.array([], dtype=TriggerSignal.get_dtype())
 
     #: Array of all hits found in event
-    #: These will get grouped into peaks during clustering
+    #: These will get grouped into peaks during clustering. New hits will be added when peaks are split.
+    #: NEVER rely upon the order of hits in this field! It depends on lunar phase and ambient pressure.
     #: This is usually emptied before output (but not in LED mode)
     all_hits = np.array([], dtype=Hit.get_dtype())
 
@@ -596,9 +611,17 @@ class Event(StrictModel):
     sum_waveforms = ListField(SumWaveform)
 
     #: A list of :class:`pax.datastructure.Interaction` objects.
-    #: An pulse holds a stream of samples in one channel provided by the digitizer.
+    #: A pulse holds a stream of samples in one channel provided by the digitizer.
     #: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
+    #: The order of this field cannot be changed after the hitfinder, since hits have a found_in_pulse field
+    #: referring to the index of a pulse in this field.
     pulses = ListField(Pulse)
+
+    #: Number of pulses per channel
+    n_pulses_per_channel = np.array([], dtype=np.int16)
+
+    #: Total number of pulses
+    n_pulses = 0
 
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int16)
@@ -641,6 +664,7 @@ class Event(StrictModel):
             raise ValueError("Nonpositive event duration %s!" % self.duration())
 
         # Initialize numpy arrays -- need to have n_channels and self.length
+        self.n_pulses_per_channel = np.zeros(n_channels, dtype=np.int16)
         self.noise_pulses_in = np.zeros(n_channels, dtype=np.int16)
         self.n_hits_rejected = np.zeros(n_channels, dtype=np.int16)
         self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
@@ -765,4 +789,10 @@ class Event(StrictModel):
 # other code will be fooled into treating it as a normal event
 # (except the explicit event class checks in ProcessPlugin of course,
 #  these have to be disabled by as needed using do_output_check and do_input_check)
-EventProxy = namedtuple('EventProxy', ['data', 'event_number'])
+EventProxy = namedtuple('EventProxy', ['data', 'event_number', 'block_id'])
+
+
+def make_event_proxy(event, data, block_id=None):
+    if block_id is None:
+        block_id = event.block_id
+    return EventProxy(data=data, event_number=event.event_number, block_id=block_id)

@@ -21,8 +21,7 @@ if os.name != 'nt' and not os.environ.get('DISPLAY'):
 # These imports must be after matplotlib.use, otherwise the backend is already chosen
 # (so which of them is actually importing matplotlib.pyplot??)
 import pax    # flake8: noqa
-from pax import core, utils, formats    # flake8: noqa
-
+from pax import core, utils, formats, parallel    # flake8: noqa
 
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
@@ -43,7 +42,6 @@ def main():
     # Feed certain command line args into pax configuration format
     for argname, configname in (('input',       'input_name'),
                                 ('output',      'output_name'),
-                                ('cpus',        'n_cpus'),
                                 ('log',         'logging_level'),
                                 ('stop_after',  'stop_after'),
                                 ('event',       'events_to_process'),
@@ -51,6 +49,8 @@ def main():
         value = getattr(args, argname)
         if value is not None:
             override_dict['pax'][configname] = value
+    if args.ignore_rundb:
+        override_dict['pax']['look_for_config_in_runs_db'] = False
 
     # Process input type options
     if args.input_type is not None:
@@ -106,18 +106,12 @@ def main():
     config_str = config_str.replace(']', ']\n')
     config_str = config_str.replace(';', '\n')
 
-    pax_instance = core.Processor(config_names=args.config,
-                                  config_paths=args.config_path,
-                                  config_string=config_str,
-                                  config_dict=override_dict)
 
-    try:
-        pax_instance.run()
-    except (KeyboardInterrupt, SystemExit):
-        print("\nShutting down all plugins...")
-        pax_instance.shutdown()
-        print("Exiting")
-        sys.exit()
+    config_kwargs = dict(config_names=args.config,
+                         config_paths=args.config_path,
+                         config_string=config_str,
+                         config_dict=override_dict)
+    parallel.maybe_multiprocess(args, **config_kwargs)
 
 
 def get_argsparser(input_plugin_aliases, output_plugin_aliases):
@@ -130,12 +124,16 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
     # Basics
     parser.add_argument('--version',  action='store_true',
                         help="Print current pax version, then exit")
-    parser.add_argument('--cpus', default=1,
-                        help="Number of CPUs to use. Default is 1; can be 'all'.",
-                        nargs='?')
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")
 
+    # Multiprocessing
+    mp_group = parser.add_argument_group(title='Multiprocessing')
+    mp_group.add_argument('--cpus', default=1, type=int,
+                          help="Number of CPUs to use. If >1, will activate multiprocessing and use 2 + cpus cores.")
+    mp_group.add_argument('--remote',  action='store_true',
+                          help="Multiprocess using remote workers")
+    parallel.add_rabbit_command_line_args(mp_group)
 
     # Input and output control
     io_group = parser.add_argument_group(title='Input/output')
@@ -184,6 +182,8 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
     config_group.add_argument('--config_string', default='',
                               help="String specifying additional configuration options. Semicolons become newlines.\n"
                                    "For example: '[WaveformSimulator]event_repetitions=2;electron_lifetime=50*us'")
+    config_group.add_argument('--ignore_rundb', action='store_true',
+                              help="Do not try to look for run-specific config overrides in runs database.")
 
     # Control events to process
     event_group = parser.add_argument_group(title='Event specification')
@@ -246,7 +246,8 @@ def get_aliases():
     ])
 
     input_plugin_aliases = OrderedDict([
-        ('none',  'Dummy.DummyInput'),
+        ('none',     'Dummy.DummyInput'),
+        ('garbage',  'Dummy.GarbageInput'),
         ('xed',      ('XED.ReadXED', 'XED.DecodeXED')),
 
         # Zipped formats

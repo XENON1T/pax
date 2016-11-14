@@ -117,7 +117,7 @@ class OutputPlugin(ProcessPlugin):
             # Is there an input plugin? If so, try to use the input plugin's input name without extension.
             # This will give problems when both input and output have no extension (e.g. directories, databases),
             # but is very convenient otherwise.
-            # Appending e.g. '_procesed' inevitably leads to '_processed_processed_...'
+            # Appending e.g. '_processed' inevitably leads to '_processed_processed_...'
             ip = self.processor.input_plugin
             if ip is not None and 'input_name' in ip.config:
                 self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
@@ -138,6 +138,26 @@ class OutputPlugin(ProcessPlugin):
         if result is not None:
             raise RuntimeError("%s returned a %s instead of None" % (self.name, type(event)))
         return event
+
+
+class ClusteringPlugin(TransformPlugin):
+    """Base class for clustering plugins"""
+
+    def transform_event(self, event):
+        self.event = event
+        new_peaks = []
+        for peak in event.peaks:
+            new_peaks += self.cluster_peak(peak)
+        event.peaks = new_peaks
+        self.finalize_event()
+        return event
+
+    def cluster_peak(self, peak):
+        """Takes peak and returns LIST of peaks"""
+        raise NotImplementedError
+
+    def finalize_event(self):
+        pass
 
 
 class PosRecPlugin(TransformPlugin):

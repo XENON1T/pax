@@ -14,24 +14,24 @@ matrix:
           env: PYTHON=2.7 ROOT=6.04
         - python: 3.4
           env: PYTHON=3.4 ROOT=6.04
-        - language: generic
-          os: osx
-          osx_image: xcode6.4
-          env: PYTHON=2.7 ROOT=5.34.32
-        - language: generic
-          os: osx
-          osx_image: xcode6.4
-          env: PYTHON=2.7 ROOT=6.04
-        - language: generic
-          os: osx
-          osx_image: xcode6.4
-          env: PYTHON=3.4 ROOT=5.34.32
-        - language: generic
-          os: osx
-          osx_image: xcode6.4
-          env: PYTHON=3.4 ROOT=6.04
-    allow_failures:
-        - os: osx
+    #     - language: generic
+    #       os: osx
+    #       osx_image: xcode6.4
+    #       env: PYTHON=2.7 ROOT=5.34.32
+    #     - language: generic
+    #       os: osx
+    #       osx_image: xcode6.4
+    #       env: PYTHON=2.7 ROOT=6.04
+    #     - language: generic
+    #       os: osx
+    #       osx_image: xcode6.4
+    #       env: PYTHON=3.4 ROOT=5.34.32
+    #     - language: generic
+    #       os: osx
+    #       osx_image: xcode6.4
+    #       env: PYTHON=3.4 ROOT=6.04
+    # allow_failures:
+    #     - os: osx
 
 
 notifications:
@@ -61,17 +61,17 @@ install:
   - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then curl --silent http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -o miniconda.sh; fi
   - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   
+  - export CONDA_ENV_PATH=$HOME/miniconda/envs/pax # a workaround since CONDA_ENV_PATH magically dissapeared from Conda
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
+  - conda install -q conda=4.1.1
   - conda info -a # Useful for debugging any issues with conda
+  - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.16 matplotlib=1.5.1 pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter
   - source activate pax
-  # tmp hack will be fixed
-  # - conda uninstall -q sqlite libpng libx11 
   - pip install coveralls nose coverage
 
   # Install pax

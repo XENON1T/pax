@@ -18,12 +18,17 @@ import datetime
 import socket
 import shutil
 
-from six.moves import input
 import pymongo
+from six.moves import input
 
-from pax import core, units
-from pax.plugins.io.MongoDB import ClientMaker
+from pax import parallel, units
+from pax.configuration import combine_configs, fix_sections_from_mongo
+from pax.exceptions import PaxException
+from pax.MongoDB_ClientMaker import ClientMaker
 
+# Name of the field in the run doc which holds the trigger status
+STATUS_FIELD_NAME = 'trigger.status'
+TRIGGERED_DATA_HOSTNAME = 'xe1t-datamanager'
 
 def get_hostname():
     return socket.gethostname().split('.')[0]
@@ -36,10 +41,12 @@ def main():
     log = setup_logging(loglevel=args.log.upper())
 
     # Check for strange argument combinations
-    if args.stop_after_sec and (0 < args.stop_after_sec < float('inf')) and not args.secret_mode:
-        print("You are about to stop the trigger after %d sec of data in the run, which means you are probably testing "
+    not_searching_full_run = ((args.stop_after_sec and (0 < args.stop_after_sec < float('inf'))) or
+                              (args.start_after_sec and (0 < args.start_after_sec < float('inf'))))
+    if not_searching_full_run and not args.secret_mode:
+        print("You are about to trigger on a piece of a run, which means you are probably testing "
               "something out. However, you have NOT enabled secret mode and will be writing to official runs db!\n"
-              "Are you sure??" % args.stop_after_sec)
+              "Are you sure??")
         if input().lower() not in ('y', 'yes'):
             print("\nFine, Exiting event builder...\n")
             exit()
@@ -49,29 +56,37 @@ def main():
     # Connect to MongoDB
     clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                       for k in ('user', 'password', 'host', 'port')})
-    runs = clientmaker.get_client('run')['run'].get_collection('runs_new')
+    run_db = clientmaker.get_client('run')['run']
+    runs = run_db.get_collection('runs_new')
+    pipeline_status_collection = run_db.get_collection('pipeline_status')
 
     # Build the query used to search for runs
-    status_name = 'trigger.status'
     if args.run_name:
         run_query = {'name': args.run_name}
     elif args.run is not None:
         run_query = {'number': args.run}
     else:
-        run_query = {status_name: 'waiting_to_be_processed',
+        run_query = {STATUS_FIELD_NAME: 'waiting_to_be_processed',
                      'data.type': 'untriggered'}
     run_query['detector'] = args.detector
     log.info("Starting run search with query %s" % run_query)
 
+    # Define the suffix for the produced folder
+    if args.detector == "muon_veto":
+        detector_suffix = "_MV"
+    else:
+        detector_suffix = ""
+
     while 1:
         if not args.secret_mode:
-            run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+            run_doc = runs.find_one_and_update(run_query, {'$set': {STATUS_FIELD_NAME: 'staging'}})
 
             if run_doc is not None:
                 data_info_entry = {'type': 'raw',
-                                   'host': get_hostname(),
+                                   'host': TRIGGERED_DATA_HOSTNAME,
                                    'status': 'transferring',
-                                   'location': os.path.join('/data/xenon1t_data', run_doc['name']),
+                                   'location': os.path.join('/data/xenon/raw',
+                                                            run_doc['name']+detector_suffix),
                                    'creation_time': datetime.datetime.utcnow(),
                                    'checksum': None}
                 runs.update({'_id': run_doc['_id']},
@@ -80,31 +95,38 @@ def main():
             run_doc = runs.find_one(run_query)
             if run_doc is None:
                 raise ValueError("Mongodb returned None instead of run document!")
-            data_info_entry = dict(location=os.path.join('.', run_doc['name']))
-            
+            data_info_entry = dict(location=os.path.join('.',
+                                                         run_doc['name']+detector_suffix))
+
         if run_doc is None:
             if args.wait <= 0:
                 log.info("No runs to process: exiting.")
                 break
             log.info("No runs to process yet... waiting %d seconds", args.wait)
+            if not args.secret_mode:
+                pipeline_status_collection.insert({'name': 'eventbuilder_info',
+                                                   'time': datetime.datetime.utcnow(),
+                                                   'working_on_run': False})
             time.sleep(args.wait)
             continue
 
         # Build configuration for pax. Settings priority:
         #   First priority: command line args
-        #   Second priority: rundb's trigger mode, in future complete override settings
+        #   Second priority: rundoc's trigger mode and trigger_config_override (latter has higher priority)
         #   Third priority: defaults from pax configuration (pax will take care of loading these)
         # Unit conversion factors are applied to the command line args, but NOT to the rundb values!
         # (to do that, we'd have to un-convert them when we later store the settings we actually used)
 
         # Load run doc settings + basic settings
         # This is a
+        config_dict = {}
         trigger_mode = run_doc['reader']['ini']['trigger_mode']
         if trigger_mode.startswith('triggered'):
-            log.debug("Picking up triggered mode: trigger_mode is %s" % trigger_mode)
+            log.info("Picked up triggered mode %s, special settings activated" % trigger_mode)
             config_dict = {"Trigger": {
                                "left_extension": 10 * units.us,
-                               "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us
+                               "right_extension": 1010 * units.us if trigger_mode.endswith('long') else 100 * units.us,
+                               "event_separation": 2 * units.ms if trigger_mode.endswith('long') else 110 * units.us,
                            },
                            "Trigger.DecideTriggers": {
                                "trigger_probability": {
@@ -113,34 +135,42 @@ def main():
                                    "2": {"2": 1}
                                }
                            }}
-        else:
-            config_dict = {}
-        # FUTURE: Get a complete override dict from run ini instead
-        # run_doc should not try to override something from 'pax', 'DEFAULT', etc.
-        # config_dict = run_doc['reader']['ini'].get('trigger_configuration_override', {})
-        config_dict.update({'DEFAULT': {'run_doc_id': run_doc['_id']},
-                            'pax': {'output_name': data_info_entry['location'],
-                                    'n_cpus': args.cpus},
-                            'BSON': {'fields_to_ignore': [],
-                                     'overwrite_output': True}})
+
+        config_dict = combine_configs(config_dict, {
+            'DEFAULT': {'run_doc_id': run_doc['_id'],
+                        'run_number': run_doc['number']},
+            'pax': {'output_name': data_info_entry['location']},
+            'BSON': {'fields_to_ignore': [],
+                     'overwrite_output': True}})
+
+        # Set any extra settings specified in the run doc
+        mongo_conf = fix_sections_from_mongo(run_doc['reader']['ini'].get('trigger_config_override', {}))
+        config_dict = combine_configs(config_dict, mongo_conf)
 
         # Apply command-line override settings for MongoDB
         mongo_settings_override = {}
         for argname in ('detector', 'secret_mode',
                         'host', 'port', 'user', 'password',
                         'batch_window', 'delete_data', 'edge_safety_margin',
-                        'max_query_workers', 'skip_ahead', 'stop_after_sec'):
+                        'max_query_workers', 'skip_ahead', 'stop_after_sec', 'start_after_sec'):
             argval = getattr(args, argname)
-            if argval is None:
+            if argval is None or argval == '':
                 continue
             if argname in ('edge_safety_margin', 'batch_window'):
                 argval *= units.s
             mongo_settings_override[argname] = argval
-        config_dict.setdefault('MongoDB', {})
-        config_dict['MongoDB'].update(mongo_settings_override)
+        config_dict = combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
+
+        # Acquisition monitor filename is a mongo db option...
+        if config_dict.get('save_acquisition_monitor_pulses', True):
+            config_dict['MongoDB']['acquisition_monitor_file_path'] = os.path.join(
+                data_info_entry['location'], 'acquisition_monitor_data.pickles')
 
         # Apply command-line override settings for trigger
-        trigger_settings_override = {}
+        # Trigger monitor filename is a trigger option...
+        trigger_settings_override = {'trigger_monitor_file_path': os.path.join(data_info_entry['location'],
+                                                                               'trigger_monitor_data.zip')}
+
         for argname, factor in (('left_extension', units.us),
                                 ('right_extension', units.us),
                                 ('signal_separation', units.us),
@@ -150,48 +180,120 @@ def main():
                 if factor is not None:
                     argval = int(factor * argval)
                 trigger_settings_override[argname] = argval
-        trigger_settings_override['trigger_monitor_file_path'] = os.path.join(data_info_entry['location'],
-                                                                              'trigger_monitor_data.zip')
-        config_dict.setdefault('Trigger', {})
-        config_dict['Trigger'].update(trigger_settings_override)
+        config_dict = combine_configs(config_dict, dict(Trigger=trigger_settings_override))
 
         # Apply command-line override settings for trigger probability
         if args.force_multiplicity_trigger is not None:
-            level = args.force_multiplicity_trigger
-            config_dict.setdefault('Trigger.DecideTriggers', {})
-            config_dict['Trigger.DecideTriggers']['trigger_probability'] = {
-                '0': {str(level): 1},
-                '1': {str(level): 1},
-                '2': {str(level): 1}}
+            str_level = str(args.force_multiplicity_trigger)
+            config_dict = combine_configs(config_dict, {'Trigger.DecideTriggers': {'trigger_probability': {
+                '0': {str_level: 1},
+                '1': {str_level: 1},
+                '2': {str_level: 1}}}})
 
         log.info("Building events for %s", run_doc['name'])
-        log.debug("Config override is: %s" % config_dict)
+        log.info("Config override is: %s" % config_dict)
         try:
-            p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
-                               config_paths=args.config_path,
-                               config_dict=config_dict)
-            p.run()     # The run() method includes a call to shutdown()
+            config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                                 config_paths=args.config_path,
+                                 config_dict=config_dict)
+            parallel.maybe_multiprocess(args, **config_kwargs)
 
-        # If a timeout occurred, set the status of this run to 'error'
-        # Add other exceptions as they come during commissioning
-        except pymongo.errors.ServerSelectionTimeoutError as e:
+        except (pymongo.errors.ServerSelectionTimeoutError,
+                PaxException) as e:
+            # We stop the acquisition of this run (if it is still going) to avoid overfilling the MongoDB buffer.
+            log.fatal("Caught known exception, aborting this run (not clearing queue).")
+            log.fatal(str(type(e)) + ": " + str(e))
+
+            if not args.secret_mode:
+                mark_run_errored(run_doc, runs)
+                stop_acquisition(clientmaker)
+                communicate_alert(clientmaker, e, log, run_doc, priority=2)
+
+        except Exception as e:
+            # A new type of exception occurred.
+            # In addition to stopping the acquisition, we clear the run queue and re-raise the exception
+            # (halting the event builder) to avoid new runs starting while we are potentially in a strange state.
+            log.fatal("Caught unknown exception.")
             log.exception(e)
-            runs.update({'name': run_doc['name'], 'detector' : args.detector},
-                        {'$set': {status_name: 'error'}})
 
-        # Copy the log file to the output dir, then clear it for the next run
-        shutil.copyfile('eventbuilder.log', data_info_entry['location'] + '/eventbuilder.log')
-        open('eventbuilder.log', mode='w').close()
+            if not args.secret_mode and args.detector == 'tpc':
+                clear_run_queue(clientmaker)
+                mark_run_errored(run_doc, runs)
+                stop_acquisition(clientmaker)
+                communicate_alert(clientmaker, e, log, run_doc, priority=3)
 
-        if not args.secret_mode:
-            data_info_entry['status'] = 'verifying'
-            runs.update({'_id': run_doc['_id'],
-                         'data.host': data_info_entry['host']},
-                        {'$set': {'data.$': data_info_entry}})
+            log.fatal("Raising unknown exception")
+            raise
+
+        else:
+            # Things went fine, tell the runs DB
+            if not args.secret_mode:
+                data_info_entry['status'] = 'verifying'
+                runs.update({'_id': run_doc['_id'],
+                             'data.host': data_info_entry['host']},
+                            {'$set': {'data.$': data_info_entry}})
+
+        finally:
+            # Whether or not a crash occurred, we should copy out the log file.
+            # Otherwise the error log would be overwritten when the next run continues / the trigger restarts.
+            if os.path.exists('eventbuilder.log') and \
+                    os.path.exists(data_info_entry['location']):
+                shutil.copyfile('eventbuilder.log',
+                                data_info_entry['location'] + '/eventbuilder.log')
+                # Clear the log file, so previous run starts with a clean slate
+                open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
             break
+
+
+def stop_acquisition(clientmaker):
+    """Stop acquisition of the current run"""
+    run_db = clientmaker.get_client('run')['run']
+    daq_control = run_db.get_collection('daq_control')
+    insert_doc = {}
+    insert_doc['command'] = 'Stop'
+    insert_doc['detector'] = 'all'
+    insert_doc['user'] = 'trigger'
+    insert_doc['comment'] = 'Caught exception in trigger'
+    daq_control.insert(insert_doc)
+
+
+def clear_run_queue(clientmaker):
+    """Clear the DAQ queue of runs to take"""
+    run_db = clientmaker.get_client('run')['run']
+    run_queue = run_db.get_collection('daq_queue')
+    run_queue.remove({})
+
+
+def communicate_alert(clientmaker, e, log, run_doc, priority=3):
+    """Write an exception e to the log and send an alert the DAQ database (visible on the website)"""
+    log.exception(e)
+    log.error("Communicating alert to run DB")
+    run_db = clientmaker.get_client('run')['run']
+    alerts = run_db.get_collection('log')
+    alert_doc = {"priority": priority,   # Low priority is less severe
+                 "time": datetime.datetime.now(),
+                 "run": run_doc['number'],
+                 "message": str(e),
+                 "sender": "trigger"}
+    alerts.insert(alert_doc)
+
+
+def mark_run_errored(run_doc, runs_collection):
+    """Sets the current run's trigger status as 'error'"""
+    query_this_run = {'name': run_doc['name'], 'detector': run_doc['detector']}
+    runs_collection.update_one(query_this_run,
+                               {'$set': {STATUS_FIELD_NAME: 'error'}})
+
+    # Find the data entry for the triggered data we were making, and set it to 'error' instead of transferring
+    # We need to start by re-fetching the run doc, as the data entries will have changed since we first queried it
+    run_doc = runs_collection.find_one(query_this_run)
+    for i, d in enumerate(run_doc['data']):
+        if d['host'] == TRIGGERED_DATA_HOSTNAME and d['type'] == 'raw':
+            run_doc['data'][i]['status'] = 'error'
+    runs_collection.update_one(query_this_run, {'$set': {'data': run_doc['data']}})
 
 
 def setup_logging(loglevel='DEBUG'):
@@ -219,6 +321,14 @@ def get_command_line_arguments():
     """
     parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ.")
 
+    # Multiprocessing
+    mp_group = parser.add_argument_group(title='Multiprocessing')
+    mp_group.add_argument('--cpus', default=1, type=int,
+                          help="Number of CPUs to use. If >1, will activate multiprocessing and use 2 + cpus cores.")
+    mp_group.add_argument('--remote',  action='store_true',
+                          help="Multiprocess using remote workers")
+    parallel.add_rabbit_command_line_args(mp_group)
+
     parser.add_argument('--config',
                         default=['eventbuilder'],
                         nargs='+',
@@ -228,8 +338,6 @@ def get_command_line_arguments():
                         nargs='+',
                         help="Path(s) of the configuration file(s) to use.")
 
-    parser.add_argument('--cpus', default=1, nargs='?',
-                        help="Number of CPUs to use for event building. Default is 1; can be 'all'.")
     parser.add_argument('--detector', default='tpc', type=str,
                         help="Detector to build events for")
     parser.add_argument('--log', default='INFO',
@@ -241,11 +349,12 @@ def get_command_line_arguments():
                              "If 0, instead shuts down if no new runs are found.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
-    connection_group.add_argument('--host', default='gw', type=str,
+    # TODO: Unfortunate we have to specify defaults here and again in configuration...
+    connection_group.add_argument('--host',type=str, default='gw',
                                   help='MongoDB hostname')
-    connection_group.add_argument('--port', default=27017, type=int,
+    connection_group.add_argument('--port', type=int, default=27017,
                                   help='Port on host where MongoDB runs')
-    connection_group.add_argument('--user', default='eb', type=str,
+    connection_group.add_argument('--user', type=str, default='eb',
                                   help='User to connect to MongoDB')
     connection_group.add_argument('--password', type=str, default=os.environ.get('MONGO_PASSWORD'),
                                   help='Password to connect to MongoDB. '
@@ -294,7 +403,10 @@ def get_command_line_arguments():
                                         "Use only for dealing quickly with runs that have overflown to disk!")
     mongoreader_group.add_argument('--stop_after_sec', type=float,
                                    help="Stop the trigger after this many seconds of data have been read. "
-                                        "Won't stop in the middle of a batch. Use only for testing!")
+                                        "Will round to query batch. Use only for testing!")
+    mongoreader_group.add_argument('--start_after_sec', type=float,
+                                   help="Start the trigger after this many seconds into the run. "
+                                        "Use only for testing!")
 
     args = parser.parse_args()
     return args

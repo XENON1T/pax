@@ -143,6 +143,7 @@ class ReadXED(InputFromFolder):
                                      event_layer_metadata['samples_in_event'])
 
             result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                block_id=-1,
                                 data=dict(xed_type='raw',
                                           data=data,
                                           dataset_name=dataset_name,
@@ -166,6 +167,7 @@ class ReadXED(InputFromFolder):
             data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
 
             result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                block_id=-1,
                                 data=dict(xed_type='zle',
                                           data=data_to_decompress,
                                           dataset_name=dataset_name,
@@ -202,6 +204,7 @@ class DecodeXED(plugin.TransformPlugin):
         event = Event(n_channels=self.config['n_channels'],
                       dataset_name=event_proxy.data['dataset_name'],
                       event_number=event_number,
+                      block_id=event_proxy.block_id,
                       start_time=int(metadata['utc_time'] * units.s + metadata['utc_time_usec'] * units.us),
                       sample_duration=int(self.config['sample_duration']),
                       length=metadata['samples_in_event'])
@@ -210,7 +213,7 @@ class DecodeXED(plugin.TransformPlugin):
             data = np.reshape(data, (metadata['channels'], metadata['samples_in_event']))
             for ch_i, chdata in enumerate(data):
                 event.pulses.append(Pulse(
-                    channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
+                    channel=int(ch_i + 1),       # +1 as first channel is 1 in Xenon100
                     left=0,
                     raw_data=chdata
                 ))
@@ -261,8 +264,8 @@ class DecodeXED(plugin.TransformPlugin):
                                                       dtype="<i2")
 
                         event.pulses.append(Pulse(
-                            channel=channel_id,
-                            left=sample_position,
+                            channel=int(channel_id),
+                            left=int(sample_position),
                             raw_data=samples_pulse
                         ))
 
