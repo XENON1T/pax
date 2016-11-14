@@ -82,7 +82,7 @@ some contain C++ code which must be compiled. With Anaconda you can get appropri
 for your platform using the `conda` tool as follows. Make sure to replace <environment_name> with the desired name of your environment (usually it is 'pax' for central installations) in the following command::
 
   conda install -q conda=4.1.1
-  conda create -n <environment_name> python=3.4 root=6 numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask
+  conda create -n <environment_name> python=3.4 root=6 numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas
 
 If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
 
