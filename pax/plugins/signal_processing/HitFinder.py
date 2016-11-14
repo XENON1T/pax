@@ -78,6 +78,8 @@ class FindHits(plugin.TransformPlugin):
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
+        self.always_find_single_hit = self.config.get('always_find_single_hit')
+
     def transform_event(self, event):
         dt = self.config['sample_duration']
         hits_per_pulse = []
@@ -129,8 +131,9 @@ class FindHits(plugin.TransformPlugin):
                                 self.config['absolute_adc_counts_low_threshold'],
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
-            if self.config.get('dont_find_hits_just_integrate_between'):
-                hit_bounds_buffer[0] = self.config.get('dont_find_hits_just_integrate_between')
+            if self.always_find_single_hit:
+                # The config specifies a single range to integrate. Useful for gain calibration
+                hit_bounds_buffer[0] = self.always_find_single_hit
                 n_hits_found = 1
             else:
                 # Call the numba hit finder -- see its docstring for description
