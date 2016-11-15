@@ -47,5 +47,6 @@ class TestPosRecRobustWeightedmean(unittest.TestCase):
         self.assertAlmostEqual(rp.x, 0, delta=0.2)
         self.assertAlmostEqual(rp.y, 0, delta=0.2)
 
+
 if __name__ == '__main__':
     unittest.main()

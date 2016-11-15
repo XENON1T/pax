@@ -105,5 +105,6 @@ class TestRawData(unittest.TestCase):
             # Cleaning up the temporary dir explicitly (otherwise tempfile gives warning):
             shutil.rmtree(tempdir)
 
+
 if __name__ == '__main__':
     unittest.main()
