@@ -57,5 +57,7 @@ class TestPaxUnits(unittest.TestCase):
         base_units['cm'] = base_units['m'] / 100
 
         self.assertAlmostEqual(units.cm, base_units['cm'])
+
+
 if __name__ == '__main__':
     unittest.main()
