@@ -50,5 +50,6 @@ class TestPosRecMaxPMT(unittest.TestCase):
         self.assertEqual(rp.x, self.plugin.config['pmts'][ch]['position']['x'])
         self.assertEqual(rp.y, self.plugin.config['pmts'][ch]['position']['y'])
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -58,5 +58,6 @@ class TestZLE(unittest.TestCase):
             for i, (l, r) in enumerate(pulse_bounds):
                 self.assertEqual(e.pulses[i].raw_data.tolist(), w[l:r + 1].tolist())
 
+
 if __name__ == '__main__':
     unittest.main()

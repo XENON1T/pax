@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib import _cntr
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
+from scipy.special import gammaln
 
 from pax import utils
 from pax.exceptions import CoordinateOutOfRangeException
@@ -218,6 +219,11 @@ class PatternFitter(object):
             areas_expected_clip = np.clip(fractions_expected * total_observed, 0.0001, float('inf'))
             # Actually compute -2ln(L) so the same interval computation can be used later
             result = ne.evaluate("-2*(ao * log({ae}) - {ae})".format(ae='areas_expected_clip'))
+            # The above line ignores the factorial term in the Poisson distribution, this has no
+            # effect on the parameter estimation of a single hitpattern but if we want to compare
+            # hitpatterns we need the 'absolute' likelihood so add on the factorial term (using
+            # ln(n!)=ln(gamma(n + 1))):
+            result += 2*np.sum(gammaln(areas_observed + 1))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
