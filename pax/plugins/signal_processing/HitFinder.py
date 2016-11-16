@@ -299,10 +299,16 @@ def build_hits(w, hit_bounds,
                 saturation_count += 1
             area += x
             center += x * i
-        center /= area
-        for i, x in enumerate(w[left:right + 1]):
-            deviation += x * abs(i - center)
-        deviation /= area
+            
+        # During gain calibration, or if the low threshold is set to negative values, 
+        # the hitfinder can include regions with negative amplitudes
+        # In rare cases this can make the area come out at 0, in which case this code
+        # would throw a divide by zero exception.
+        if area != 0:
+            center /= area
+            for i, x in enumerate(w[left:right + 1]):
+                deviation += x * abs(i - center)
+            deviation /= area
 
         # Store the hit properties
         hits_buffer[hit_i].channel = channel
