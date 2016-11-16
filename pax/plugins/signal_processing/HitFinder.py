@@ -299,7 +299,7 @@ def build_hits(w, hit_bounds,
                 saturation_count += 1
             area += x
             center += x * i
-            
+
         # During gain calibration, or if the low threshold is set to negative values, 
         # the hitfinder can include regions with negative amplitudes
         # In rare cases this can make the area come out at 0, in which case this code
