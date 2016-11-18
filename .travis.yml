@@ -75,6 +75,7 @@ install:
   - pip install coveralls nose coverage
 
   # Install pax
+  - pip install mongodbproxy    # Somehow needs explicit install?
   - python setup.py install
   
   # Run a simple test file, to see if the tests load

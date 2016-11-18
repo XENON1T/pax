@@ -3,10 +3,21 @@ import re
 import os
 
 import pymongo
+
 try:
     from monary import Monary
 except Exception:
     pass   # Let's hope we're not the event builder.
+
+try:
+    from mongo_proxy import MongoProxy
+except Exception:
+    print("MongoDBProxy is not installed, autoreconnect exception handling disabled")
+
+    def dummy(x):
+        return x
+
+    MongoProxy = dummy
 
 
 class ClientMaker:
@@ -70,7 +81,6 @@ class ClientMaker:
 
             if autoreconnect:
                 # Wrap the client in a magic object that retries autoreconnect exceptions
-                from mongo_proxy import MongoProxy
                 client = MongoProxy(client)
 
             return client
