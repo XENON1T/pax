@@ -24,7 +24,7 @@ class ClientMaker:
         self.config = {k: config[k] for k in ('user', 'password', 'host', 'port')}
         self.log = logging.getLogger('Mongo client maker')
 
-    def get_client(self, database_name=None, uri=None, monary=False, host=None, **kwargs):
+    def get_client(self, database_name=None, uri=None, monary=False, host=None, autoreconnect=False, **kwargs):
         """Get a Mongoclient. Returns Mongo database object.
         If you provide a mongodb connection string uri, we will insert user & password into it,
         otherwise one will be built from the configuration settings.
@@ -67,6 +67,12 @@ class ClientMaker:
             client = pymongo.MongoClient(uri, **kwargs)
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
             self.log.debug("Successfully pinged client")
+
+            if autoreconnect:
+                # Wrap the client in a magic object that retries autoreconnect exceptions
+                from mongo_proxy import MongoProxy
+                client = MongoProxy(client)
+
             return client
 
 

@@ -56,7 +56,7 @@ def main():
     # Connect to MongoDB
     clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                       for k in ('user', 'password', 'host', 'port')})
-    run_db = clientmaker.get_client('run')['run']
+    run_db = clientmaker.get_client('run', autoreconnect=True)['run']
     runs = run_db.get_collection('runs_new')
     pipeline_status_collection = run_db.get_collection('pipeline_status')
 
