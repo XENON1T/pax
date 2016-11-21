@@ -123,7 +123,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
         # Connect to MongoDB. Do import here, since someone may wish to run pax without mongo
         from pax.MongoDB_ClientMaker import ClientMaker         # noqa
         run_collection = ClientMaker(evaled_config['MongoDB']).get_client(
-            'run', autoreconnect=True)['run'].get_collection('runs_new')
+            'run', autoreconnect=True)['run']['runs_new']
 
         # Get the run document, either by explicitly specified run number, or by the input name
         # The last option is a bit of a hack... if you don't like it, think of some way to always pass
