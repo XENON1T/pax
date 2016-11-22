@@ -14,7 +14,7 @@ try:
 except Exception:
     print("MongoDBProxy is not installed, autoreconnect exception handling disabled")
 
-    def dummy(x):
+    def dummy(x, **kwargs):
         return x
 
     MongoProxy = dummy
@@ -81,7 +81,7 @@ class ClientMaker:
 
             if autoreconnect:
                 # Wrap the client in a magic object that retries autoreconnect exceptions
-                client = MongoProxy(client)
+                client = MongoProxy(client, disconnect_on_timeout=False, wait_time=180)
 
             return client
 
