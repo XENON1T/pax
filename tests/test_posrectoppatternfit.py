@@ -62,5 +62,6 @@ class TestPosRecTopPatternFit(unittest.TestCase):
         cts = rp.confidence_tuples
         self.assertEqual(len(cts), 2)
 
+
 if __name__ == '__main__':
     unittest.main()
