@@ -2,6 +2,8 @@
 Plugins to interface with the integrated waveform simulator (FaX)
 This is I/O stuff only: truth file writing, instruction reading, etc.
 There is no physics here, all that is in pax.simulation.
+Added by Qing: Sorry there's a little physics (S2 after pulses)
+is implemented here for it is easier.
 """
 
 import os
@@ -345,11 +347,15 @@ class WaveformSimulatorFromMC(WaveformSimulator):
             for p in interaction_instructions:
                 # Correct the z-coordinate system
                 p['z'] += self.config['add_to_z']
-                # Fix ER / NR label
-                if p['recoil_type'] != 0:
+                # Fix ER / NR / alpha label
+                if p['recoil_type'] == 1:
                     p['recoil_type'] = 'NR'
-                else:
+                elif p['recoil_type'] == 0:
                     p['recoil_type'] = 'ER'
+                elif p['recoil_type'] == 9:
+                    p['recoil_type'] = 'alpha'
+                else:
+                    raise ValueError("Type of events unknown!")
             # Sort by time
             interaction_instructions.sort(key=lambda p: p['t'])
 
