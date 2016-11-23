@@ -347,7 +347,7 @@ class WaveformSimulatorFromMC(WaveformSimulator):
             for p in interaction_instructions:
                 # Correct the z-coordinate system
                 p['z'] += self.config['add_to_z']
-                # Fix ER / NR /alpha label
+                # Fix ER / NR / alpha label
                 if p['recoil_type'] == 1:
                     p['recoil_type'] = 'NR'
                 elif p['recoil_type'] == 0:
