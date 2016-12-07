@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.1.1 (2016-11-24)
+------------------
+* Fax update - PMT and S2 afterpulses (#452)
+* Include factorial in posrec likelihood (#459)
+
+------------------
 6.1.0 (2016-11-11)
 ------------------
 * Improved clustering (#450)
