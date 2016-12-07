@@ -18,4 +18,3 @@ mock
 rabbitpy
 boto3
 multihist
-mongodbproxy

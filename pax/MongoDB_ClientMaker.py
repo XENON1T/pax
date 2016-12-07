@@ -5,12 +5,12 @@ import os
 import pymongo
 
 try:
-    from monary import Monary
+    from monary import Monary     # noqa
 except Exception:
     pass   # Let's hope we're not the event builder.
 
 try:
-    from mongo_proxy import MongoProxy
+    from mongo_proxy import MongoProxy      # noqa
 except Exception:
     print("MongoDBProxy is not installed, autoreconnect exception handling disabled")
 
