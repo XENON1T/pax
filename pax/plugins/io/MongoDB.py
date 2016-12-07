@@ -33,8 +33,8 @@ class MongoBase:
 
         # Connect to the runs db
         self.cm = ClientMaker(self.processor.config['MongoDB'])
-        self.run_client = self.cm.get_client('run')
-        self.runs_collection = self.run_client['run'].get_collection('runs_new')
+        self.run_client = self.cm.get_client('run', autoreconnect=True)
+        self.runs_collection = self.run_client['run']['runs_new']
         self.refresh_run_doc()
 
         self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
