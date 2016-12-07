@@ -56,9 +56,9 @@ def main():
     # Connect to MongoDB
     clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
                                       for k in ('user', 'password', 'host', 'port')})
-    run_db = clientmaker.get_client('run')['run']
-    runs = run_db.get_collection('runs_new')
-    pipeline_status_collection = run_db.get_collection('pipeline_status')
+    run_db = clientmaker.get_client('run', autoreconnect=True)['run']
+    runs = run_db['runs_new']
+    pipeline_status_collection = run_db['pipeline_status']
 
     # Build the query used to search for runs
     if args.run_name:
@@ -250,8 +250,8 @@ def main():
 
 def stop_acquisition(clientmaker):
     """Stop acquisition of the current run"""
-    run_db = clientmaker.get_client('run')['run']
-    daq_control = run_db.get_collection('daq_control')
+    run_db = clientmaker.get_client('run', autoreconnect=True)['run']
+    daq_control = run_db['daq_control']
     insert_doc = {}
     insert_doc['command'] = 'Stop'
     insert_doc['detector'] = 'all'
@@ -262,8 +262,8 @@ def stop_acquisition(clientmaker):
 
 def clear_run_queue(clientmaker):
     """Clear the DAQ queue of runs to take"""
-    run_db = clientmaker.get_client('run')['run']
-    run_queue = run_db.get_collection('daq_queue')
+    run_db = clientmaker.get_client('run', autoreconnect=True)['run']
+    run_queue = run_db['daq_queue']
     run_queue.remove({})
 
 
@@ -271,8 +271,8 @@ def communicate_alert(clientmaker, e, log, run_doc, priority=3):
     """Write an exception e to the log and send an alert the DAQ database (visible on the website)"""
     log.exception(e)
     log.error("Communicating alert to run DB")
-    run_db = clientmaker.get_client('run')['run']
-    alerts = run_db.get_collection('log')
+    run_db = clientmaker.get_client('run', autoreconnect=True)['run']
+    alerts = run_db['log']
     alert_doc = {"priority": priority,   # Low priority is less severe
                  "time": datetime.datetime.now(),
                  "run": run_doc['number'],
