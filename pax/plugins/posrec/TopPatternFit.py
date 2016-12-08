@@ -37,8 +37,10 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                 peak.left, peak.right))
             return None
 
-        # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
-        ndf = np.count_nonzero(is_pmt_in) - 2 - 1
+        # Number of degrees of freedom, equal to the number of terms in the likelihood, equal
+        # to the number of contributing PMTs. Subtract/add degrees of freedom for model
+        # parameters somewhere else.
+        ndf = np.count_nonzero(is_pmt_in)
 
         # Pe observed per pmt. Don't QE correct: pattern map has been adjusted for QE already
         areas_observed = peak.area_per_channel[self.pmts]
