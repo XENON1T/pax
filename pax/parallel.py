@@ -142,9 +142,9 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
 
     for worker_type, worker_overide in overrides:
         new_conf = deepcopy(base_config_kwargs)
-        new_conf['config_dict'] = combine_configs(new_conf.get('config_dict'),
-                                                  common_override,
-                                                  worker_overide)
+        new_conf['config_dict'] = combine_configs(common_override,
+                                                  worker_overide,
+                                                  new_conf.get('config_dict'))
         yield worker_type, new_conf
 
 
