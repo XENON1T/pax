@@ -3,6 +3,12 @@
 History
 -------
 
+----------------
+6.1.2 (upcoming)
+----------------
+* Fixed-range hitfinder (#458)
+* Event builder robustness to db connectivity issues (#461)
+
 ------------------
 6.1.1 (2016-11-24)
 ------------------
