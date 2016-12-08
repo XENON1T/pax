@@ -17,6 +17,7 @@ import pax  # For version number
 from pax import plugin, datastructure, exceptions
 from pax.datastructure import make_event_proxy
 
+ROOT.gROOT.SetBatch(True)
 log = logging.getLogger('ROOTClass_helpers')
 
 # Header for the automatically generated C++ code
