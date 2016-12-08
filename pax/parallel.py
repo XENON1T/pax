@@ -116,8 +116,7 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                    encoder_plugin=None,
                                    decoder_plugin=None,
                                    output='Queues.PushToQueue'),
-                          Queues=dict(timeout_after_sec=300,
-                                      **processing_queue_kwargs))
+                          Queues=dict(**processing_queue_kwargs))
 
     worker_override = {'pax': dict(input='Queues.PullFromQueue',
                                    output='Queues.PushToQueue',
@@ -135,16 +134,15 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                     events_to_process=None,
                                     input='Queues.PullFromQueue'),
                            Queues=dict(ordered_pull=True,
-                                       timeout_after_sec=300,
                                        **output_queue_kwargs))
 
     overrides = [('input', input_override)] + [('worker', worker_override)] * n_cpus + [('output', output_override)]
 
     for worker_type, worker_overide in overrides:
         new_conf = deepcopy(base_config_kwargs)
-        new_conf['config_dict'] = combine_configs(common_override,
-                                                  worker_overide,
-                                                  new_conf.get('config_dict'))
+        new_conf['config_dict'] = combine_configs(new_conf.get('config_dict'),
+                                                  common_override,
+                                                  worker_overide)
         yield worker_type, new_conf
 
 
