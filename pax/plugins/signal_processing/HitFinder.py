@@ -78,6 +78,8 @@ class FindHits(plugin.TransformPlugin):
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
+        self.always_find_single_hit = self.config.get('always_find_single_hit')
+
     def transform_event(self, event):
         dt = self.config['sample_duration']
         hits_per_pulse = []
@@ -129,15 +131,21 @@ class FindHits(plugin.TransformPlugin):
                                 self.config['absolute_adc_counts_low_threshold'],
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
-            # Call the numba hit finder -- see its docstring for description
-            n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(w,
-                                                                               high_threshold,
-                                                                               low_threshold,
-                                                                               hit_bounds_buffer,
-                                                                               dynamic_low_threshold_coeff)
+            if self.always_find_single_hit:
+                # The config specifies a single range to integrate. Useful for gain calibration
+                hit_bounds_buffer[0] = self.always_find_single_hit
+                n_hits_found = 1
+            else:
+                # Call the numba hit finder -- see its docstring for description
+                n_hits_found = find_intervals_above_threshold(w,
+                                                              high_threshold,
+                                                              low_threshold,
+                                                              hit_bounds_buffer,
+                                                              dynamic_low_threshold_coeff)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
+            pulse.n_hits_found = n_hits_found
             hit_bounds_found = hit_bounds_buffer[:n_hits_found]
 
             # If no hits were found, this is a noise pulse: update the noise pulse count
@@ -291,10 +299,16 @@ def build_hits(w, hit_bounds,
                 saturation_count += 1
             area += x
             center += x * i
-        center /= area
-        for i, x in enumerate(w[left:right + 1]):
-            deviation += x * abs(i - center)
-        deviation /= area
+
+        # During gain calibration, or if the low threshold is set to negative values,
+        # the hitfinder can include regions with negative amplitudes
+        # In rare cases this can make the area come out at 0, in which case this code
+        # would throw a divide by zero exception.
+        if area != 0:
+            center /= area
+            for i, x in enumerate(w[left:right + 1]):
+                deviation += x * abs(i - center)
+            deviation /= area
 
         # Store the hit properties
         hits_buffer[hit_i].channel = channel
