@@ -706,7 +706,7 @@ class PeakViewer(PlotBase):
         x = start_x + 2 * column_x + x_sep_text
         y = start_y + 4 * row_y + y_sep_middle - y_sep_text
         event_text = ''
-        event_text += 'Event recorded aat %s UTC, %09d ns\n' % (
+        event_text += 'Event recorded at %s UTC, %09d ns\n' % (
             epoch_to_human_time(self.trigger_time_ns),
             self.trigger_time_ns % units.s)
         suspicious_channels = np.where(event.is_channel_suspicious)[0]
