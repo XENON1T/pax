@@ -6,6 +6,7 @@ Use matplotlib to display various things about the event.
 import random
 import os
 import datetime
+import pytz
 import textwrap
 
 import matplotlib
@@ -23,8 +24,9 @@ from pax import plugin, units, datastructure, dsputils
 
 
 def epoch_to_human_time(timestamp):
-    # Unfortunately the python datetime
-    return datetime.datetime.fromtimestamp(timestamp / units.s).strftime("%Y/%m/%d, %H:%M:%S")
+    # Unfortunately the python datetime, explicitly choose UTC timezone (default is local)
+    tz = pytz.timezone('UTC')
+    return datetime.datetime.fromtimestamp(timestamp / units.s, tz=tz).strftime("%Y/%m/%d, %H:%M:%S")
 
 
 class PlotBase(plugin.OutputPlugin):
@@ -704,7 +706,7 @@ class PeakViewer(PlotBase):
         x = start_x + 2 * column_x + x_sep_text
         y = start_y + 4 * row_y + y_sep_middle - y_sep_text
         event_text = ''
-        event_text += 'Event recorded at %s UTC, %09d ns\n' % (
+        event_text += 'Event recorded aat %s UTC, %09d ns\n' % (
             epoch_to_human_time(self.trigger_time_ns),
             self.trigger_time_ns % units.s)
         suspicious_channels = np.where(event.is_channel_suspicious)[0]
