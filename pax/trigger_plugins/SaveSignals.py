@@ -38,8 +38,8 @@ class SaveSignals(TriggerPlugin):
                     self.log.debug("Storing %d signals in trigger data" % len(sigs))
                     self.trigger.save_monitor_data('trigger_signals', sigs)
             elif self.save_mode == '2d_histogram':
-                hist, _, _ = np.histogram2d(np.clip(sigs['n_pulses'], self.ts_bins[0][0], self.ts_bins[0][1]),
-                                            np.clip(sigs['time_rms'] + 1, self.ts_bins[1][0], self.ts_bins[1][1]),
+                hist, _, _ = np.histogram2d(np.clip(sigs['n_pulses'], self.ts_bins[0][0], self.ts_bins[0][-1]),
+                                            np.clip(sigs['time_rms'] + 1, self.ts_bins[1][0], self.ts_bins[1][-1]),
                                             bins=self.ts_bins)
                 self.trigger.save_monitor_data('trigger_signals_histogram', hist)
 
