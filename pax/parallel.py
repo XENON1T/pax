@@ -122,7 +122,9 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                    output='Queues.PushToQueue',
                                    event_numbers_file=None,
                                    events_to_process=None),
-                       'Queues.PullFromQueue': processing_queue_kwargs,
+                       # PullFromQueue can't have a timeout in the workers, see #444
+                       'Queues.PullFromQueue': dict(timeout_after_sec=float('inf'),
+                                                    **processing_queue_kwargs),
                        'Queues.PushToQueue': dict(preserve_ids=True,
                                                   many_to_one=True,
                                                   **output_queue_kwargs)}

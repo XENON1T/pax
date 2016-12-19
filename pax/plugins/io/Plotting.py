@@ -6,6 +6,7 @@ Use matplotlib to display various things about the event.
 import random
 import os
 import datetime
+import pytz
 import textwrap
 
 import matplotlib
@@ -23,8 +24,9 @@ from pax import plugin, units, datastructure, dsputils
 
 
 def epoch_to_human_time(timestamp):
-    # Unfortunately the python datetime
-    return datetime.datetime.fromtimestamp(timestamp / units.s).strftime("%Y/%m/%d, %H:%M:%S")
+    # Unfortunately the python datetime, explicitly choose UTC timezone (default is local)
+    tz = pytz.timezone('UTC')
+    return datetime.datetime.fromtimestamp(timestamp / units.s, tz=tz).strftime("%Y/%m/%d, %H:%M:%S")
 
 
 class PlotBase(plugin.OutputPlugin):
