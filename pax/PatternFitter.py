@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from matplotlib import _cntr
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
-from scipy.special import gammaln
 
 from pax import utils
 from pax.exceptions import CoordinateOutOfRangeException
@@ -158,7 +157,7 @@ class PatternFitter(object):
                 # because ln(a/b) = ln(a) - ln(b), also different ranges
                 q.append(gofs.T - np.nanmin(gofs))
                 plt.pcolormesh(*q, vmin=1, vmax=100, alpha=0.9)
-                plt.colorbar(label=r'$L - L_0$')
+                plt.colorbar(label=r'$\Delta L$')
             else:
                 q.append(gofs.T / np.nanmin(gofs))
                 plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
@@ -214,16 +213,12 @@ class PatternFitter(object):
             result = ne.evaluate("(ao - {ae})**2 /"
                                  "({ae} + square_syst_errors)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'likelihood_poisson':
-            # Simple Poisson likelihood
+            # Poisson likelihood chi-square (Baker and Cousins, 1984)
             # Clip areas to range [0.0001, +inf), because of log(0)
-            areas_expected_clip = np.clip(fractions_expected * total_observed, 0.0001, float('inf'))
-            # Actually compute -2ln(L) so the same interval computation can be used later
-            result = ne.evaluate("-2*(ao * log({ae}) - {ae})".format(ae='areas_expected_clip'))
-            # The above line ignores the factorial term in the Poisson distribution, this has no
-            # effect on the parameter estimation of a single hitpattern but if we want to compare
-            # hitpatterns we need the 'absolute' likelihood so add on the factorial term (using
-            # ln(n!)=ln(gamma(n + 1))):
-            result += 2*np.sum(gammaln(areas_observed + 1))
+            areas_expected_clip = np.clip(fractions_expected * total_observed, 1e-10, float('inf'))
+            areas_observed_clip = np.clip(areas_observed, 1e-10, float('inf'))
+            result = ne.evaluate("-2*({ao} * log({ae}/{ao}) + {ao} - {ae})".format(ae='areas_expected_clip',
+                                                                                   ao='areas_observed_clip'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
