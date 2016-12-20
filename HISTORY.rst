@@ -11,7 +11,7 @@ History
 * Fix timezone offset for event time in plots (#466)
 * Pattern goodness of fit is now a likelihood ratio (#465)
 * Event builder robustness to db connectivity issues (#461)
-* Fixed-range hitfinder (#458)
+* Fixed-range hit finder (#458)
 
 ------------------
 6.1.1 (2016-11-24)
