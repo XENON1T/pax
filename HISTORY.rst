@@ -3,11 +3,15 @@
 History
 -------
 
-----------------
-6.1.2 (upcoming)
-----------------
-* Fixed-range hitfinder (#458)
+------------------
+6.2.0 (2016-12-20)
+------------------
+* Low-energy classification update, new peak properties (#467)
+* Corrected error in peak.mean_area_over_noise computation
+* Fix timezone offset for event time in plots (#466)
+* Pattern goodness of fit is now a likelihood ratio (#465)
 * Event builder robustness to db connectivity issues (#461)
+* Fixed-range hitfinder (#458)
 
 ------------------
 6.1.1 (2016-11-24)
