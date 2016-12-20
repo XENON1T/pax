@@ -235,8 +235,10 @@ class Simulator(object):
 
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
-            # If the channel is dead, we don't do anything.
-            if self.config['gains'][channel] == 0 or (self.config['pmt_0_is_fake'] and channel == 0):
+            # If the channel is dead, fake, or not in the TPC, we don't do anything.
+            if (self.config['gains'][channel] == 0 or
+               (self.config['pmt_0_is_fake'] and channel == 0) or
+               channel not in self.config['channels_in_detector']['tpc']):
                 continue
 
             photon_detection_times = np.array(photon_detection_times)
@@ -374,7 +376,7 @@ class Simulator(object):
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
                 sample_size = self.config['real_noise_sample_size']
-                available_noise_samples = self.noise_data.shape[1] / sample_size
+                available_noise_samples = self.noise_data.shape[1] // sample_size
                 needed_noise_samples = int(math.ceil(pulse_length / sample_size))
                 chosen_noise_sample_numbers = np.random.randint(0,
                                                                 available_noise_samples - 1,
