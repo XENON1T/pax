@@ -296,9 +296,8 @@ class Simulator(object):
                                                         left_boundary=0,
                                                         right_boundary=float('inf'),
                                                         n_rvs=n_afterpulses))
-            # if none of the setting specified, raise error
-            else:
-                raise ValueError("No pmt after pulse setting for channel#"+str(channel))
+
+            # If none of the setting specified, do not make afterpulses
 
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))

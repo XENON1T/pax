@@ -246,6 +246,12 @@ class Peak(StrictModel):
     #: If the peak is a lone_hit: the channel the hit is / hits are in
     lone_hit_channel = INT_NAN
 
+    # Area of the largest hit in the peak
+    largest_hit_area = float('nan')
+
+    # Channel of the largest hit in the peak
+    largest_hit_channel = 0
+
     @property
     def does_channel_contribute(self):
         """Boolean array of n_channels which tells you if the channel contributes any hit"""
