@@ -162,7 +162,7 @@ def main():
         config_dict = combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
 
         # Acquisition monitor filename is a mongo db option...
-        if config_dict.get('save_acquisition_monitor_pulses', True):
+        if config_dict['MongoDB'].get('save_acquisition_monitor_pulses', True):
             config_dict['MongoDB']['acquisition_monitor_file_path'] = os.path.join(
                 data_info_entry['location'], 'acquisition_monitor_data.pickles')
 
