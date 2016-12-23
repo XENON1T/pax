@@ -98,8 +98,9 @@ def add_rabbit_command_line_args(parser):
 
 def url_from_parsed_args(parsed_args):
     """Return RabbitMQ connection URL from argparser args"""
-    return 'amqp://{username}:{password}@{host}:{port}/%2f'.format(**{x: getattr(parsed_args, 'rabbit_' + x)
-                                                                      for x in 'username password host port'.split()})
+    urikwargs = {x: getattr(parsed_args, 'rabbit_' + x)
+                 for x in 'username password host port'.split()}
+    return 'amqp://{username}:{password}@{host}:{port}/%2f?timeout=60'.format(**urikwargs)
 
 ##
 # Pax multiprocessing code
