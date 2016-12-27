@@ -192,38 +192,23 @@ def main():
 
         log.info("Building events for %s", run_doc['name'])
         log.info("Config override is: %s" % config_dict)
+        config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                             config_paths=args.config_path,
+                             config_dict=config_dict)
         try:
-            config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
-                                 config_paths=args.config_path,
-                                 config_dict=config_dict)
             parallel.maybe_multiprocess(args, **config_kwargs)
 
-        except (pymongo.errors.ServerSelectionTimeoutError,
-                PaxException) as e:
-            # We stop the acquisition of this run (if it is still going) to avoid overfilling the MongoDB buffer.
-            log.fatal("Caught known exception, aborting this run (not clearing queue).")
+        except Exception as e:
+            # Something went wrong and we had to stop event building.
+            # Stop acquisition of the run to avoid overfilling the MongoDB buffer.
+            # Hopefully the next run will work...
+            log.fatal("Caught exception, aborting this run (not clearing queue).")
             log.fatal(str(type(e)) + ": " + str(e))
 
             if not args.secret_mode:
                 mark_run_errored(run_doc, runs)
                 stop_acquisition(clientmaker)
                 communicate_alert(clientmaker, e, log, run_doc, priority=2)
-
-        except Exception as e:
-            # A new type of exception occurred.
-            # In addition to stopping the acquisition, we clear the run queue and re-raise the exception
-            # (halting the event builder) to avoid new runs starting while we are potentially in a strange state.
-            log.fatal("Caught unknown exception.")
-            log.exception(e)
-
-            if not args.secret_mode and args.detector == 'tpc':
-                clear_run_queue(clientmaker)
-                mark_run_errored(run_doc, runs)
-                stop_acquisition(clientmaker)
-                communicate_alert(clientmaker, e, log, run_doc, priority=3)
-
-            log.fatal("Raising unknown exception")
-            raise
 
         else:
             # Things went fine, tell the runs DB
