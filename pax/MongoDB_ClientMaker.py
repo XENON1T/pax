@@ -70,7 +70,7 @@ class ClientMaker:
             # self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
             # serverselection option makes the C driver retry if it can't connect;
             # since we often make new monary connections this is useful to protect against brief network hickups.
-            client = Monary(uri + '?serverSelectionTryOnce=false', **kwargs)
+            client = Monary(uri + '?serverSelectionTryOnce=false&serverSelectionTimeoutMS=60000', **kwargs)
             self.log.debug("Succesfully connected via monary (probably...)")
             return client
 
