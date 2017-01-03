@@ -55,7 +55,7 @@ def require_live_runs_db():
     log = logging.getLogger('Eventbuilder')
     while True:
         try:
-            run_client.ping()
+            run_client.admin.command('ping')
             return
 
         except Exception as e:
