@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.2.1 (2017-01-11)
+------------------
+* Fax: first realistic noise and ZLE thresholds (#471)
+* Fax: first realistic PMT after-pulse configuration (#475)
+
+------------------
 6.2.0 (2016-12-20)
 ------------------
 * Low-energy classification update, new peak properties (#467)
