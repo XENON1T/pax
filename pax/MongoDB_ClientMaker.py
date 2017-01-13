@@ -12,11 +12,9 @@ except Exception:
 try:
     from mongo_proxy import MongoProxy      # noqa
 except Exception:
-    print("MongoDBProxy is not installed, autoreconnect exception handling disabled")
-
+    # MongoDB Proxy did not load, falling back to vanilla pymongo
     def dummy(x, **kwargs):
         return x
-
     MongoProxy = dummy
 
 
