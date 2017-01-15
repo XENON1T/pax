@@ -413,23 +413,24 @@ class Pulse(Model):
     #: For example, 0 is the first sample that could exist in the event, 1 the second, etc.
     left = INT_NAN
 
-    #: Stop index/sample of this pulse (INCLUSIVE!)
+    #: Stop index/sample of this pulse (INCLUSIVE). For example, this is 1 for a 2-sample event.
     right = INT_NAN
 
-    #: Channel number the pulse belongs to
+    #: Channel number the pulse belongs to.
     channel = INT_NAN
 
-    #: Raw wave data (numpy array of int16, raw ADC counts)
+    #: Raw wave data (numpy array of int16, raw ADC counts).
+    #: This is just what you get from the ADC, not corrected or modified in any way
     raw_data = np.array([], np.int16)
 
     #: Baseline, in ADC counts relative to reference baseline -- but float!
-    #: This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
-    #: at the start and at the end of the pulse.
-    #: Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.
+    #: This is computed on the first few samples at the start of the pulse.
     baseline = float('nan')
 
     #: Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
-    #: E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.
+    #: E.g. if this is positive, the baseline increased in signal-like direction = decreased in raw ADC.
+    #: Depending on the PMTs used and baselining length, this may not reflect an actual baseline increase but just
+    #: a long tail of a photoelectron pulse
     baseline_increase = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)

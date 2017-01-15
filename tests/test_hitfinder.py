@@ -1,12 +1,8 @@
 import unittest
 import numpy as np
 
-from pax import core, datastructure, utils
-import os
-import sys
-sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
-import HitFinder  # flake8: noqa
-import PulseProperties   # flake8: noqa
+from pax import core, datastructure
+from pax.plugins.signal_processing import HitFinder, PulseProperties
 
 
 class TestHitFinder(unittest.TestCase):
@@ -90,13 +86,13 @@ class TestHitFinder(unittest.TestCase):
             baseline, baseline_increase, noise, min_w, max_w = results
             bl_before = np.mean(w[:min(len(w), 10)])
             bl_after = np.mean(w[-min(len(w), 10):])
-            self.assertEqual(baseline, max(bl_before, bl_after))
+            self.assertEqual(baseline, bl_before)
             self.assertEqual(baseline_increase, bl_after - bl_before)
             w -= baseline
             self.assertEqual(min_w, np.min(w))
             self.assertEqual(max_w, np.max(w))
             below_bl = w[w < 0]
-            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2/len(below_bl))))
+            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2 / len(below_bl))))
 
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center
