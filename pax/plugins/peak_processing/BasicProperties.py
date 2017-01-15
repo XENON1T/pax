@@ -39,7 +39,6 @@ class BasicProperties(plugin.TransformPlugin):
             peak.n_saturated_samples = np.sum(peak.n_saturated_per_channel)
             peak.n_saturated_channels = len(np.where(peak.n_saturated_per_channel)[0])
             peak.n_contributing_channels = len(peak.contributing_channels)
-            peak.mean_amplitude_to_noise /= peak.area
 
             # Compute top fraction
             peak.area_fraction_top = np.sum(peak.area_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
@@ -58,6 +57,11 @@ class BasicProperties(plugin.TransformPlugin):
                 channel = hits[0]['channel']
                 event.lone_hits_per_channel[channel] += 1
                 peak.lone_hit_channel = channel
+
+            # Store some properties of the largest hit
+            largest_hit_i = np.argmax(hits['area'])
+            peak.largest_hit_area = hits[largest_hit_i]['area']
+            peak.largest_hit_channel = hits[largest_hit_i]['channel']
 
         return event
 

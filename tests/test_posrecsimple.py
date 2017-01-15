@@ -36,5 +36,6 @@ class TestPosRecWeightedSum(unittest.TestCase):
         self.assertIsInstance(self.posrec_plugin, plugin.TransformPlugin)
         self.assertEqual(self.posrec_plugin.__class__.__name__, 'PosRecWeightedSum')
 
+
 if __name__ == '__main__':
     unittest.main()

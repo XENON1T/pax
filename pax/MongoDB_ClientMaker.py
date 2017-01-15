@@ -3,10 +3,21 @@ import re
 import os
 
 import pymongo
+
 try:
-    from monary import Monary
+    from monary import Monary     # noqa
 except Exception:
     pass   # Let's hope we're not the event builder.
+
+try:
+    from mongo_proxy import MongoProxy      # noqa
+except Exception:
+    print("MongoDBProxy is not installed, autoreconnect exception handling disabled")
+
+    def dummy(x, **kwargs):
+        return x
+
+    MongoProxy = dummy
 
 
 class ClientMaker:
@@ -24,7 +35,7 @@ class ClientMaker:
         self.config = {k: config[k] for k in ('user', 'password', 'host', 'port')}
         self.log = logging.getLogger('Mongo client maker')
 
-    def get_client(self, database_name=None, uri=None, monary=False, host=None, **kwargs):
+    def get_client(self, database_name=None, uri=None, monary=False, host=None, autoreconnect=False, **kwargs):
         """Get a Mongoclient. Returns Mongo database object.
         If you provide a mongodb connection string uri, we will insert user & password into it,
         otherwise one will be built from the configuration settings.
@@ -57,7 +68,9 @@ class ClientMaker:
         if monary:
             # Be careful enabling this debug log statement, it's useful but prints the password in the uri
             # self.log.debug("Connecting to Mongo via monary using uri %s" % uri)
-            client = Monary(uri, **kwargs)
+            # serverselection option makes the C driver retry if it can't connect;
+            # since we often make new monary connections this is useful to protect against brief network hickups.
+            client = Monary(uri + '?serverSelectionTryOnce=false&serverSelectionTimeoutMS=60000', **kwargs)
             self.log.debug("Succesfully connected via monary (probably...)")
             return client
 
@@ -67,6 +80,11 @@ class ClientMaker:
             client = pymongo.MongoClient(uri, **kwargs)
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
             self.log.debug("Successfully pinged client")
+
+            if autoreconnect:
+                # Wrap the client in a magic object that retries autoreconnect exceptions
+                client = MongoProxy(client, disconnect_on_timeout=False, wait_time=180)
+
             return client
 
 

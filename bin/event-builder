@@ -18,23 +18,59 @@ import datetime
 import socket
 import shutil
 
-import pymongo
 from six.moves import input
 
 from pax import parallel, units
 from pax.configuration import combine_configs, fix_sections_from_mongo
-from pax.exceptions import PaxException
 from pax.MongoDB_ClientMaker import ClientMaker
 
 # Name of the field in the run doc which holds the trigger status
 STATUS_FIELD_NAME = 'trigger.status'
 TRIGGERED_DATA_HOSTNAME = 'xe1t-datamanager'
 
+# global used for runs-db interaction (needed in several functions)
+clientmaker_config = None
+run_client = None
+run_db = None
+runs = None
+pipeline_status_collection = None
+
+
 def get_hostname():
     return socket.gethostname().split('.')[0]
 
 
+def connect_to_mongo():
+    global run_client, run_db, runs, pipeline_status_collection
+    clientmaker = ClientMaker(config=clientmaker_config)
+    run_client = clientmaker.get_client('run', autoreconnect=True)
+    run_db = run_client['run']
+    runs = run_db['runs_new']
+    pipeline_status_collection = run_db['pipeline_status']
+    return run_client, run_db, runs, pipeline_status_collection
+
+
+def require_live_runs_db():
+    """Checks that the runs db connection we currently have is alive. If not, we try to re-acquire it forever."""
+    log = logging.getLogger('Eventbuilder')
+    while True:
+        try:
+            run_client.admin.command('ping')
+            return
+
+        except Exception as e:
+            log.fatal("Exception pinging runs db: %s: %s" % (type(e), str(e)))
+
+            try:
+                connect_to_mongo()
+            except Exception as e:
+                log.fatal("Could not re-acquire runs db connection: %s %s. Trying again in ten seconds." % (
+                    type(e), str(e)))
+                time.sleep(10)
+
+
 def main():
+    global clientmaker_config
     """Start running the event builder
     """
     args = get_command_line_arguments()
@@ -54,11 +90,9 @@ def main():
         raise RuntimeError("Secret mode doesn't support wait-for-runs-mode (too lazy right now)")
 
     # Connect to MongoDB
-    clientmaker = ClientMaker(config={k: eval('args.%s' % k, dict(args=args))
-                                      for k in ('user', 'password', 'host', 'port')})
-    run_db = clientmaker.get_client('run')['run']
-    runs = run_db.get_collection('runs_new')
-    pipeline_status_collection = run_db.get_collection('pipeline_status')
+    clientmaker_config = {k: eval('args.%s' % k, dict(args=args))
+                          for k in ('user', 'password', 'host', 'port')}
+    connect_to_mongo()
 
     # Build the query used to search for runs
     if args.run_name:
@@ -77,7 +111,11 @@ def main():
     else:
         detector_suffix = ""
 
+    failed_last_time = False
+
     while 1:
+        require_live_runs_db()
+
         if not args.secret_mode:
             run_doc = runs.find_one_and_update(run_query, {'$set': {STATUS_FIELD_NAME: 'staging'}})
 
@@ -162,7 +200,7 @@ def main():
         config_dict = combine_configs(config_dict, dict(MongoDB=mongo_settings_override))
 
         # Acquisition monitor filename is a mongo db option...
-        if config_dict.get('save_acquisition_monitor_pulses', True):
+        if config_dict['MongoDB'].get('save_acquisition_monitor_pulses', True):
             config_dict['MongoDB']['acquisition_monitor_file_path'] = os.path.join(
                 data_info_entry['location'], 'acquisition_monitor_data.pickles')
 
@@ -192,38 +230,27 @@ def main():
 
         log.info("Building events for %s", run_doc['name'])
         log.info("Config override is: %s" % config_dict)
+        config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                             config_paths=args.config_path,
+                             config_dict=config_dict)
         try:
-            config_kwargs = dict(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
-                                 config_paths=args.config_path,
-                                 config_dict=config_dict)
             parallel.maybe_multiprocess(args, **config_kwargs)
 
-        except (pymongo.errors.ServerSelectionTimeoutError,
-                PaxException) as e:
-            # We stop the acquisition of this run (if it is still going) to avoid overfilling the MongoDB buffer.
-            log.fatal("Caught known exception, aborting this run (not clearing queue).")
+        except Exception as e:
+            # Something went wrong and we had to stop event building.
+            # Stop acquisition of the run to avoid overfilling the MongoDB buffer.
+            # Hopefully the next run will work...
+            log.fatal("Caught exception, aborting this run (not clearing queue).")
             log.fatal(str(type(e)) + ": " + str(e))
 
             if not args.secret_mode:
-                mark_run_errored(run_doc, runs)
-                stop_acquisition(clientmaker)
-                communicate_alert(clientmaker, e, log, run_doc, priority=2)
+                mark_run_errored(run_doc)
+                stop_acquisition()
+                communicate_alert(e,
+                                  run_number=run_doc['number'],
+                                  priority=3 if failed_last_time else 0)
 
-        except Exception as e:
-            # A new type of exception occurred.
-            # In addition to stopping the acquisition, we clear the run queue and re-raise the exception
-            # (halting the event builder) to avoid new runs starting while we are potentially in a strange state.
-            log.fatal("Caught unknown exception.")
-            log.exception(e)
-
-            if not args.secret_mode and args.detector == 'tpc':
-                clear_run_queue(clientmaker)
-                mark_run_errored(run_doc, runs)
-                stop_acquisition(clientmaker)
-                communicate_alert(clientmaker, e, log, run_doc, priority=3)
-
-            log.fatal("Raising unknown exception")
-            raise
+            failed_last_time = True
 
         else:
             # Things went fine, tell the runs DB
@@ -233,25 +260,30 @@ def main():
                              'data.host': data_info_entry['host']},
                             {'$set': {'data.$': data_info_entry}})
 
+            failed_last_time = False
+
         finally:
             # Whether or not a crash occurred, we should copy out the log file.
             # Otherwise the error log would be overwritten when the next run continues / the trigger restarts.
-            if os.path.exists('eventbuilder.log') and \
-                    os.path.exists(data_info_entry['location']):
+            if os.path.exists('eventbuilder.log'):
+                if not os.path.exists(data_info_entry['location']):
+                    os.makedirs(data_info_entry['location'])
                 shutil.copyfile('eventbuilder.log',
                                 data_info_entry['location'] + '/eventbuilder.log')
                 # Clear the log file, so previous run starts with a clean slate
                 open('eventbuilder.log', mode='w').close()
+            else:
+                log.fatal('No eventbuilder logfile to copy out?')
 
         # If we're trying to build a single run, don't try again to find it
         if args.run_name or args.run:
             break
 
 
-def stop_acquisition(clientmaker):
+def stop_acquisition():
     """Stop acquisition of the current run"""
-    run_db = clientmaker.get_client('run')['run']
-    daq_control = run_db.get_collection('daq_control')
+    require_live_runs_db()
+    daq_control = run_db['daq_control']
     insert_doc = {}
     insert_doc['command'] = 'Stop'
     insert_doc['detector'] = 'all'
@@ -260,40 +292,37 @@ def stop_acquisition(clientmaker):
     daq_control.insert(insert_doc)
 
 
-def clear_run_queue(clientmaker):
-    """Clear the DAQ queue of runs to take"""
-    run_db = clientmaker.get_client('run')['run']
-    run_queue = run_db.get_collection('daq_queue')
-    run_queue.remove({})
-
-
-def communicate_alert(clientmaker, e, log, run_doc, priority=3):
+def communicate_alert(e, run_number=None, priority=3):
     """Write an exception e to the log and send an alert the DAQ database (visible on the website)"""
+    log = logging.getLogger('Eventbuilder')
     log.exception(e)
     log.error("Communicating alert to run DB")
-    run_db = clientmaker.get_client('run')['run']
-    alerts = run_db.get_collection('log')
+
+    require_live_runs_db()
+    alerts = run_db['log']
     alert_doc = {"priority": priority,   # Low priority is less severe
                  "time": datetime.datetime.now(),
-                 "run": run_doc['number'],
+                 "run": run_number,
                  "message": str(e),
                  "sender": "trigger"}
     alerts.insert(alert_doc)
 
 
-def mark_run_errored(run_doc, runs_collection):
+def mark_run_errored(run_doc):
     """Sets the current run's trigger status as 'error'"""
+    require_live_runs_db()
+
     query_this_run = {'name': run_doc['name'], 'detector': run_doc['detector']}
-    runs_collection.update_one(query_this_run,
-                               {'$set': {STATUS_FIELD_NAME: 'error'}})
+    runs.update_one(query_this_run,
+                    {'$set': {STATUS_FIELD_NAME: 'error'}})
 
     # Find the data entry for the triggered data we were making, and set it to 'error' instead of transferring
     # We need to start by re-fetching the run doc, as the data entries will have changed since we first queried it
-    run_doc = runs_collection.find_one(query_this_run)
+    run_doc = runs.find_one(query_this_run)
     for i, d in enumerate(run_doc['data']):
         if d['host'] == TRIGGERED_DATA_HOSTNAME and d['type'] == 'raw':
             run_doc['data'][i]['status'] = 'error'
-    runs_collection.update_one(query_this_run, {'$set': {'data': run_doc['data']}})
+    runs.update_one(query_this_run, {'$set': {'data': run_doc['data']}})
 
 
 def setup_logging(loglevel='DEBUG'):

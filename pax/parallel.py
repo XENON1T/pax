@@ -98,8 +98,9 @@ def add_rabbit_command_line_args(parser):
 
 def url_from_parsed_args(parsed_args):
     """Return RabbitMQ connection URL from argparser args"""
-    return 'amqp://{username}:{password}@{host}:{port}/%2f'.format(**{x: getattr(parsed_args, 'rabbit_' + x)
-                                                                      for x in 'username password host port'.split()})
+    urikwargs = {x: getattr(parsed_args, 'rabbit_' + x)
+                 for x in 'username password host port'.split()}
+    return 'amqp://{username}:{password}@{host}:{port}/%2f?timeout=60'.format(**urikwargs)
 
 ##
 # Pax multiprocessing code
@@ -116,14 +117,15 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                    encoder_plugin=None,
                                    decoder_plugin=None,
                                    output='Queues.PushToQueue'),
-                          Queues=dict(timeout_after_sec=300,
-                                      **processing_queue_kwargs))
+                          Queues=dict(**processing_queue_kwargs))
 
     worker_override = {'pax': dict(input='Queues.PullFromQueue',
                                    output='Queues.PushToQueue',
                                    event_numbers_file=None,
                                    events_to_process=None),
-                       'Queues.PullFromQueue': processing_queue_kwargs,
+                       # PullFromQueue can't have a timeout in the workers, see #444
+                       'Queues.PullFromQueue': dict(timeout_after_sec=float('inf'),
+                                                    **processing_queue_kwargs),
                        'Queues.PushToQueue': dict(preserve_ids=True,
                                                   many_to_one=True,
                                                   **output_queue_kwargs)}
@@ -135,7 +137,6 @@ def multiprocess_configuration(n_cpus, pax_id, base_config_kwargs, processing_qu
                                     events_to_process=None,
                                     input='Queues.PullFromQueue'),
                            Queues=dict(ordered_pull=True,
-                                       timeout_after_sec=300,
                                        **output_queue_kwargs))
 
     overrides = [('input', input_override)] + [('worker', worker_override)] * n_cpus + [('output', output_override)]

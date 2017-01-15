@@ -4,6 +4,39 @@ History
 -------
 
 ------------------
+6.2.1 (2017-01-11)
+------------------
+* Fax: first realistic noise and ZLE thresholds (#471)
+* Fax: first realistic PMT after-pulse configuration (#475)
+
+------------------
+6.2.0 (2016-12-20)
+------------------
+* Low-energy classification update, new peak properties (#467)
+* Corrected error in peak.mean_area_over_noise computation
+* Fix timezone offset for event time in plots (#466)
+* Pattern goodness of fit is now a likelihood ratio (#465)
+* Event builder robustness to db connectivity issues (#461)
+* Fixed-range hit finder (#458)
+
+------------------
+6.1.1 (2016-11-24)
+------------------
+* Fax update - PMT and S2 afterpulses (#452)
+* Include factorial in posrec likelihood (#459)
+
+------------------
+6.1.0 (2016-11-11)
+------------------
+* Improved clustering (#450)
+* Make processed data smaller (#456)
+* Write fax output to its own ROOT file (#453)
+* Neural network update (#457)
+* Fix for acquisition monitor pulse rescue logic (#454)
+* Bug related to decimal types in datastructure (#447)
+* Assorted event builder improvements after major changes
+
+------------------
 6.0.2 (2016-10-31)
 ------------------
 * More lenient timeouts for batch queue processing

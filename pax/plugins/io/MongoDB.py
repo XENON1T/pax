@@ -17,10 +17,11 @@ import numpy as np
 import pymongo
 import snappy
 import pickle
+import monary
 
 from pax.MongoDB_ClientMaker import ClientMaker, parse_passwordless_uri
 from pax.datastructure import Event, Pulse, EventProxy
-from pax import plugin, trigger, units
+from pax import plugin, trigger, units, exceptions
 
 
 class MongoBase:
@@ -33,8 +34,8 @@ class MongoBase:
 
         # Connect to the runs db
         self.cm = ClientMaker(self.processor.config['MongoDB'])
-        self.run_client = self.cm.get_client('run')
-        self.runs_collection = self.run_client['run'].get_collection('runs_new')
+        self.run_client = self.cm.get_client('run', autoreconnect=True)
+        self.runs_collection = self.run_client['run']['runs_new']
         self.refresh_run_doc()
 
         self.split_collections = self.run_doc['reader']['ini'].get('rotating_collections', 0)
@@ -740,22 +741,30 @@ def get_pulses(client_maker_config, input_info, collection_name, query, host, ge
 
     The monary client is created inside this function, so we could run it with ProcessPoolExecutor.
     """
-    client_maker = ClientMaker(client_maker_config)
-
-    monary_client = client_maker.get_client(database_name=input_info['database'],
-                                            uri=input_info['location'],
-                                            host=host,
-                                            monary=True)
     fields = ['time', 'module', 'channel'] + (['integral'] if get_area else [])
     types = ['int64', 'int32', 'int32'] + (['area'] if get_area else [])
 
-    # Somehow monary's block query fails when we have multiple blocks,
-    # we need to take care of copying out the data ourselves, but even if I use .copy it doesn't seem to work
-    # Never mind, just make a big block
-    results = list(monary_client.block_query(input_info['database'], collection_name, query, fields, types,
-                                             block_size=int(5e8),
-                                             select_fields=True))
-    monary_client.close()
+    try:
+        client_maker = ClientMaker(client_maker_config)
+
+        monary_client = client_maker.get_client(database_name=input_info['database'],
+                                                uri=input_info['location'],
+                                                host=host,
+                                                monary=True)
+
+        # Somehow monary's block query fails when we have multiple blocks,
+        # we need to take care of copying out the data ourselves, but even if I use .copy it doesn't seem to work
+        # Never mind, just make a big block
+        results = list(monary_client.block_query(input_info['database'], collection_name, query, fields, types,
+                                                 block_size=int(5e8),
+                                                 select_fields=True))
+        monary_client.close()
+
+    except monary.monary.MonaryError as e:
+        if 'Failed to resolve' in str(e):
+            raise exceptions.DatabaseConnectivityError("Caught error trying to connect to untriggered database. "
+                                                       "Original exception: %s." % str(e))
+        raise e
 
     if not len(results) or not len(results[0]):
         times = np.zeros(0, dtype=np.int64)

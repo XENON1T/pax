@@ -235,8 +235,10 @@ class Simulator(object):
 
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
-            # If the channel is dead, we don't do anything.
-            if self.config['gains'][channel] == 0 or (self.config['pmt_0_is_fake'] and channel == 0):
+            # If the channel is dead, fake, or not in the TPC, we don't do anything.
+            if (self.config['gains'][channel] == 0 or
+               (self.config['pmt_0_is_fake'] and channel == 0) or
+               channel not in self.config['channels_in_detector']['tpc']):
                 continue
 
             photon_detection_times = np.array(photon_detection_times)
@@ -255,26 +257,49 @@ class Simulator(object):
             # Add PMT afterpulses
             ap_times = []
             ap_gains = []
-            for ap_data in self.config['pmt_afterpulse_types'].values():
-                ap_data.setdefault('gain_mean', self.config['gains'][channel])
-                ap_data.setdefault('gain_rms', self.config['gain_sigmas'][channel])
+            # if we have specify the pmt afterpulses in each PMT channel
+            if self.config['each_pmt_afterpulse_types']:
+                for ap_data in self.config['each_pmt_afterpulse_types'][channel].values():
+                    # How many photons will make this kind of afterpulse?
+                    n_afterpulses = np.random.binomial(n=len(photon_detection_times),
+                                                       p=ap_data['p'])
+                    if not n_afterpulses:
+                        continue
+                    # Find the time and gain of the afterpulses
+                    dist_kwargs = ap_data['time_parameters']
+                    dist_kwargs['size'] = n_afterpulses
+                    ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
+                                    getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
+                    ap_gains.extend(truncated_gauss_rvs(my_mean=self.config['gains'][channel],
+                                                        my_std=self.config['gain_sigmas'][channel],
+                                                        left_boundary=0,
+                                                        right_boundary=float('inf'),
+                                                        n_rvs=n_afterpulses))
+            # if not, but we have an average configuration
+            # of pmt afterpulses over all PMTs
+            elif self.config['pmt_afterpulse_types']:
+                for ap_data in self.config['pmt_afterpulse_types'].values():
+                    ap_data.setdefault('gain_mean', self.config['gains'][channel])
+                    ap_data.setdefault('gain_rms', self.config['gain_sigmas'][channel])
 
-                # How many photons will make this kind of afterpulse?
-                n_afterpulses = np.random.binomial(n=len(photon_detection_times),
-                                                   p=ap_data['p'])
-                if not n_afterpulses:
-                    continue
+                    # How many photons will make this kind of afterpulse?
+                    n_afterpulses = np.random.binomial(n=len(photon_detection_times),
+                                                       p=ap_data['p'])
+                    if not n_afterpulses:
+                        continue
 
-                # Find the time and gain of the afterpulses
-                dist_kwargs = ap_data['time_parameters']
-                dist_kwargs['size'] = n_afterpulses
-                ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
-                                getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
-                ap_gains.extend(truncated_gauss_rvs(my_mean=ap_data['gain_mean'],
-                                                    my_std=ap_data['gain_rms'],
-                                                    left_boundary=0,
-                                                    right_boundary=float('inf'),
-                                                    n_rvs=n_afterpulses))
+                    # Find the time and gain of the afterpulses
+                    dist_kwargs = ap_data['time_parameters']
+                    dist_kwargs['size'] = n_afterpulses
+                    ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
+                                    getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
+                    ap_gains.extend(truncated_gauss_rvs(my_mean=ap_data['gain_mean'],
+                                                        my_std=ap_data['gain_rms'],
+                                                        left_boundary=0,
+                                                        right_boundary=float('inf'),
+                                                        n_rvs=n_afterpulses))
+
+            # If none of the setting specified, do not make afterpulses
 
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
@@ -351,7 +376,7 @@ class Simulator(object):
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
                 sample_size = self.config['real_noise_sample_size']
-                available_noise_samples = self.noise_data.shape[1] / sample_size
+                available_noise_samples = self.noise_data.shape[1] // sample_size
                 needed_noise_samples = int(math.ceil(pulse_length / sample_size))
                 chosen_noise_sample_numbers = np.random.randint(0,
                                                                 available_noise_samples - 1,
@@ -482,8 +507,8 @@ class Simulator(object):
             # Hence, we don't care about primary & secondary excimers at all:
             timings = self.singlet_triplet_delays(
                 np.zeros(n_photons),
-                t1=self.config['alpha_singlet_lifetime_liquid'],
-                t3=self.config['alpha_triplet_lifetime_liquid'],
+                t1=self.config['singlet_lifetime_liquid'],
+                t3=self.config['triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
             )
 

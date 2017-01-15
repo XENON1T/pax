@@ -12,6 +12,18 @@ class DeleteLowLevelInfo(plugin.TransformPlugin):
 
     def transform_event(self, event):
 
+        # For high energy events, zero the data in expensive fields, except for the 5 largest S1s and S2s in the TPC
+        if event.n_pulses > self.config.get('shrink_data_threshold', float('inf')):
+            largest_indices = [event.peaks.index(x) for x in (event.s1s()[:5] + event.s2s()[:5])]
+            for i, p in enumerate(event.peaks):
+                if i in largest_indices:
+                    continue
+                p.sum_waveform *= 0
+                p.sum_waveform_top *= 0
+                p.area_per_channel *= 0
+                p.hits_per_channel *= 0
+                p.n_saturated_per_channel *= 0
+
         if self.config.get('delete_sum_waveforms', True):
             event.sum_waveforms = []
 

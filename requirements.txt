@@ -19,3 +19,4 @@ rabbitpy
 boto3
 multihist
 msgpack-python
+pytz
