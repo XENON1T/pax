@@ -1,9 +1,6 @@
 import numpy as np
 import numba
 
-# For diagnostic plotting:
-from textwrap import dedent
-import matplotlib.pyplot as plt
 import os
 
 from pax import plugin, datastructure, dsputils
@@ -40,7 +37,6 @@ class FindHits(plugin.TransformPlugin):
        if you have ZLE off, this may be a bad idea...
        This threshold operates on the (-) height above baseline / height below baseline of the lowest sample in pulse
 
-
     Edge cases:
 
     1) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.
@@ -52,12 +48,6 @@ class FindHits(plugin.TransformPlugin):
        low threshold to a fraction dynamic_low_threshold_coeff of the hit height after a hit has been encountered.
        This is a temporary change for just the remainder of a pulse.
        Also, if the hit height * dynamic_low_threshold_coeff is lower than the low threshold, nothing is changed.
-
-    Diagnostic plot options:
-        make_diagnostic_plots can be always, never, tricky cases, no hits, hits only. This controls whether to make
-        diagnostic plots showing individual pulses and the hitfinder's interpretation of them. For details on what
-        constitutes a tricky case, check the source.
-        make_diagnostic_plots_in sets the directory where the diagnostic plots are created.
 
     Debugging tip:
     If you get an error from one of the numba methods in this plugin (exception from native function blahblah)
@@ -114,18 +104,10 @@ class FindHits(plugin.TransformPlugin):
             if pmt_gain == 0:
                 continue
 
-            # Check if the DAQ pulse was ADC-saturated (clipped)
-            # This means the raw waveform dropped to 0,
-            # i.e. we went digitizer_reference_baseline above the reference baseline
-            # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
-            # 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported
-            # Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different
-            is_saturated = pulse.maximum >= self.reference_baseline - pulse.baseline - 0.5
-
-            # Compute thresholds based on noise level
-            high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
-                                 self.config['absolute_adc_counts_high_threshold'],
-                                 - self.config['height_over_min_high_threshold'] * pulse.minimum)
+            # Compute hitfinder threshold to use
+            pulse.hitfinder_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
+                                            self.config['absolute_adc_counts_high_threshold'],
+                                            - self.config['height_over_min_high_threshold'] * pulse.minimum)
             low_threshold = max(self.config['height_over_noise_low_threshold'] * pulse.noise_sigma,
                                 self.config['absolute_adc_counts_low_threshold'],
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
@@ -137,7 +119,7 @@ class FindHits(plugin.TransformPlugin):
             else:
                 # Call the numba hit finder -- see its docstring for description
                 n_hits_found = find_intervals_above_threshold(w,
-                                                              float(high_threshold),
+                                                              float(pulse.hitfinder_threshold),
                                                               float(low_threshold),
                                                               hit_bounds_buffer,
                                                               dynamic_low_threshold_coeff)
@@ -162,104 +144,17 @@ class FindHits(plugin.TransformPlugin):
             adc_to_pe = dsputils.adc_to_pe(self.config, channel)
             noise_sigma_pe = pulse.noise_sigma * adc_to_pe
 
+            # If the DAQ pulse was ADC-saturated (clipped), the raw waveform dropped to 0,
+            # i.e. we went digitizer_reference_baseline above the reference baseline
+            # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
+            # 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported
+            # Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different
+            saturation_threshold = self.reference_baseline - pulse.baseline - 0.5
+
             build_hits(w, hit_bounds_found, hits_buffer,
-                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i,
-                       saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5)
+                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold)
             hits = hits_buffer[:n_hits_found].copy()
             hits_per_pulse.append(hits)
-
-            # Diagnostic plotting
-            # TODO: Move to separate plugin, we have dict_group_by now
-
-            # Do we need to show this pulse? If not: continue
-            if self.make_diagnostic_plots == 'never':
-                continue
-            elif self.make_diagnostic_plots == 'tricky cases':
-                # Always show pulse if noise level is very high
-                if noise_sigma_pe < 0.5:
-                    if len(hit_bounds_found) == 0:
-                        # Show pulse if it nearly went over threshold
-                        if not pulse.maximum > 0.8 * high_threshold:
-                            continue
-                    else:
-                        # Show pulse if any of its hit nearly didn't go over threshold
-                        if not any([event.all_hits[-(i+1)].height < 1.2 * high_threshold * adc_to_pe
-                                   for i in range(len(hit_bounds_found))]):
-                            continue
-            elif self.make_diagnostic_plots == 'no hits':
-                if len(hit_bounds_found) != 0:
-                    continue
-            elif self.make_diagnostic_plots == 'baseline shifts':
-                if abs(pulse.baseline_increase) < 10:
-                    continue
-            elif self.make_diagnostic_plots == 'hits only':
-                if len(hit_bounds_found) == 0:
-                    continue
-            elif self.make_diagnostic_plots == 'saturated':
-                if not is_saturated:
-                    continue
-            else:
-                if self.make_diagnostic_plots != 'always':
-                    raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
-
-            plt.figure(figsize=(14, 10))
-            data_for_title = (event.event_number, start, stop, channel)
-            plt.title('Event %s, pulse %d-%d, Channel %d' % data_for_title)
-            ax1 = plt.gca()
-            ax2 = ax1.twinx()
-            ax1.set_position((.1, .1, .6, .85))
-            ax2.set_position((.1, .1, .6, .85))
-            ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
-            ax1.set_ylabel("ADC counts above baseline")
-            ax2.set_ylabel("pe / sample")
-
-            # Plot the signal and noise levels
-            ax1.plot(w, drawstyle='steps-mid', label='Data')
-            ax1.plot(np.ones_like(w) * high_threshold, '--', label='Threshold', color='red')
-            ax1.plot(np.ones_like(w) * pulse.noise_sigma, ':', label='Noise level', color='gray')
-            ax1.plot(np.ones_like(w) * pulse.minimum, '--', label='Minimum', color='orange')
-            ax1.plot(np.ones_like(w) * low_threshold, '--', label='Boundary threshold', color='green')
-
-            # Mark the hit ranges & center of gravity point
-            for hit_i, hit in enumerate(hit_bounds_found):
-                ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
-
-            # Make sure the y-scales match
-            ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
-
-            # Add pulse / hit information
-            if len(hits) != 0:
-                largest_hit = hits[np.argmax(hits['area'])]
-                plt.figtext(0.75, 0.9, dedent("""
-                            Pulse maximum: {pulse.maximum:.5g}
-                            Pulse minimum: {pulse.minimum:.5g}
-                              (both in ADCc above baseline)
-                            Pulse baseline: {pulse.baseline}
-                              (ADCc above reference baseline)
-                            Baseline increase: {pulse.baseline_increase:.2f}
-
-                            Gain in this PMT: {gain:.3g}
-
-                            Largest hit info ({left}-{right}):
-                            Area: {hit_area:.5g} pe
-                            Height: {hit_height:.4g} pe
-                            Saturated samples: {hit_n_saturated}
-                            """.format(pulse=pulse,
-                                       gain=self.config['gains'][pulse.channel],
-                                       left=largest_hit['left']-pulse.left,
-                                       right=largest_hit['right']-pulse.left,
-                                       hit_area=largest_hit['area'],
-                                       hit_height=largest_hit['height'],
-                                       hit_n_saturated=largest_hit['n_saturated'])),
-                            fontsize=14, verticalalignment='top')
-
-            # Finish the plot, save, close
-            leg = ax1.legend()
-            leg.get_frame().set_alpha(0.5)
-            plt.savefig(os.path.join(self.make_diagnostic_plots_in,
-                                     'event%04d_pulse%05d-%05d_ch%03d.png' % data_for_title))
-            plt.xlim(0, len(pulse.raw_data))
-            plt.close()
 
         if len(hits_per_pulse):
             event.all_hits = np.concatenate(hits_per_pulse)

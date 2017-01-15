@@ -445,6 +445,9 @@ class Pulse(Model):
     #: Number of hits found in this pulse
     n_hits_found = 0
 
+    # Hitfinder threshold used in ADC counts
+    hitfinder_threshold = 0
+
     @property
     def length(self):
         return self.right - self.left + 1
