@@ -8,46 +8,40 @@ from pax.dsputils import find_intervals_above_threshold
 
 
 class FindHits(plugin.TransformPlugin):
-    """Finds hits in pulses
-    First, the waveform is baseline-corrected (with baseline as determined by PulseProperties.PulseProperties).
-    Next, hits are found based on a high and low threshold:
-     - A hit starts/ends when it passes the low_threshold
-     - A hit has to pass the high_threshold somewhere.
+    """Finds hits in pulses, proceeding in a few stages
+        1. The waveform is baseline-corrected (with baseline as determined by PulseProperties.PulseProperties)
+        2. Hits are found based on a threshold, which can be set on three different quantities (see below)
+        3. Hits are extended left and right depending on the left_extension and right_extension settings.
 
-    Thresholds can be set on three different quantities. These are computed per pulse, the highest is used.
-    Here high/positive means 'signal like' (i.e. the PMT voltage becomes more negative)
+    Types of thresholds:
 
     1) Height over noise threshold
-           Options: height_over_noise_high_threshold, height_over_noise_low_threshold
        This threshold operates on the height above baseline / noise level
        The noise level is deteremined in each pulse as
          (<(w - baseline)**2>)**0.5
        with the average running *only* over samples < baseline!
 
     2) Absolute ADC counts above baseline
-           Options: absolute_adc_counts_high_threshold, absolute_adc_counts_low_threshold
        If there is measurable noise in the waveform, you don't want the thresholds to fall to 0 and crash pax.
        This happens for pulses constant on initial_baseline_samples.
        Please use this as a deep fallback only, unless you know what mess you're getting yourself into!
 
     3) - Height / minimum
-           Options: height_over_min_high_threshold, height_over_min_LOW_threshold
        Using this threshold protects you against sudden up & down fluctuations, especially in large pulses
        However, keep in mind that one large downfluctuation will cause a sensitivity loss throughout an entire pulse;
        if you have ZLE off, this may be a bad idea...
        This threshold operates on the (-) height above baseline / height below baseline of the lowest sample in pulse
 
-    Edge cases:
+    The threshold is computed and stored per pulse.
+    Here high/positive means 'signal like' (i.e. the PMT voltage becomes more negative). If multiple thresholds are
+    given, the highest is used.
 
-    1) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.
+    Edge case:
+
+    *) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.
        If more than max_hits_per_pulse hits are found in a pulse, the rest will be ignored.
        If this threshold is set too low, you risk missing some hits in such events.
        If set too high, it will degrade performance. Don't set to infinity, we need to allocate memory for this...
-
-    2) Very high hits (near ADC saturation) sometimes have a long tail. To protect against this, we raise the
-       low threshold to a fraction dynamic_low_threshold_coeff of the hit height after a hit has been encountered.
-       This is a temporary change for just the remainder of a pulse.
-       Also, if the hit height * dynamic_low_threshold_coeff is lower than the low threshold, nothing is changed.
 
     Debugging tip:
     If you get an error from one of the numba methods in this plugin (exception from native function blahblah)
@@ -74,7 +68,8 @@ class FindHits(plugin.TransformPlugin):
         dt = self.config['sample_duration']
         hits_per_pulse = []
 
-        dynamic_low_threshold_coeff = self.config['dynamic_low_threshold_coeff']
+        left_extension = self.config['left_extension'] // dt
+        right_extension = self.config['right_extension'] // dt
 
         # Allocate numpy arrays to hold numba hitfinder results
         # -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)
@@ -105,13 +100,9 @@ class FindHits(plugin.TransformPlugin):
                 continue
 
             # Compute hitfinder threshold to use
-            pulse.hitfinder_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
-                                            self.config['absolute_adc_counts_high_threshold'],
-                                            - self.config['height_over_min_high_threshold'] * pulse.minimum)
-            low_threshold = max(self.config['height_over_noise_low_threshold'] * pulse.noise_sigma,
-                                self.config['absolute_adc_counts_low_threshold'],
-                                - self.config['height_over_min_low_threshold'] * pulse.minimum)
-
+            pulse.hitfinder_threshold = max(self.config['height_over_noise_threshold'] * pulse.noise_sigma,
+                                            self.config['absolute_adc_counts_threshold'],
+                                            - self.config['height_over_min_threshold'] * pulse.minimum)
             if self.always_find_single_hit:
                 # The config specifies a single range to integrate. Useful for gain calibration
                 hit_bounds_buffer[0] = self.always_find_single_hit
@@ -119,10 +110,10 @@ class FindHits(plugin.TransformPlugin):
             else:
                 # Call the numba hit finder -- see its docstring for description
                 n_hits_found = find_intervals_above_threshold(w,
-                                                              float(pulse.hitfinder_threshold),
-                                                              float(low_threshold),
-                                                              hit_bounds_buffer,
-                                                              dynamic_low_threshold_coeff)
+                                                              threshold=float(pulse.hitfinder_threshold),
+                                                              left_extension=left_extension,
+                                                              right_extension=right_extension,
+                                                              result_buffer=hit_bounds_buffer)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses

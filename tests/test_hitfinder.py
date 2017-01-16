@@ -22,7 +22,12 @@ class TestHitFinder(unittest.TestCase):
                                           'encoder_plugin': None,
                                           'decoder_plugin': None,
                                           'test':               ['PulseProperties.PulseProperties',
-                                                                 'HitFinder.FindHits']}})
+                                                                 'HitFinder.FindHits']},
+                                      'HitFinder.FindHits': {
+                                          'left_extension': 0,
+                                          'right_extension': 0
+                                      }
+                                  })
         for test_w, hit_bounds, pulse_min, pulse_max in (
             # Keep in mind the hitfinder flips the pulse...
             [np.zeros(100), [], 0, 0],
@@ -49,8 +54,11 @@ class TestHitFinder(unittest.TestCase):
         delattr(self, 'pax')
 
     def test_intervals_above_threshold(self):
-        # Test of the "hitfinder part" of the hitfinder
+        """Test of the "hitfinder part" of the hitfinder
+        """
         for test_waveform, a in (
+            ([], []),
+            ([1], [[0, 0]]),
             ([0, 1, 2, 0, 4, -1, 60, 700, -4], [[1, 2], [4, 4], [6, 7]]),
             ([1, 1, 2, 0, 4, -1, 60, 700, -4], [[0, 2], [4, 4], [6, 7]]),
             ([1, 0, 2, 3, 4, -1, 60, 700, -4], [[0, 0], [2, 4], [6, 7]]),
@@ -59,10 +67,36 @@ class TestHitFinder(unittest.TestCase):
         ):
             result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
             hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
-                                                                  high_threshold=0,
-                                                                  low_threshold=0,
-                                                                  result_buffer=result_buffer,
-                                                                  dynamic_low_threshold_coeff=0)
+                                                                  threshold=0, left_extension=0, right_extension=0,
+                                                                  result_buffer=result_buffer)
+            found = result_buffer[:hits_found]
+            self.assertEqual(found.tolist(), a)
+
+    def test_left_right_extension(self):
+        """Test of the "hitfinder part" of the hitfinder, now with left and right extension enabled
+        """
+        for test_waveform, a in (
+            ([], []),
+
+            # Single interval tests
+            ([1], [[0, 0]]),
+            ([0, 1], [[0, 1]]),
+            ([0, 0, 1], [[1, 2]]),
+            ([0, 0, 1, 0], [[1, 3]]),
+            ([0, 0, 1, 0, 0], [[1, 4]]),
+            ([0, 0, 1, 0, 0, 0], [[1, 4]]),
+            ([0, 0, 1, 1, 0, 0, 0], [[1, 5]]),
+
+            # Competition between left and right extension
+            ([1, 0, 0, 1], [[0, 2], [3, 3]]),
+            ([1, 0, 0, 1, 0, 0, 0], [[0, 2], [3, 5]]),
+            ([1, 0, 0, 0, 1, 0, 0, 0], [[0, 2], [3, 6]]),
+            ([1, 0, 0, 0, 0, 1, 0, 0, 0], [[0, 2], [4, 7]]),
+        ):
+            result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
+            hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
+                                                                  threshold=0, left_extension=1, right_extension=2,
+                                                                  result_buffer=result_buffer)
             found = result_buffer[:hits_found]
             self.assertEqual(found.tolist(), a)
 
