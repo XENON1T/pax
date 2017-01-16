@@ -170,6 +170,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
     latest_subcollection = 0           # Last subcollection that was found to contain some data, last time we checked
 
     def startup(self):
+        self.log.info("Eventbuilder input starting up")
         MongoBase.startup(self)
         self.detector = self.config['detector']
         self.max_query_workers = self.config['max_query_workers']
@@ -185,8 +186,11 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         else:
             trig_mon_coll = None
             self.uri_for_monitor = 'nowhere, because secret mode was used'
+
+        self.log.info("Trigger starting up")
         self.trigger = trigger.Trigger(pax_config=self.processor.config,
                                        trigger_monitor_collection=trig_mon_coll)
+        self.log.info("Trigger startup successful")
 
         # For starting event building in the middle of a run:
         self.initial_start_time = self.config.get('start_after_sec', 0) * units.s
@@ -197,6 +201,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
         self.pipeline_status_collection = self.run_client['run'][self.config.get('pipeline_status_collection_name',
                                                                                  'pipeline_status')]
+        self.log.info("Eventbuilder input startup successful")
 
     def refresh_run_info(self):
         """Refreshes the run doc and last pulse time information.
@@ -301,7 +306,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                     })
 
     def get_events(self):
+        self.log.info("Eventbuilder get_events starting up")
         self.refresh_run_info()
+        self.log.info("Fetched runs db info successfully")
+
         # Last time (ns) searched, exclusive. ie we searched [something, last_time_searched)
         self.last_time_searched = self.initial_start_time
         self.log.info("self.initial_start_time: %s", pax_to_human_time(self.initial_start_time))
