@@ -100,9 +100,10 @@ class FindHits(plugin.TransformPlugin):
                 continue
 
             # Compute hitfinder threshold to use
-            pulse.hitfinder_threshold = max(self.config['height_over_noise_threshold'] * pulse.noise_sigma,
-                                            self.config['absolute_adc_counts_threshold'],
-                                            - self.config['height_over_min_threshold'] * pulse.minimum)
+            # Rounding down is ok, since hitfinder uses >, not >= for threshold crossing testing.
+            pulse.hitfinder_threshold = int(max(self.config['height_over_noise_threshold'] * pulse.noise_sigma,
+                                                self.config['absolute_adc_counts_threshold'],
+                                                - self.config['height_over_min_threshold'] * pulse.minimum))
             if self.always_find_single_hit:
                 # The config specifies a single range to integrate. Useful for gain calibration
                 hit_bounds_buffer[0] = self.always_find_single_hit

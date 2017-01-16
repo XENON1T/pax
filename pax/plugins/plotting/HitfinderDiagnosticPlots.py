@@ -118,15 +118,18 @@ class HitfinderDiagnosticPlots(plugin.TransformPlugin):
             # Add pulse / hit information
             if len(hits) != 0:
                 largest_hit = hits[np.argmax(hits['area'])]
-                plt.figtext(0.75, 0.9, dedent("""
+                plt.figtext(0.75, 0.98, dedent("""
                             Pulse maximum: {pulse.maximum:.5g}
                             Pulse minimum: {pulse.minimum:.5g}
                               (both in ADCc above baseline)
                             Pulse baseline: {pulse.baseline}
-                              (ADCc above reference baseline)
+                              (in ADCc above reference baseline)
                             Baseline increase: {pulse.baseline_increase:.2f}
 
                             Gain in this PMT: {gain:.3g}
+
+                            Noise level: {pulse.noise_sigma:.2f} ADCc
+                            Hitfinder threshold: {pulse.hitfinder_threshold} ADCc
 
                             Largest hit info ({left}-{right}):
                             Area: {hit_area:.5g} pe
