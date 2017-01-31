@@ -94,8 +94,8 @@ class PlotBase(plugin.OutputPlugin):
             if self.config['plot_format'] == 'pdf':
                 plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
             elif self.config['plot_format'] == 'pickle':
-                ax = plt.gcf()
-                pickle.dump(ax, open(self.output_dir + '/%06d.pickle' % event_number, "wb"))
+                with open(self.output_dir + '/%06d.pickle' % event_number, "wb") as outfile:
+                    pickle.dump(plt.gcf(), outfile)
             else:
                 plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
