@@ -93,15 +93,27 @@ class WaveformSimulator(plugin.InputPlugin):
         self.truth_peaks.append(true_peak)
 
     def s2(self, electrons, g4_id=-1, t=0., x=0., y=0., z=0.):
-        electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
+        r = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z, r=r)
         if not len(electron_times):
             return None
         photon_times = self.simulator.s2_scintillation(electron_times, x, y)
         if not len(photon_times):
             return None
         self.store_true_peak('s2', g4_id, t, x, y, z, photon_times, electron_times)
-        # Generate S2 hitpattern "at the anode": cue for  simulator to use the S2 LCE map
-        return self.simulator.queue_signal(photon_times, x, y, z=-self.config['gate_to_anode_distance'])
+
+        # Compute the xy for the S2 using the radial distortion map
+        dmap = self.simulator.rz_position_distortion_map
+        if dmap:
+            r += dmap.get_value(r, z, map_name='to_distorted_r')
+            x = r * np.cos(phi)
+            y = r * np.sin(phi)
+
+        return self.simulator.queue_signal(photon_times, x, y,
+                                           # Generate S2 hitpattern "at the anode": cue for simulator to use S2 LCE map
+                                           z=-self.config['gate_to_anode_distance'])
 
     def s1(self, photons, recoil_type, g4_id=-1, t=0., x=0., y=0., z=0.):
         """
