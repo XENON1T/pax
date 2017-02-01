@@ -44,17 +44,21 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
         Hits that straddle a split point are themselves split into two hits: peak.hits is updated.
         """
         # First, split hits that straddle the split points
-        # Hits may have to be split several times; for each split point we remake
+        # Hits may have to be split several times; for each split point we modify the 'hits' list, splitting only
+        # the hits we need.
         hits = peak.hits
         for x in split_points:
             x += peak.left   # Convert to index in event
+
+            # Select hits that must be split: start before x and end after it.
             selection = (hits['left'] <= x) & (hits['right'] > x)
             hits_to_split = hits[selection]
-            new_hits = [hits[True ^ selection]]    # Will contain list of arraylikes for later concatenation
+
+            # new_hits will be a list of hit arrays, which we concatenate later to make the new 'hits' list
+            # Start with the hits that don't have to be split: we definitely want to retain those!
+            new_hits = [hits[True ^ selection]]
 
             for h in hits_to_split:
-                # Use the hitfinder's build_hits to compute the properties of these hits
-                # Damn this is ugly... but at least we don't have duplicate property computation code
                 pulse_i = h['found_in_pulse']
                 pulse = self.event.pulses[pulse_i]
 
@@ -62,6 +66,8 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
                 baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
                 w = baseline_to_subtract - pulse.raw_data.astype(np.float64)
 
+                # Use the hitfinder's build_hits to compute the properties of these hits
+                # Damn this is ugly... but at least we don't have duplicate property computation code
                 hits_buffer = np.zeros(2, dtype=datastructure.Hit.get_dtype())
                 adc_to_pe = dsputils.adc_to_pe(self.config, h['channel'])
                 hit_bounds = np.array([[h['left'], x], [x+1, h['right']]], dtype=np.int64)
@@ -79,6 +85,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
 
                 new_hits.append(hits_buffer)
 
+            # Now remake the hits list, then go on to the next peak.
             hits = np.concatenate(new_hits)
 
         # Next, split the peaks, sorting hits to the right peak by their maximum index.
