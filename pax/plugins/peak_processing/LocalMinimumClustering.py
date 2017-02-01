@@ -31,6 +31,13 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
         self.event.all_hits = np.concatenate([p.hits for p in self.event.peaks] +
                                              [self.event.all_hits[self.event.all_hits['is_rejected']]])
 
+        # Restores order after shenanigans here
+        # Important if someone uses (dict_)group_by from recarray tools later
+        # As is done, for example in the hitfinder diagnostic plots... if you don't do this you get really strange
+        # things there (missing hits were things were split, which makes you think there is a bug
+        # in LocalMinimumClustering, but actually there isn't...)
+        self.event.all_hits.sort(order='found_in_pulse')
+
     def split_peak(self, peak, split_points):
         """Yields new peaks split from peak at split_points = sample indices within peak
         Samples at the split points will fall to the right (so if we split [0, 5] on 2, you get [0, 1] and [2, 5]).

@@ -39,6 +39,8 @@ class HitfinderDiagnosticPlots(plugin.TransformPlugin):
             return event
 
         # Get the pulse-to-hit mapping
+        # Note this relies on the hits being sorted by found_in_pulse
+        # (probably shouldn't have rolled our own fake pandas for recarrays...)
         self.log.debug("Reconstructing hit/pulse mapping")
         hits_in_pulse = dict_group_by(event.all_hits, 'found_in_pulse')
 
@@ -87,6 +89,11 @@ class HitfinderDiagnosticPlots(plugin.TransformPlugin):
                     continue
             elif self.make_diagnostic_plots == 'saturated':
                 if not is_saturated:
+                    continue
+            elif self.make_diagnostic_plots == 'negative':
+                # Select only pulses which had hits whose area and or height were originally negative
+                # (the hitfinder helpfully capped them at 1e-9, so they're not actually negative...)
+                if not (len(hits) and (np.any(hits['area'] < 1e-6) or np.any(hits['height'] < 1e-6))):
                     continue
             elif self.make_diagnostic_plots != 'always':
                 raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
@@ -151,3 +158,5 @@ class HitfinderDiagnosticPlots(plugin.TransformPlugin):
                                      'event%04d_pulse%05d-%05d_ch%03d.png' % data_for_title))
             plt.xlim(0, len(pulse.raw_data))
             plt.close()
+
+        return event
