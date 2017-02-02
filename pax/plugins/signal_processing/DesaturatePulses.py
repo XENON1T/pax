@@ -4,6 +4,11 @@ from pax.dsputils import adc_to_pe
 
 
 class DesaturatePulses(plugin.TransformPlugin):
+    """Estimates the waveform shape in channels that go beyond the digitizer's dynamic range, using
+    the other channels' waveform shape as a template.
+
+    See Fei & Yuehan's note: media=xenon:feigao:xenon1t_background_comparison_jan2017.html
+    """
 
     def startup(self):
         self.reference_baseline = self.config['digitizer_reference_baseline']
@@ -11,7 +16,7 @@ class DesaturatePulses(plugin.TransformPlugin):
     def transform_event(self, event):
         tpc_channels = np.array(self.config['channels_in_detector']['tpc'])
         is_saturated = np.array([self.is_saturated(p) for p in event.pulses])
-        reference_region_samples = self.config.get('reference_region_samples', 10)
+        reference_region_samples = self.config['reference_region_samples']
 
         for pulse_i, pulse in enumerate(event.pulses):
             if not is_saturated[pulse_i] or pulse.channel not in tpc_channels:
