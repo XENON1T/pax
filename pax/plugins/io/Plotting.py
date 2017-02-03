@@ -16,6 +16,8 @@ import numpy as np
 from six.moves import input
 from operator import attrgetter
 
+import pickle
+
 # Init stuff for 3d plotting
 # Please do not remove, although it appears to be unused, 3d plotting won't work without it
 from mpl_toolkits.mplot3d import Axes3D     # noqa
@@ -91,6 +93,9 @@ class PlotBase(plugin.OutputPlugin):
         if self.output_dir:
             if self.config['plot_format'] == 'pdf':
                 plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
+            elif self.config['plot_format'] == 'pickle':
+                with open(self.output_dir + '/%06d.pickle' % event_number, "wb") as outfile:
+                    pickle.dump(plt.gcf(), outfile)
             else:
                 plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
