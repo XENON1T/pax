@@ -15,16 +15,29 @@ class DesaturatePulses(plugin.TransformPlugin):
 
     def transform_event(self, event):
         tpc_channels = np.array(self.config['channels_in_detector']['tpc'])
-        is_saturated = np.array([self.is_saturated(p) for p in event.pulses])
-        reference_region_samples = self.config['reference_region_samples']
+
+        # Boolean array, tells us which pulses are saturated
+        is_saturated = np.array([p.maximum >= self.reference_baseline - p.baseline - 0.5
+                                 for p in event.pulses])
 
         for pulse_i, pulse in enumerate(event.pulses):
+            # Consider only saturated pulses in the TPC
             if not is_saturated[pulse_i] or pulse.channel not in tpc_channels:
                 continue
 
-            # Find all pulses in TPC channels that overlap in time, but didn't saturate
+            # Where is the current pulse saturated?
+            saturated = pulse.raw_data <= 0            # Boolean array, True if sample is saturated
+            _where_saturated = np.where(saturated)[0]
+            first_saturated = _where_saturated.min()
+            last_saturated = _where_saturated.max()
+
+            # Select a reference region just before the start of the saturated region
+            reference_slice = slice(min(0, first_saturated - self.config['reference_region_samples']),
+                                    first_saturated)
+
+            # Find all pulses in TPC channels that overlap with the saturated & reference region
             other_pulses = [p for i, p in enumerate(event.pulses)
-                            if p.left < pulse.right and p.right > p.left and not is_saturated[i] and
+                            if p.left < last_saturated and p.right > pulse.left and not is_saturated[i] and
                             p.channel in tpc_channels]
 
             if not len(other_pulses):
@@ -43,17 +56,9 @@ class DesaturatePulses(plugin.TransformPlugin):
             offset = pulse.left - min_left
             sumw = sumw[offset:offset + len(pulse.raw_data)]
 
-            # Where is the current pulse saturated?
-            saturated = pulse.raw_data <= 0            # Boolean array, True if sample is saturated
-
-            # Get a region of nonsaturated samples, a few samples to the left and right of the saturated region(s)
-            reference_region = True ^ saturated
-            reference_region &= np.arange(len(saturated)) > (np.where(saturated)[0].min() - reference_region_samples)
-            reference_region &= np.arange(len(saturated)) < (np.where(saturated)[0].max() + reference_region_samples)
-
             # Compute the ratio of this channel's waveform / the nonsaturated waveform in the reference region
             w = self.waveform_in_pe(pulse)
-            ratio = w[reference_region].sum()/sumw[reference_region].sum()
+            ratio = w[reference_slice].sum()/sumw[reference_slice].sum()
 
             # Reconstruct the waveform in the saturated region according to this ratio.
             # The waveform should never be reduced due to this (then we are sure the correction is making things worse)
@@ -76,7 +81,3 @@ class DesaturatePulses(plugin.TransformPlugin):
         w = self.reference_baseline - p.raw_data.astype(np.float) - p.baseline
         w *= adc_to_pe(self.config, p.channel)
         return w
-
-    def is_saturated(self, p):
-        """Return if a pulse is saturated"""
-        return p.maximum >= self.reference_baseline - p.baseline - 0.5
