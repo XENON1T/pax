@@ -14,7 +14,7 @@ class RZCorrection(plugin.TransformPlugin):
         for ia in event.interactions:
             # Compute the correction
             ia.r_correction = self.rzmap.get_value(ia.r, ia.z, map_name='to_true_r')
-            ia.z_correction = self.rzmap.get_value(ia.r, ia.z, map_name='to_true_r')
+            ia.z_correction = self.rzmap.get_value(ia.r, ia.z, map_name='to_true_z')
 
             # Set the new (x, y, z) position (r and phi are just python properties)
             ia.z = ia.z + ia.z_correction
