@@ -174,7 +174,7 @@ class ClusteringPlugin(TransformPlugin):
 
         if peak.n_contributing_channels == 0:
             raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
-        
+
         if peak.n_contributing_channels == 1:
             peak.type = 'lone_hit'
             peak.lone_hit_channel = hits[0]['channel']
