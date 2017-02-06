@@ -97,6 +97,7 @@ class Simulator(object):
         if c.get('s1_patterns_file', None) is not None:
             self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
                                              zoom_factor=c.get('s1_patterns_zoom_factor', 1),
+                                             adjust_to_qe=qes[c['channels_in_detector']['tpc']],
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s1_patterns = None
