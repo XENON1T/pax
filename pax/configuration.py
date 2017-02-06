@@ -23,7 +23,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
 
     configp = ConfigParser(inline_comment_prefixes='#',
                            interpolation=ExtendedInterpolation(),
-                           strict=True,
+                           strict=True,                           
                            default_section='Why_doesnt_configparser_let_me_disable_DEFAULT')
 
     # Allow for case-sensitive configuration keys
