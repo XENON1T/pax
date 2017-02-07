@@ -486,7 +486,7 @@ class Interaction(StrictModel):
     # Position information
     ##
 
-    #: The reconstructed position of the interaction
+    #: The reconstructed position of the interaction, (r,z) corrected
     x = float('nan')  #: x position of the interaction (cm)
     y = float('nan')  #: y position of the interaction (cm)
 
@@ -502,28 +502,25 @@ class Interaction(StrictModel):
     #: Drift time (ns) between s1 and s2
     drift_time = float('nan')
 
-    #: z position (cm) calculated from drift time.
-    #: This - (drift time - drift time of gate) * drift velocity
+    #: z position (cm) of the interaction,
+    #: This starts from - (drift time - drift time of gate) * drift velocity, then applies the (r,z) correction
     z = float('nan')
 
-    #: r position (cm)
+    #: r position (cm), (r,z) corrected
     @property
     def r(self):
         return np.sqrt(self.x ** 2 + self.y ** 2)
 
-    #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
+    #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians).
     @property
     def phi(self):
         return np.arctan2(self.y, self.x)
 
-    def set_position(self, recpos):
-        """Sets the x, y position of the interaction
-        based on a :class:`pax.datastructure.ReconstructedPosition` object"""
-        self.x = recpos.x
-        self.y = recpos.y
-        self.xy_posrec_algorithm = recpos.algorithm
-        self.xy_posrec_ndf = recpos.ndf
-        self.xy_posrec_goodness_of_fit = recpos.goodness_of_fit
+    #: R correction that has been added to r. Subtract it from interaction.r to recover the uncorrected r position
+    r_correction = 0.0
+
+    #: Z correction that has been added to z. Subtract it from interaction.z to recover the uncorrected z position
+    z_correction = 0.0
 
     ##
     # Interaction properties

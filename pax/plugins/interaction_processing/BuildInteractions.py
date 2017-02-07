@@ -40,8 +40,15 @@ class BuildInteractions(plugin.TransformPlugin):
                 ia.s2 = event.peaks.index(s2)
                 ia.drift_time = dt
                 try:
-                    # Get x,y position from peak
-                    ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
+                    # Get x,y position from S2 peak
+                    recpos = s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
+                    # Set this position in the interaction
+                    ia.x = recpos.x
+                    ia.y = recpos.y
+                    ia.xy_posrec_algorithm = recpos.algorithm
+                    ia.xy_posrec_ndf = recpos.ndf
+                    ia.xy_posrec_goodness_of_fit = recpos.goodness_of_fit
+
                 except ValueError:
                     self.log.debug("Could not find any position from the chosen algorithms")
                 # Append to event
