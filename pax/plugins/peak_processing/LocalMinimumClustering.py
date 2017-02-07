@@ -1,5 +1,4 @@
 from pax import plugin, datastructure, dsputils
-# import numba
 import numpy as np
 import logging
 from pax.plugins.signal_processing.HitFinder import build_hits
@@ -9,10 +8,6 @@ log = logging.getLogger('LocalMinimumClusteringHelpers')
 class LocalMinimumClustering(plugin.ClusteringPlugin):
 
     def cluster_peak(self, peak):
-        # Unfortunate code duplication with BasicProperties...
-        peak.left = peak.hits['left'].min()
-        peak.right = peak.hits['right'].max()
-
         if peak.type == 'lone_hit':
             return [peak]
         w = self.event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
@@ -106,9 +101,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
             if not len(hs):
                 raise RuntimeError("Attempt to create a peak without hits in LocalMinimumClustering!")
 
-            yield datastructure.Peak(left=l,
-                                     right=r,
-                                     detector=peak.detector, hits=hs)
+            yield self.build_peak(hits=hs, detector=peak.detector, left=l, right=r)
 
 
 #  @numba.jit(numba.float64[:])
