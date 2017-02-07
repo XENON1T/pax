@@ -33,6 +33,13 @@ plugins_to_test = [
         'encoder':      'Pickle.EncodeZPickle',
         'write_plugin': 'Zip.WriteZipped',
     },
+    {
+        'name':         'MessagePack',
+        'read_plugin':  'Zip.ReadZipped',
+        'decoder':      'MessagePack.DecodeMessagePack',
+        'encoder':      'MessagePack.EncodeMessagePack',
+        'write_plugin': 'Zip.WriteZipped',
+    },
 ]
 
 

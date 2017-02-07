@@ -96,61 +96,79 @@ def get_detector_by_channel(config):
     return detector_by_channel
 
 
-@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),
+@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.int64, numba.int64, numba.int64[:, :]),
            nopython=True)
-def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff):
-    """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
-        result_buffer: numpy N*2 array of ints, will be filled by function.
-    Returns: number of intervals found
-    Will stop search after N intervals are found, with N the length of result_buffer.
-    Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold
+def find_intervals_above_threshold(w, threshold, left_extension, right_extension, result_buffer):
+    """Fills result_buffer with l, r bounds of intervals in w > threshold.
+    :param w: Waveform to do hitfinding in
+    :param threshold: Threshold for including an interval
+    :param left_extension: When an interval above threshold is found, extend it left by this number of samples,
+                           or as far as possible until the end of another interval.
+    :param right_extension: Same, extend to right.
+    :param result_buffer: numpy N*2 array of ints, will be filled by function.
+                          if more than N intervals are found, none past the first N will be processed.
+    :returns : number of intervals processed
+
+    When two intervals' extension claims compete, right extension has priority.
+
+    Boundary indices are inclusive, i.e. without any extension settings, the right boundary is the last index
+    which was still above low_threshold
     """
-    in_candidate_interval = False
-    current_interval_passed_test = False
-    current_interval = 0
     result_buffer_size = len(result_buffer)
     last_index_in_w = len(w) - 1
-    current_candidate_interval_start = -1
+
+    ##
+    # Step 1: Find intervals above threshold
+    ##
+    in_interval = False
+    current_interval = 0
+    current_interval_start = -1
 
     for i, x in enumerate(w):
 
-        if not in_candidate_interval and x > low_threshold:
-            # Start of candidate interval
-            in_candidate_interval = True
-            current_candidate_interval_start = i
+        if not in_interval and x > threshold:
+            # Start of an interval
+            in_interval = True
+            current_interval_start = i
 
-        # This must be if, not else: an interval can cross high_threshold in start sample
-        if in_candidate_interval:
+        if in_interval and (x <= threshold or i == last_index_in_w):
+            # End of the current interval
+            in_interval = False
 
-            if x > high_threshold:
-                current_interval_passed_test = True
-                # Raise lower threshold to a fraction of the hit height
-                # This helps against tails (due to amplifiers?) for REALLY high hits
-                low_threshold = max(low_threshold, dynamic_low_threshold_coeff*x)
+            # The interval ended just before this index
+            # Unless we ended ONLY because this is the last index, then the interval ends right here
+            itv_end = i - 1 if x <= threshold else i
 
-            if x <= low_threshold or i == last_index_in_w:
+            # Add bounds to result buffer
+            result_buffer[current_interval, 0] = current_interval_start
+            result_buffer[current_interval, 1] = itv_end
+            current_interval += 1
 
-                # End of candidate interval
-                in_candidate_interval = False
+            if current_interval == result_buffer_size:
+                break
 
-                if current_interval_passed_test:
-                    # We've found a new interval!
+    n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
 
-                    # The interval ended just before this index
-                    # unless, of course, we ended ONLY BECAUSE this is the last index
-                    itv_end = i-1 if x <= low_threshold else i
+    ##
+    # Step 2: Right extension
+    ##
+    if right_extension != 0:
+        for i in range(n_intervals):
+            if i == n_intervals - 1:
+                max_possible_r = last_index_in_w
+            else:
+                max_possible_r = result_buffer[i + 1][0] - 1
+            result_buffer[i][1] = min(max_possible_r, result_buffer[i][1] + right_extension)
 
-                    # Add to result buffer
-                    result_buffer[current_interval, 0] = current_candidate_interval_start
-                    result_buffer[current_interval, 1] = itv_end
+    ##
+    # Step 3: Left extension
+    ##
+    if left_extension != 0:
+        for i in range(n_intervals):
+            if i == 0:
+                min_possible_l = 0
+            else:
+                min_possible_l = result_buffer[i - 1][1] + 1
+            result_buffer[i][0] = max(min_possible_l, result_buffer[i][0] - left_extension)
 
-                    # Prepare for the next interval
-                    current_interval += 1
-                    current_interval_passed_test = False
-
-                    if current_interval == result_buffer_size:
-                        break
-
-    # Return number of hits found
-    # One day numba may have crashed here: not sure if it is int32 or int64...
-    return current_interval
+    return n_intervals
