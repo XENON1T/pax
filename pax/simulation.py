@@ -81,6 +81,12 @@ class Simulator(object):
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
         self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
 
+        # Load transverse field (r,z) distortion map
+        if c.get('rz_position_distortion_map'):
+            self.rz_position_distortion_map = InterpolatingMap(utils.data_file_name(c['rz_position_distortion_map']))
+        else:
+            self.rz_position_distortion_map = None
+
         # Init s2 per pmt lce map
         qes = np.array(c['quantum_efficiencies'])
         if c.get('s2_patterns_file', None) is not None:
@@ -415,19 +421,23 @@ class Simulator(object):
         self.clear_signals_queue()
         return event
 
-    def s2_electrons(self, electrons_generated=None, z=0., t=0.):
+    def s2_electrons(self, electrons_generated=None, z=0, r=0, t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
 
             electrons             -   total # of drift electrons generated at the interaction site
             t                     -   Time at which the original energy deposition occurred.
+            r                     -   Radius at which " " " " " (needed for (r,z) distortion)
             z                     -   Depth below the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
-
         if not - self.config['tpc_length'] <= z <= 0:
             log.warning("Unphysical depth: %s cm below gate. Not generating S2." % - z)
             return []
         log.debug("Creating an s2 from %s electrons..." % electrons_generated)
+
+        # Correct the z position for the radial distortion
+        if self.rz_position_distortion_map:
+            z += self.rz_position_distortion_map.get_value(r, z, map_name='to_distorted_z')
 
         # Average drift time of the electrons
         drift_time_mean = - z / self.config['drift_velocity_liquid'] + self.config['drift_time_gate']

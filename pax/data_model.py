@@ -53,7 +53,12 @@ class Model(object):
                         temp_list.append(el)
                     elif isinstance(el, dict):
                         # Dicts are fine too, we can use them to init the desired type
-                        temp_list.append(desired_type(**el))
+                        some_key = next(iter(el.keys()))
+                        if isinstance(some_key, bytes):
+                            # Messagepack returns byte-encode keys.. which python doesn't accept as keyword arguments
+                            temp_list.append(desired_type(**{k.decode('ascii'): v for k, v in el.items()}))
+                        else:
+                            temp_list.append(desired_type(**el))
                     else:
                         raise ValueError("Attempt to initialize list field %s with type %s, "
                                          "but you promised type %s in class declaration." % (k,
@@ -205,7 +210,7 @@ casting_allowed_for = {
     'float':  ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'float32', 'float64', 'long'],
     'bool':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'long', 'bool_'],
     'long':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
-    'str':    ['unicode'],
+    'str':    ['unicode', 'bytes'],
 }
 
 
@@ -237,7 +242,10 @@ class StrictModel(Model):
 
             # Are we allowed to cast the type?
             if old_class_name in casting_allowed_for and new_class_name in casting_allowed_for[old_class_name]:
-                value = old_type(value)
+                if new_type == 'str' and old_type == 'bytes':
+                    value = value.decode('ascii')
+                else:
+                    value = old_type(value)
 
             else:
                 raise TypeError('Attribute %s of class %s should be a %s, not a %s. Allowed other types: %s.'
