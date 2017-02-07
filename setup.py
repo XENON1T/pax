@@ -56,6 +56,7 @@ setup(
                 'pax.plugins.io',
                 'pax.plugins.signal_processing',
                 'pax.plugins.peak_processing',
+                'pax.plugins.plotting',
                 'pax.plugins.posrec',
                 'pax.plugins.interaction_processing',
                 'pax.trigger_plugins',
