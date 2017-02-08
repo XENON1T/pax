@@ -8,6 +8,7 @@ import logging
 import math
 import time
 import pickle
+from functools import partial
 
 import numpy as np
 import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
@@ -61,12 +62,18 @@ class Simulator(object):
 
         # Determine sensible length of a pmt pulse to simulate
         dt = c['sample_duration']
-        c['samples_before_pulse_center'] = math.ceil(
-            c['pulse_width_cutoff'] * c['pmt_rise_time'] / dt
-        )
-        c['samples_after_pulse_center'] = math.ceil(
-            c['pulse_width_cutoff'] * c['pmt_fall_time'] / dt
-        )
+        if c['pe_pulse_model'] == 'exponential':
+            c['samples_before_pulse_center'] = math.ceil(c['pulse_width_cutoff'] * c['pmt_rise_time'] / dt)
+            c['samples_after_pulse_center'] = math.ceil(c['pulse_width_cutoff'] * c['pmt_fall_time'] / dt)
+        else:
+            # Build the custom PMT pulse model
+            ts = np.array(c['pe_pulse_ts'])
+            ys = np.array(c['pe_pulse_ys'])
+
+            # Integrate and normalize it
+            # Note we're storing the integrated pulse, while the user gives the regular pulse.
+            c['pe_pulse_function'] = interp1d(ts, np.cumsum(ys)/np.sum(ys), bounds_error=False, fill_value=(0, 1))
+
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
             c['samples_before_pulse_center'], c['samples_after_pulse_center']))
 
@@ -588,14 +595,22 @@ class Simulator(object):
 
     def pmt_pulse_current(self, gain, offset=0):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
-        return gain * pmt_pulse_current_raw(
-            self.config['pmt_pulse_time_rounding'] * round(offset / self.config['pmt_pulse_time_rounding']),
-            self.config['sample_duration'],
-            self.config['samples_before_pulse_center'],
-            self.config['samples_after_pulse_center'],
-            self.config['pmt_rise_time'],
-            self.config['pmt_fall_time'],
-        )
+        offset = self.config['pmt_pulse_time_rounding'] * round(offset / self.config['pmt_pulse_time_rounding'])
+        if self.config['pe_pulse_model'] == 'exponential':
+            return gain * double_exp_pmt_pulse_current_raw(
+                offset,
+                self.config['sample_duration'],
+                self.config['samples_before_pulse_center'],
+                self.config['samples_after_pulse_center'],
+                self.config['pmt_rise_time'],
+                self.config['pmt_fall_time'],
+            )
+        else:
+            return gain * custom_pmt_pulse_current(self.config['pe_pulse_function'],
+                                                   offset,
+                                                   self.config['sample_duration'],
+                                                   self.config['samples_before_pulse_center'],
+                                                   self.config['samples_after_pulse_center'])
 
     def distribute_photons(self, n_photons, x, y, z):
         """Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)
@@ -695,15 +710,29 @@ class Simulator(object):
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
 
 @Memoize
-def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
-    return np.diff(exp_pulse(
+def double_exp_pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
+    pmt_pulse = partial(exp_pulse, q=units.electron_charge, tr=tr, tf=tf)
+    return digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after)
+
+
+@Memoize
+def custom_pmt_pulse_current(pmt_pulse, offset, dt, samples_before, samples_after):
+    return digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after)
+
+
+def digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after):
+    """Get the output of pmt_pulse(t) on a digitizer with sampling size dt.
+    :param pmt_pulse: function that accepts a numpy array of times.
+    :param offset: Offset of the digitizer time grid (number in [0, dt])
+    :param dt: sampling size (ns)
+    :param samples_before: number of samples before the maximum to simulate
+    :param samples_after: number of samples after the maximum to simulate
+    """
+    return np.diff(pmt_pulse(
         np.linspace(
             - offset - samples_before * dt,
             - offset + samples_after * dt,
-            1 + samples_before + samples_after),
-        units.electron_charge,
-        tr,
-        tf
+            1 + samples_before + samples_after)
     )) / dt
 
 
