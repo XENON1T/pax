@@ -16,7 +16,6 @@ numexpr
 psutil
 mock
 rabbitpy
-boto3
 multihist
 msgpack-python
 pytz
