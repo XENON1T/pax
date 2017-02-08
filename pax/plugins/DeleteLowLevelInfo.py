@@ -44,6 +44,7 @@ class DeleteLowLevelInfo(plugin.TransformPlugin):
             event.pulses = [p for i, p in enumerate(event.pulses) if i in pulses_to_keep]
 
         elif delopt == 'all':
+            event.all_hits = event.all_hits[:0]
             event.pulses = []
             for p in event.peaks:
                 p.hits = p.hits[:0]
