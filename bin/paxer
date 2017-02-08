@@ -96,6 +96,7 @@ def main():
             override_dict['pax']['output_name'] = 'SCREEN'
             override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
         if args.rootplot:
+            override_dict['pax']['output_name'] = args.rootplot
             override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
         if args.plot_to_dir:
             override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
@@ -210,9 +211,7 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
                                         help='Plot summed waveforms on screen. '
                                              'Equivalent to --output_type plot --output SCREEN.')
     plotting_control_group.add_argument('--rootplot',
-                                        action='store_const',
-                                        const=True,
-                                        help='Save waveform in ROOT format')
+                                        help='Save waveform in ROOT format. Give argument as the ouput folder.')
     plotting_control_group.add_argument('--plot_interactive',
                                         action='store_const',
                                         const=True,

@@ -44,16 +44,15 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
     def write_event(self, event):
         
         # Super simple. Just make a sum waveform and dump it
-        name = "test.root"
-        outfile = os.path.join(self.output_dir, name)
+        namestring = '%s_%s' % (event.dataset_name, event.event_number)
+        outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
         self.outfile = ROOT.TFile(outfile, 'RECREATE')
 
         # Borrow liberally from xerawdp
         titlestring = 'Event %s from %s Recorded at %s UTC, %09d ns' % (
             event.event_number, event.dataset_name,
             epoch_to_human_time(event.start_time / units.ns),
-            (event.start_time/units.ns) % (units.s))
-        namestring = '%s_%s' % (event.dataset_name, event.event_number)
+            (event.start_time/units.ns) % (units.s))        
         win = ROOT.TCanvas("canvas", titlestring, 1200, 1000)
         #win.Divide(1,2);
 
@@ -201,9 +200,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
 
         hitpattern = []
         maxhit = 0.
-        minhit = 1e10
-        print(len(thepeak.area_per_channel))
-        print(thepeak.type)
+        minhit = 1e10        
         for pmt in self.pmts[tb]:
             ch = {
                 "x": self.pmt_locations[pmt][0],
@@ -234,9 +231,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             
             xx = [x1-w,x1+w,x1+w,x1-w,x1-w]
             yy = [y1+w+yoff,y1+w+yoff,y1-w+yoff,y1-w+yoff,y1+w+yoff]
-            print(xx)
-            print(yy)
-            #self.plines.append(ROOT.TPolyLine(5,np.array(xx),np.array(yy)))
+
             self.plines.append(ROOT.TEllipse(x1, y1+yoff, w, w))
             self.plines[len(self.plines)-1].SetFillColor(col)
             self.plines[len(self.plines)-1].SetLineColor(1)
