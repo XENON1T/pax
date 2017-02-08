@@ -537,7 +537,7 @@ class PlotChannelWaveforms2D(PlotBase):
             result.append([
                 (0.5 + hit['center'] / dt) * time_scale,                  # X
                 hit['channel'],                                           # Y
-                color_factor,                                          # Color (in [0,1] -> [Blue, Red])
+                color_factor,                                             # Color (in [0,1] -> [Blue, Red])
                 10 * min(10, hit['area']),                                # Size
                 (1 if hit['is_rejected'] else 0),                         # Is rejected? If so, will make green
             ])

@@ -3,7 +3,7 @@ import numpy as np
 from pax import plugin
 
 
-class RejectNoiseHits(plugin.TransformPlugin):
+class RejectNoiseHits(plugin.ClusteringPlugin):
     """Remove hits in channels with many lone hits from peaks without many other hits.
     Works with a penalty point system (see #126):
     * The more lone hits you see in a channel, the more points a channel gets.
@@ -61,17 +61,24 @@ class RejectNoiseHits(plugin.TransformPlugin):
             for hit_i in np.where(cut)[0]:
                 rejected_hits.append(peak.hits[hit_i])
                 event.n_hits_rejected[peak.hits[hit_i]['channel']] += 1
-            peak.hits = peak.hits[True ^ cut]       # True ^ inverts the boolean array, so this selects good hits
 
             # Has the peak become empty? Then mark it for deletion.
-            # We can't delete it now since we're iterating over event.peaks
-            if len(peak.hits) == 0:
+            if np.all(cut):
                 self.log.debug('Peak %d consists completely of rejected hits and will be deleted!' % peak_i)
                 peaks_to_delete.append(peak_i)
                 continue
 
+            else:
+                # Else replace the peak with a new peak containing only the remaining hits
+                event.peaks[peak_i] = self.build_peak(hits=peak.hits[True ^ cut], detector=peak.detector)
+
         # Delete any peaks which have gone empty
         event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]
+
+        # Count the remaining number of lone hits per channel
+        for peak in event.peaks:
+            if peak.n_contributing_channels == 1:
+                event.lone_hits_per_channel[peak.lone_hit_channel] += 1
 
         # Rebuild the event.all_hits field.
         if len(rejected_hits):

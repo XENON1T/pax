@@ -14,7 +14,13 @@ import pandas
 
 from pax import plugin, units, utils
 
-import root_pandas  # noqa
+try:
+    import ROOT
+    import root_pandas  # noqa
+    have_root = True
+except ImportError:
+    print("You don't have ROOT or root_pandas, root truth file output is disabled")
+    have_root = False
 
 
 def uniform_circle_rv(radius, n_samples=None):
@@ -58,7 +64,8 @@ class WaveformSimulator(plugin.InputPlugin):
         self.log.debug("Write the truth peaks to %s" % self.config['truth_file_name'])
         output = pandas.DataFrame(self.all_truth_peaks)
         output.to_csv(self.config['truth_file_name']+".csv", index_label='fax_truth_peak_id')
-        output.to_root(self.config['truth_file_name']+".root", 'fax_truth')
+        if have_root:
+            output.to_root(self.config['truth_file_name']+".root", 'fax_truth')
 
     def store_true_peak(self, peak_type, g4_id, t, x, y, z, photon_times, electron_times=()):
         """ Saves the truth information about a peak (s1 or s2)
@@ -93,15 +100,27 @@ class WaveformSimulator(plugin.InputPlugin):
         self.truth_peaks.append(true_peak)
 
     def s2(self, electrons, g4_id=-1, t=0., x=0., y=0., z=0.):
-        electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
+        r = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z, r=r)
         if not len(electron_times):
             return None
         photon_times = self.simulator.s2_scintillation(electron_times, x, y)
         if not len(photon_times):
             return None
         self.store_true_peak('s2', g4_id, t, x, y, z, photon_times, electron_times)
-        # Generate S2 hitpattern "at the anode": cue for  simulator to use the S2 LCE map
-        return self.simulator.queue_signal(photon_times, x, y, z=-self.config['gate_to_anode_distance'])
+
+        # Compute the xy for the S2 using the radial distortion map
+        dmap = self.simulator.rz_position_distortion_map
+        if dmap:
+            r += dmap.get_value(r, z, map_name='to_distorted_r')
+            x = r * np.cos(phi)
+            y = r * np.sin(phi)
+
+        return self.simulator.queue_signal(photon_times, x, y,
+                                           # Generate S2 hitpattern "at the anode": cue for simulator to use S2 LCE map
+                                           z=-self.config['gate_to_anode_distance'])
 
     def s1(self, photons, recoil_type, g4_id=-1, t=0., x=0., y=0., z=0.):
         """
@@ -317,10 +336,13 @@ class WaveformSimulatorFromMC(WaveformSimulator):
     )
 
     def startup(self):
+        if not have_root:
+            raise RuntimeError("Can't read MC ROOT files if you do not have root!")
+
         self.config.setdefault('add_to_z', 0)
         self.log.warning('This plugin is completely untested and will probably crash!')
         filename = self.config['input_name']
-        import ROOT
+
         self.f = ROOT.TFile(utils.data_file_name(filename))
         self.t = self.f.Get("events/events")  # new MC structure, 160622
         WaveformSimulator.startup(self)
@@ -377,7 +399,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
     )
 
     def startup(self):
-        import ROOT
+        if not have_root:
+            raise RuntimeError("Can't read MC ROOT files if you do not have root!")
+
         self.f = ROOT.TFile(self.config['input_name'])
         if not self.f.IsOpen():
             raise ValueError(
