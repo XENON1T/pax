@@ -242,7 +242,6 @@ class PlotBase(plugin.OutputPlugin):
                     # Go to next peak if not in annotation list, otherwise annotate!
                     if peak not in annotation_list:
                         continue
-                textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
@@ -268,7 +267,7 @@ class PlotBase(plugin.OutputPlugin):
                             xytext=(x, ytext),
                             fontsize=8,
                             arrowprops=arrowprops,
-                            color=textcolor)
+                            color='red' if peak.detector == 'veto' else 'black')
 
         ax.set_ylim(y_min, y_max * 1.1)
 
@@ -288,7 +287,10 @@ class PlotBase(plugin.OutputPlugin):
         for peak in peaks:
             if self.config.get('hide_peak_info'):
                 continue
-            shade_color = self.peak_colors.get(peak.type, 'black') if peak.detector == 'tpc' else 'red'
+            if peak.detector == 'veto':
+                shade_color = 'red'
+            else:
+                shade_color = self.peak_colors.get(peak.type, 'black')
             ax.axvspan((peak.left - 1) * self.samples_to_us,
                        peak.right * self.samples_to_us,
                        color=shade_color,
