@@ -32,12 +32,13 @@ class DesaturatePulses(plugin.TransformPlugin):
             last_saturated = _where_saturated.max()
 
             # Select a reference region just before the start of the saturated region
-            reference_slice = slice(min(0, first_saturated - self.config['reference_region_samples']),
+            reference_slice = slice(max(0, first_saturated - self.config['reference_region_samples']),
                                     first_saturated)
 
             # Find all pulses in TPC channels that overlap with the saturated & reference region
             other_pulses = [p for i, p in enumerate(event.pulses)
-                            if p.left < last_saturated and p.right > pulse.left and not is_saturated[i] and
+                            if p.left < last_saturated + pulse.left and p.right > pulse.left and
+                            not is_saturated[i] and
                             p.channel in tpc_channels]
 
             if not len(other_pulses):
