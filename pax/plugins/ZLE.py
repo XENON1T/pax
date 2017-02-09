@@ -14,7 +14,7 @@ class SoftwareZLE(plugin.TransformPlugin):
     Uses a separate debug setting, as need to show plots
     """
     debug = False
-    zle_intervals_buffer = -1 * np.ones((5000, 2), dtype=np.int64)
+    zle_intervals_buffer = -1 * np.ones((50000, 2), dtype=np.int64)
 
     def transform_event(self, event):
         new_pulses = []
