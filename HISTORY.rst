@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.3.1 (2017-02-09)
+------------------
+* Fix crash due to edge case due to negative samples in hits (#490)
+* Remove AWS support (#489)
+
+------------------
 6.3.0 (2017-02-08)
 ------------------
 * Hitfinder upgrade to accomodate long-tailed pe-pulses (#479)
