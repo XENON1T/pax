@@ -86,7 +86,9 @@ class SumWaveformProperties(plugin.TransformPlugin):
                 peak.center_time = float('nan')
                 continue
             else:
-                peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
+                peak.center_time = (peak.left + np.average(np.arange(len(w)),
+                                                           weights=np.clip(w, 0, float('inf')))) * dt
+                # Cut out negative samples for computation of center of gravity
 
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
