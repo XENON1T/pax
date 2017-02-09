@@ -8,7 +8,7 @@ import pytz
 import datetime
 
 from itertools import islice, count                
-from pax import plugin, units
+from pax import plugin, units, dsputils
 
 
 def epoch_to_human_time(timestamp):
@@ -176,7 +176,33 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         self.Draw2DDisplay(event, 's1', 'bottom', 0, detail_pad_1)
         self.Draw2DDisplay(event, 's2', 'top', 0, detail_pad_2)
         self.Draw2DDisplay(event, 's2', 'bottom', 0, detail_pad_3)
-            
+
+        # Make 2D histogram
+        hitplot_pad.cd()
+        channels = max(self.config['channels_in_detector']['tpc'])
+        twodhist = ROOT.TH2D("hist2d","",len(sum_waveform_x),0,
+                             self.samples_to_us*(len(sum_waveform_x)-1),
+                             channels, 0, channels)
+        maximumbin = 0
+        for pulse in event.pulses:
+            #Extract
+            w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
+            w *= dsputils.adc_to_pe(self.config, pulse.channel, use_reference_gain=True)
+            for i, sample in enumerate(w):
+                if sample > maximumbin:
+                    maximumbin = sample
+                twodhist.SetBinContent(pulse.left+i, pulse.channel, sample)
+        twodhist.SetStats(0)
+        twodhist.GetXaxis().SetTitle("Time [#mus]")
+        twodhist.GetYaxis().SetTitleOffset(0.3)
+        twodhist.GetYaxis().SetTitleSize(0.05)
+        twodhist.GetXaxis().SetTitleOffset(0.8)
+        twodhist.GetXaxis().SetTitleSize(0.05)
+        twodhist.GetYaxis().SetTitle("Channel")
+        maximumbin = min(maximumbin, 1)
+        twodhist.SetMaximum(maximumbin)
+        twodhist.Draw("colz")
+        
         win.Update()
         self.outfile.cd()
         win.Write()
