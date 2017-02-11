@@ -56,12 +56,12 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         win = ROOT.TCanvas("canvas", titlestring, 1200, 1000)
         #win.Divide(1,2);
 
-        sum_pad = ROOT.TPad("sum_waveform_pad", "sum_waveform_pad",0.0, 0.6, 1.0, 1.0, 0)
-        detail_pad_0 = ROOT.TPad("detail_0_pad", "detail_0_pad", 0.0, 0.3, 0.25, 0.6, 0)
-        detail_pad_1 = ROOT.TPad("detail_1_pad", "detail_1_pad", 0.25, 0.3, 0.5, 0.6, 0)
-        detail_pad_2 = ROOT.TPad("detail_2_pad", "detail_2_pad", 0.5, 0.3, 0.75, 0.6, 0)
-        detail_pad_3 = ROOT.TPad("detail_3_pad", "detail_3_pad", 0.75, 0.3, 1.0, 0.6, 0)
-        hitplot_pad = ROOT.TPad("hit_plot_pad", "hit_plot_pad", 0.0, 0.0, 1.0, 0.3, 0) 
+        sum_pad = ROOT.TPad("sum_waveform_pad", "sum_waveform_pad",0.0, 0.4, 1.0, 1.0, 0)
+        detail_pad_0 = ROOT.TPad("detail_0_pad", "detail_0_pad", 0.0, 0.0, 0.25, 0.4, 0)
+        detail_pad_1 = ROOT.TPad("detail_1_pad", "detail_1_pad", 0.25, 0.0, 0.5, 0.4, 0)
+        detail_pad_2 = ROOT.TPad("detail_2_pad", "detail_2_pad", 0.5, 0.0, 0.75, 0.4, 0)
+        detail_pad_3 = ROOT.TPad("detail_3_pad", "detail_3_pad", 0.75, 0.0, 1.0, 0.4, 0)
+        #hitplot_pad = ROOT.TPad("hit_plot_pad", "hit_plot_pad", 0.0, 0.0, 1.0, 0.3, 0) 
 
         sum_pad.SetRightMargin(0.01)
         sum_pad.SetLeftMargin(0.05)
@@ -71,7 +71,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         detail_pad_1.Draw()
         detail_pad_2.Draw()
         detail_pad_3.Draw()
-        hitplot_pad.Draw()
+        #hitplot_pad.Draw()
         
         # Plot Sum Waveform
         sum_pad.cd()
@@ -177,7 +177,8 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         self.Draw2DDisplay(event, 's2', 'top', 0, detail_pad_2)
         self.Draw2DDisplay(event, 's2', 'bottom', 0, detail_pad_3)
 
-        # Make 2D histogram
+        # Make hit histogram
+        '''
         hitplot_pad.cd()
         channels = max(self.config['channels_in_detector']['tpc'])
         twodhist = ROOT.TH2D("hist2d","",len(sum_waveform_x),0,
@@ -202,14 +203,64 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         maximumbin = min(maximumbin, 1)
         twodhist.SetMaximum(maximumbin)
         twodhist.Draw("colz")
+        '''
         
         win.Update()
         self.outfile.cd()
         win.Write()
-        #self.outfile.Write()
+
+        # Now want all pulses written out
+        peak_indices = {}
+        hist_objs = [] #suppress warnings
+        for i, peak in enumerate(event.S2s()):
+            hist_objs.append(self.WriteHits(peak, event, i))
+        for i, peak in enumerate(event.S1s()):
+            hist_objs.append(self.WriteHits(peak, event, i))
+        for peak in event.peaks:
+            if peak.type == 's1' or peak.type == 's2':
+                continue
+            if peak.type not in peak_indices:
+                peak_indices[peak.type] = -1
+            peak_indices[peak.type] += 1
+            hist_objs.append(self.WriteHits(peak, event, peak_indices[peak.type]))
+                
         self.outfile.Close()
 
-        
+    def WriteHits(self, peak, event, index):
+        ''' Write out 1D histos for this peak '''
+        hit_indices = {}
+        directory = self.outfile.mkdir(peak.type+"["+str(index)+"]")
+        hists = []
+        for hit in peak.hits:
+            found_in_pulse = hit[3]
+            channel = hit[2]
+            center = hit[1]
+            left = hit[7]
+            right = hit[10]
+            if channel not in hit_indices:
+                hit_indices[channel] = -1
+            hit_indices[channel] += 1
+            hitname = "hit_%s_%i_%i_%i" % (peak.type, index, channel, hit_indices[channel])
+            hittitle = "Hit from channel %i (%i) in %s[%i]" % (channel, hit_indices[channel], peak.type, index)
+            pulse = event.pulses[found_in_pulse]
+            hist = ROOT.TH1F(hitname, hittitle, pulse.right-pulse.left,
+                             pulse.left, pulse.right)
+            w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
+            for i, sample in enumerate(w):
+                hist.SetBinContent(i, sample)
+
+            hist.SetStats(0)
+            hist.GetXaxis().SetTitle("Time [samples]")
+            hist.GetYaxis().SetTitleOffset(0.8)
+            hist.GetYaxis().SetTitleSize(0.05)
+            hist.GetXaxis().SetTitleOffset(0.8)
+            hist.GetXaxis().SetTitleSize(0.05)
+            hist.GetYaxis().SetTitle("ADC Reading (baseline corrected)")
+            hists.append(hist)
+            directory.cd()
+            hist.Write()
+        return hists
+            
     def Draw2DDisplay(self, event, peaktype, tb, index, pad):
 
         pad.cd()
