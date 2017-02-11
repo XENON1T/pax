@@ -229,22 +229,28 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
     def WriteHits(self, peak, event, index):
         ''' Write out 1D histos for this peak '''
         hit_indices = {}
-        directory = self.outfile.mkdir(peak.type+"["+str(index)+"]")
+        directory = self.outfile.mkdir(peak.type+"_"+str(index))
         hists = []
         for hit in peak.hits:
             found_in_pulse = hit[3]
             channel = hit[2]
             center = hit[1]
-            left = hit[7]
+            # minus one here seems to be needed to get plot to line up
+            left = hit[7]-1 
             right = hit[10]
+            height = hit[4]/dsputils.adc_to_pe(self.config,
+                                               channel,
+                                               use_reference_gain=True)
             if channel not in hit_indices:
                 hit_indices[channel] = -1
             hit_indices[channel] += 1
             hitname = "hit_%s_%i_%i_%i" % (peak.type, index, channel, hit_indices[channel])
             hittitle = "Hit from channel %i (%i) in %s[%i]" % (channel, hit_indices[channel], peak.type, index)
+            c = ROOT.TCanvas(hitname, "")
             pulse = event.pulses[found_in_pulse]
-            hist = ROOT.TH1F(hitname, hittitle, pulse.right-pulse.left,
-                             pulse.left, pulse.right)
+            hist = ROOT.TH1F("hist_"+hitname, hittitle,
+                             pulse.right-pulse.left+1,
+                             pulse.left, pulse.right+1)
             w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
             for i, sample in enumerate(w):
                 hist.SetBinContent(i, sample)
@@ -256,9 +262,24 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             hist.GetXaxis().SetTitleOffset(0.8)
             hist.GetXaxis().SetTitleSize(0.05)
             hist.GetYaxis().SetTitle("ADC Reading (baseline corrected)")
-            hists.append(hist)
+
+            c.cd()
+            hist.Draw()
+
+            leftline = ROOT.TLine(left, 0, left, height)
+            rightline = ROOT.TLine(right, 0, right, height)
+            leftline.SetLineStyle(2)
+            rightline.SetLineStyle(2)
+            leftline.SetLineColor(2)
+            rightline.SetLineColor(2)
+            leftline.Draw("same")
+            rightline.Draw("same")
+            c.Update()
+            
+            hists.append({"hist": hist, "c": c, "lline": leftline,
+                          "rline": rightline})
             directory.cd()
-            hist.Write()
+            c.Write()
         return hists
             
     def Draw2DDisplay(self, event, peaktype, tb, index, pad):
