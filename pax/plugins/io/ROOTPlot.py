@@ -20,6 +20,9 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
     
     def startup(self):
         self.output_dir = self.config['output_name']
+        self.full_plot = False
+        if self.config['rootplot_full']:
+            self.full_plot = True
         self.samples_to_us = self.config['sample_duration'] / units.us
                 
         if self.output_dir is None:
@@ -176,53 +179,27 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         self.Draw2DDisplay(event, 's1', 'bottom', 0, detail_pad_1)
         self.Draw2DDisplay(event, 's2', 'top', 0, detail_pad_2)
         self.Draw2DDisplay(event, 's2', 'bottom', 0, detail_pad_3)
-
-        # Make hit histogram
-        '''
-        hitplot_pad.cd()
-        channels = max(self.config['channels_in_detector']['tpc'])
-        twodhist = ROOT.TH2D("hist2d","",len(sum_waveform_x),0,
-                             self.samples_to_us*(len(sum_waveform_x)-1),
-                             channels, 0, channels)
-        maximumbin = 0
-        for pulse in event.pulses:
-            #Extract
-            w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
-            w *= dsputils.adc_to_pe(self.config, pulse.channel, use_reference_gain=True)
-            for i, sample in enumerate(w):
-                if sample > maximumbin:
-                    maximumbin = sample
-                twodhist.SetBinContent(pulse.left+i, pulse.channel, sample)
-        twodhist.SetStats(0)
-        twodhist.GetXaxis().SetTitle("Time [#mus]")
-        twodhist.GetYaxis().SetTitleOffset(0.3)
-        twodhist.GetYaxis().SetTitleSize(0.05)
-        twodhist.GetXaxis().SetTitleOffset(0.8)
-        twodhist.GetXaxis().SetTitleSize(0.05)
-        twodhist.GetYaxis().SetTitle("Channel")
-        maximumbin = min(maximumbin, 1)
-        twodhist.SetMaximum(maximumbin)
-        twodhist.Draw("colz")
-        '''
         
         win.Update()
         self.outfile.cd()
         win.Write()
 
-        # Now want all pulses written out
-        peak_indices = {}
-        hist_objs = [] #suppress warnings
-        for i, peak in enumerate(event.S2s()):
-            hist_objs.append(self.WriteHits(peak, event, i))
-        for i, peak in enumerate(event.S1s()):
-            hist_objs.append(self.WriteHits(peak, event, i))
-        for peak in event.peaks:
-            if peak.type == 's1' or peak.type == 's2':
-                continue
-            if peak.type not in peak_indices:
-                peak_indices[peak.type] = -1
-            peak_indices[peak.type] += 1
-            hist_objs.append(self.WriteHits(peak, event, peak_indices[peak.type]))
+        if self.full_plot:
+            # Now want all pulses written out
+            peak_indices = {}
+            hist_objs = [] #suppress warnings
+            for i, peak in enumerate(event.S2s()):
+                hist_objs.append(self.WriteHits(peak, event, i))
+            for i, peak in enumerate(event.S1s()):
+                hist_objs.append(self.WriteHits(peak, event, i))
+            for peak in event.peaks:
+                if peak.type == 's1' or peak.type == 's2':
+                    continue
+                if peak.type not in peak_indices:
+                    peak_indices[peak.type] = -1
+                peak_indices[peak.type] += 1
+                hist_objs.append(self.WriteHits(peak, event,
+                                                peak_indices[peak.type]))
                 
         self.outfile.Close()
 
@@ -248,12 +225,16 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             hittitle = "Hit from channel %i (%i) in %s[%i]" % (channel, hit_indices[channel], peak.type, index)
             c = ROOT.TCanvas(hitname, "")
             pulse = event.pulses[found_in_pulse]
+            plotleft = max(left-10, 0)
+            plotright = min(right+10, pulse.right)
             hist = ROOT.TH1F("hist_"+hitname, hittitle,
-                             pulse.right-pulse.left+1,
-                             pulse.left, pulse.right+1)
+                             int(plotright-plotleft+1),float(plotleft),
+                             float(plotright+1))
             w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
             for i, sample in enumerate(w):
-                hist.SetBinContent(i, sample)
+                if i+pulse.left >= plotleft and i+pulse.left <= plotright:
+                    hist.SetBinContent(int(i+pulse.left-plotleft),
+                                       float(sample))
 
             hist.SetStats(0)
             hist.GetXaxis().SetTitle("Time [samples]")
@@ -266,18 +247,23 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             c.cd()
             hist.Draw()
 
+            baseline = ROOT.TLine(plotleft,pulse.baseline,
+                                  plotright,pulse.baseline)
             leftline = ROOT.TLine(left, 0, left, height)
             rightline = ROOT.TLine(right, 0, right, height)
             leftline.SetLineStyle(2)
             rightline.SetLineStyle(2)
             leftline.SetLineColor(2)
             rightline.SetLineColor(2)
+            baseline.SetLineStyle(2)
+            baseline.SetLineColor(4)
+            baseline.Draw("same")
             leftline.Draw("same")
             rightline.Draw("same")
             c.Update()
             
             hists.append({"hist": hist, "c": c, "lline": leftline,
-                          "rline": rightline})
+                          "rline": rightline, "bline": baseline})
             directory.cd()
             c.Write()
         return hists
