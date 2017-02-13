@@ -39,6 +39,11 @@ class BuildInteractions(plugin.TransformPlugin):
                 ia.s1 = event.peaks.index(s1)
                 ia.s2 = event.peaks.index(s2)
                 ia.drift_time = dt
+
+                # Determine z position from drift time
+                # We must do this here, since we need z for the (r,z) correction
+                ia.z = - self.config['drift_velocity_liquid'] * (ia.drift_time - self.config['drift_time_gate'])
+
                 try:
                     # Get x,y position from S2 peak
                     recpos = s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
@@ -77,9 +82,6 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
             # Electron lifetime correction on S2 area
             ia.s2_lifetime_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
-
-            # Determine z position from drift time
-            ia.z = - self.config['drift_velocity_liquid'] * (ia.drift_time - self.config['drift_time_gate'])
 
             # S1 area correction: divide by relative light yield at the position
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
