@@ -21,6 +21,7 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
     def startup(self):
         self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'], k=1)
         self.dt = self.config['sample_duration']
+        self.rescale_factor = self.config['rescale_factor']
 
     def cluster_peak(self, peak):
         """Cluster hits in peak by variant on the natural breaks algorithm.
@@ -101,34 +102,47 @@ def _sad_fallback(x, areas, fallback):
     return sad
 
 
-@numba.jit(numba.float64(numba.int64[:], numba.int64[:],
-                         numba.float64[:], numba.float64[:], numba.float64[:],
-                         numba.float64[:]),
-           nopython=False)
-def compute_every_split_goodness(gaps, split_indices,
-                                 center, deviation, area,
-                                 results):
-    """Computes the "goodness of split" for several split points: see compute_split_goodness"""
-    for gap_i, gap in enumerate(gaps):
-        # Index of hit to split on = index first hit that will go to right cluster
-        split_i = split_indices[gap_i]
-        results[gap_i] = compute_split_goodness(split_i, center, deviation, area)
-
-
-@numba.jit(numba.float64(numba.int64, numba.float64[:], numba.float64[:], numba.float64[:]),
-           nopython=False)
-def compute_split_goodness(split_index, center, deviation, area):
+@numba.jit(numba.float64(numba.int64, numba.float64[:], numba.float64[:], numba.float64[:], numba.float64),
+           nopython=True)
+def compute_split_goodness(split_index, center, deviation, area, rescale_factor):
     """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
+    High values indicate a better split.
        left, right: left, right indices of hits
        area: area of hits
-    "goodness of split" = 1 - (sad(left cluster) + sad(right cluster) / sad(all_hits)
-      where sad = weighted (by area) sum of absolute deviation from mean.
+
+    "goodness of split" = 1 - (f(left cluster) + f(right cluster) / f(all_hits)
+    with f = mean absolute deviation from mean / area**rescale_factor
+    So if rescale_factor = 1, f is the mean absolute deviation from the mean (weighted by area)
+                         = 0, f is the SUM absolute deviation " '""
+    Low rescale factors prefer symmetric (equal area) splits over non-symmetric ones.
+
     For more information, see this note:
     https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering
     """
     if split_index > len(center) - 1 or split_index <= 0:
         raise ValueError("Ridiculous split index received!")
-    numerator = _sad_fallback(center[:split_index], areas=area[:split_index], fallback=deviation[:split_index])
-    numerator += _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
-    denominator = _sad_fallback(center, areas=area, fallback=deviation)
-    return 1 - numerator / denominator
+    sad_right = _sad_fallback(center[:split_index], areas=area[:split_index], fallback=deviation[:split_index])
+    sad_left = _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
+    sad_together = _sad_fallback(center, areas=area, fallback=deviation)
+
+    sum_right = area[:split_index].sum()
+    sum_left = area[split_index:].sum()
+    sum_together = sum_left + sum_right
+
+    result = sad_left / sum_left**rescale_factor + sad_right / sum_right**rescale_factor
+    result /= sad_together / sum_together**rescale_factor
+    return 1 - result
+
+
+@numba.jit(numba.void(numba.int64[:], numba.int64[:],
+                      numba.float64[:], numba.float64[:], numba.float64[:],
+                      numba.float64[:], numba.float64),
+           nopython=True)
+def compute_every_split_goodness(gaps, split_indices,
+                                 center, deviation, area,
+                                 results, rescale_factor):
+    """Computes the "goodness of split" for several split points: see compute_split_goodness"""
+    for gap_i, gap in enumerate(gaps):
+        # Index of hit to split on = index first hit that will go to right cluster
+        split_i = split_indices[gap_i]
+        results[gap_i] = compute_split_goodness(split_i, center, deviation, area, rescale_factor)
