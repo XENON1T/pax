@@ -21,6 +21,8 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
     def startup(self):
         self.output_dir = self.config['output_name']
         self.full_plot = False
+        print("ROOTPLOT")
+        print(self.config['rootplot_full'])
         if self.config['rootplot_full']:
             self.full_plot = True
         self.samples_to_us = self.config['sample_duration'] / units.us
@@ -128,7 +130,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             s2+=1              
             text.append(ROOT.TText(peak.left*self.samples_to_us, peak.height, label))
             text[len(text)-1].SetTextColor(self.peak_colors[peak.type])
-            text[len(text)-1].SetTextSize(0.02)
+            text[len(text)-1].SetTextSize(0.03)
             text[len(text)-1].Draw("same")
         for i, peak in enumerate(event.s1s()):
             if i > 1:
@@ -189,9 +191,14 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             peak_indices = {}
             hist_objs = [] #suppress warnings
             for i, peak in enumerate(event.S2s()):
+                if i > 2:
+                    break
                 hist_objs.append(self.WriteHits(peak, event, i))
             for i, peak in enumerate(event.S1s()):
+                if i > 2:
+                    break
                 hist_objs.append(self.WriteHits(peak, event, i))
+            '''
             for peak in event.peaks:
                 if peak.type == 's1' or peak.type == 's2':
                     continue
@@ -200,7 +207,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
                 peak_indices[peak.type] += 1
                 hist_objs.append(self.WriteHits(peak, event,
                                                 peak_indices[peak.type]))
-                
+            ''' 
         self.outfile.Close()
 
     def WriteHits(self, peak, event, index):
@@ -208,62 +215,109 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         hit_indices = {}
         directory = self.outfile.mkdir(peak.type+"_"+str(index))
         hists = []
-        for hit in peak.hits:
-            found_in_pulse = hit[3]
-            channel = hit[2]
-            center = hit[1]
-            # minus one here seems to be needed to get plot to line up
-            left = hit[7]-1 
-            right = hit[10]
-            height = hit[4]/dsputils.adc_to_pe(self.config,
-                                               channel,
-                                               use_reference_gain=True)
-            if channel not in hit_indices:
-                hit_indices[channel] = -1
-            hit_indices[channel] += 1
-            hitname = "hit_%s_%i_%i_%i" % (peak.type, index, channel, hit_indices[channel])
-            hittitle = "Hit from channel %i (%i) in %s[%i]" % (channel, hit_indices[channel], peak.type, index)
-            c = ROOT.TCanvas(hitname, "")
-            pulse = event.pulses[found_in_pulse]
-            plotleft = max(left-10, 0)
-            plotright = min(right+10, pulse.right)
-            hist = ROOT.TH1F("hist_"+hitname, hittitle,
-                             int(plotright-plotleft+1),float(plotleft),
-                             float(plotright+1))
-            w = self.config['digitizer_reference_baseline'] + pulse.baseline-pulse.raw_data.astype(np.float64)
-            for i, sample in enumerate(w):
-                if i+pulse.left >= plotleft and i+pulse.left <= plotright:
-                    hist.SetBinContent(int(i+pulse.left-plotleft),
-                                       float(sample))
 
-            hist.SetStats(0)
-            hist.GetXaxis().SetTitle("Time [samples]")
-            hist.GetYaxis().SetTitleOffset(0.8)
-            hist.GetYaxis().SetTitleSize(0.05)
-            hist.GetXaxis().SetTitleOffset(0.8)
-            hist.GetXaxis().SetTitleSize(0.05)
-            hist.GetYaxis().SetTitle("ADC Reading (baseline corrected)")
+        pulses_to_write = {}
+        hitlist = {}
+        
+        for hit in peak.hits:
+            hitdict = {
+                "found_in_pulse": hit[3],
+                "area": hit[0],
+                "channel": hit[2],
+                "center": hit[1]/10,                    
+                "left": hit[7]-1,
+                "right": hit[10],
+                "max_index": hit[5],
+                "height": hit[4]/dsputils.adc_to_pe(self.config,
+                                               hit[2],
+                                               use_reference_gain=True)
+            }            
+            if hitdict['channel'] not in hitlist:
+                hitlist[hitdict['channel']] = []
+                pulses_to_write[hitdict['channel']] = []
+            hitlist[hitdict['channel']].append(hitdict)
+            if hitdict['found_in_pulse'] not in pulses_to_write[hitdict['channel']]:
+                pulses_to_write[hitdict['channel']].append(hitdict['found_in_pulse'])
+
+        # Now we should have pulses_to_write with which
+        # pulses to plot per channel and
+        # hitlist with a list of all hit properties to add
+        for channel, pulselist in pulses_to_write.items():
+            leftbound = -1
+            rightbound = -1
+
+            # Needs an initial scan to find histogram range
+            for pulseid in pulselist:
+                if leftbound == -1 or event.pulses[pulseid].left < leftbound:
+                    leftbound = event.pulses[pulseid].left
+                if rightbound == -1 or event.pulses[pulseid].right > rightbound:
+                    rightbound = event.pulses[pulseid].right
+
+            # Make and book the histo. Put into hists so doesn't get overwritten
+            histname = "%s_%i_channel_%i" % (peak.type, index, channel)
+            histtitle = "Channel %i in %s[%i]" % (channel, peak.type, index)
+            c = ROOT.TCanvas(histname, "")
+            h = ROOT.TH1F(histname, histtitle, int(rightbound-leftbound),
+                          float(leftbound), float(rightbound))
+
+            # Now put the bin values in the histogram
+            for pulseid in pulselist:
+                pulse = event.pulses[pulseid]
+                w = ( self.config['digitizer_reference_baseline'] + pulse.baseline -
+                      pulse.raw_data.astype(np.float64) )
+                for i, sample in enumerate(w):
+                    h.SetBinContent(int(i+pulse.left-leftbound), sample)
+
+            h.SetStats(0)
+            h.GetXaxis().SetTitle("Time [samples]")
+            h.GetYaxis().SetTitleOffset(0.8)
+            h.GetYaxis().SetTitleSize(0.05)
+            h.GetXaxis().SetTitleOffset(0.8)
+            h.GetXaxis().SetTitleSize(0.05)
+            h.GetYaxis().SetTitle("ADC Reading (baseline corrected)")
 
             c.cd()
-            hist.Draw()
+            h.Draw()
 
-            baseline = ROOT.TLine(plotleft,pulse.baseline,
-                                  plotright,pulse.baseline)
-            leftline = ROOT.TLine(left, 0, left, height)
-            rightline = ROOT.TLine(right, 0, right, height)
-            leftline.SetLineStyle(2)
-            rightline.SetLineStyle(2)
-            leftline.SetLineColor(2)
-            rightline.SetLineColor(2)
-            baseline.SetLineStyle(2)
-            baseline.SetLineColor(4)
-            baseline.Draw("same")
-            leftline.Draw("same")
-            rightline.Draw("same")
+            plist = {"x":[], "y":[]}
+            for i, hitdict in enumerate(hitlist[channel]):
+                
+                baseline = ROOT.TLine(hitdict['left'],pulse.baseline,
+                                  hitdict['right'],pulse.baseline)
+                leftline = ROOT.TLine(hitdict['left'], 0, hitdict['left'], hitdict['height'])
+                rightline = ROOT.TLine(hitdict['right'], 0, hitdict['right'], hitdict['height'])
+                
+                plist['x'].append(hitdict['center'])
+                plist['y'].append(hitdict['height'])
+                leftline.SetLineStyle(2)
+                rightline.SetLineStyle(2)
+                leftline.SetLineColor(2)
+                rightline.SetLineColor(2)
+                baseline.SetLineStyle(2)
+                baseline.SetLineColor(4)
+                baseline.Draw("same")
+                leftline.Draw("same")
+                rightline.Draw("same")
+
+                label = "hit " + str(i) + "({:.2f} p.e.)".format(hitdict['area'])
+                text = ROOT.TText(hitdict['center'], hitdict['height'], label)
+                text.SetTextColor(2)
+                text.SetTextSize(0.03)
+                text.Draw("same")
+                c.Update()
+                hists.append({"lline": leftline, "text": text,
+                              "rline": rightline, "bline": baseline})
+            c.cd()
+            polymarker = ROOT.TPolyMarker()
+            polymarker.SetMarkerStyle(23)
+            polymarker.SetMarkerColor(2)
+            polymarker.SetMarkerSize(1.1)
+            polymarker.SetPolyMarker(len(plist['x']), np.array(plist['x']),
+                                     np.array(plist['y']))
+            polymarker.Draw("same")
             c.Update()
+            hists.append({"poly": polymarker, "hist": h, "c": c})
             
-            hists.append({"hist": hist, "c": c, "lline": leftline,
-                          "rline": rightline, "bline": baseline})
             directory.cd()
             c.Write()
         return hists
