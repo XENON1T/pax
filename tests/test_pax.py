@@ -226,7 +226,7 @@ class TestPax(unittest.TestCase):
                                                     'output_name': 'plots_test'}})
         mypax.run()
         self.assertTrue(os.path.exists('./plots_test'))
-        self.assertTrue(os.path.exists('./plots_test/000000.png'))
+        self.assertTrue(os.path.exists('./plots_test/000000_000000.png'))
         shutil.rmtree('plots_test')
 
 
