@@ -14,7 +14,7 @@ class SoftwareZLE(plugin.TransformPlugin):
     Uses a separate debug setting, as need to show plots
     """
     debug = False
-    zle_intervals_buffer = -1 * np.ones((5000, 2), dtype=np.int64)
+    zle_intervals_buffer = -1 * np.ones((50000, 2), dtype=np.int64)
 
     def transform_event(self, event):
         new_pulses = []
@@ -53,8 +53,10 @@ class SoftwareZLE(plugin.TransformPlugin):
 
             # Find intervals above ZLE threshold
             n_itvs_found = find_intervals_above_threshold(w.astype(np.float64),
-                                                          threshold, threshold, zle_intervals_buffer,
-                                                          dynamic_low_threshold_coeff=0)
+                                                          threshold=threshold,
+                                                          left_extension=0, right_extension=0,
+                                                          result_buffer=zle_intervals_buffer,
+                                                          )
 
             if n_itvs_found == self.config['max_intervals']:
                 # more than 5000 intervals - insane!!!

@@ -8,6 +8,7 @@ import logging
 import math
 import time
 import pickle
+from functools import partial
 
 import numpy as np
 import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
@@ -61,12 +62,18 @@ class Simulator(object):
 
         # Determine sensible length of a pmt pulse to simulate
         dt = c['sample_duration']
-        c['samples_before_pulse_center'] = math.ceil(
-            c['pulse_width_cutoff'] * c['pmt_rise_time'] / dt
-        )
-        c['samples_after_pulse_center'] = math.ceil(
-            c['pulse_width_cutoff'] * c['pmt_fall_time'] / dt
-        )
+        if c['pe_pulse_model'] == 'exponential':
+            c['samples_before_pulse_center'] = math.ceil(c['pulse_width_cutoff'] * c['pmt_rise_time'] / dt)
+            c['samples_after_pulse_center'] = math.ceil(c['pulse_width_cutoff'] * c['pmt_fall_time'] / dt)
+        else:
+            # Build the custom PMT pulse model
+            ts = np.array(c['pe_pulse_ts'])
+            ys = np.array(c['pe_pulse_ys'])
+
+            # Integrate and normalize it
+            # Note we're storing the integrated pulse, while the user gives the regular pulse.
+            c['pe_pulse_function'] = interp1d(ts, np.cumsum(ys)/np.sum(ys), bounds_error=False, fill_value=(0, 1))
+
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
             c['samples_before_pulse_center'], c['samples_after_pulse_center']))
 
@@ -80,6 +87,12 @@ class Simulator(object):
         # Load light yields
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
         self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
+
+        # Load transverse field (r,z) distortion map
+        if c.get('rz_position_distortion_map'):
+            self.rz_position_distortion_map = InterpolatingMap(utils.data_file_name(c['rz_position_distortion_map']))
+        else:
+            self.rz_position_distortion_map = None
 
         # Init s2 per pmt lce map
         qes = np.array(c['quantum_efficiencies'])
@@ -97,6 +110,7 @@ class Simulator(object):
         if c.get('s1_patterns_file', None) is not None:
             self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
                                              zoom_factor=c.get('s1_patterns_zoom_factor', 1),
+                                             adjust_to_qe=qes[c['channels_in_detector']['tpc']],
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s1_patterns = None
@@ -414,19 +428,23 @@ class Simulator(object):
         self.clear_signals_queue()
         return event
 
-    def s2_electrons(self, electrons_generated=None, z=0., t=0.):
+    def s2_electrons(self, electrons_generated=None, z=0, r=0, t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
 
             electrons             -   total # of drift electrons generated at the interaction site
             t                     -   Time at which the original energy deposition occurred.
+            r                     -   Radius at which " " " " " (needed for (r,z) distortion)
             z                     -   Depth below the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
-
         if not - self.config['tpc_length'] <= z <= 0:
             log.warning("Unphysical depth: %s cm below gate. Not generating S2." % - z)
             return []
         log.debug("Creating an s2 from %s electrons..." % electrons_generated)
+
+        # Correct the z position for the radial distortion
+        if self.rz_position_distortion_map:
+            z += self.rz_position_distortion_map.get_value(r, z, map_name='to_distorted_z')
 
         # Average drift time of the electrons
         drift_time_mean = - z / self.config['drift_velocity_liquid'] + self.config['drift_time_gate']
@@ -577,14 +595,22 @@ class Simulator(object):
 
     def pmt_pulse_current(self, gain, offset=0):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
-        return gain * pmt_pulse_current_raw(
-            self.config['pmt_pulse_time_rounding'] * round(offset / self.config['pmt_pulse_time_rounding']),
-            self.config['sample_duration'],
-            self.config['samples_before_pulse_center'],
-            self.config['samples_after_pulse_center'],
-            self.config['pmt_rise_time'],
-            self.config['pmt_fall_time'],
-        )
+        offset = self.config['pmt_pulse_time_rounding'] * round(offset / self.config['pmt_pulse_time_rounding'])
+        if self.config['pe_pulse_model'] == 'exponential':
+            return gain * double_exp_pmt_pulse_current_raw(
+                offset,
+                self.config['sample_duration'],
+                self.config['samples_before_pulse_center'],
+                self.config['samples_after_pulse_center'],
+                self.config['pmt_rise_time'],
+                self.config['pmt_fall_time'],
+            )
+        else:
+            return gain * custom_pmt_pulse_current(self.config['pe_pulse_function'],
+                                                   offset,
+                                                   self.config['sample_duration'],
+                                                   self.config['samples_before_pulse_center'],
+                                                   self.config['samples_after_pulse_center'])
 
     def distribute_photons(self, n_photons, x, y, z):
         """Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)
@@ -684,15 +710,29 @@ class Simulator(object):
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
 
 @Memoize
-def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
-    return np.diff(exp_pulse(
+def double_exp_pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
+    pmt_pulse = partial(exp_pulse, q=units.electron_charge, tr=tr, tf=tf)
+    return digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after)
+
+
+@Memoize
+def custom_pmt_pulse_current(pmt_pulse, offset, dt, samples_before, samples_after):
+    return digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after)
+
+
+def digitizer_response(pmt_pulse, offset, dt, samples_before, samples_after):
+    """Get the output of pmt_pulse(t) on a digitizer with sampling size dt.
+    :param pmt_pulse: function that accepts a numpy array of times.
+    :param offset: Offset of the digitizer time grid (number in [0, dt])
+    :param dt: sampling size (ns)
+    :param samples_before: number of samples before the maximum to simulate
+    :param samples_after: number of samples after the maximum to simulate
+    """
+    return np.diff(pmt_pulse(
         np.linspace(
             - offset - samples_before * dt,
             - offset + samples_after * dt,
-            1 + samples_before + samples_after),
-        units.electron_charge,
-        tr,
-        tf
+            1 + samples_before + samples_after)
     )) / dt
 
 

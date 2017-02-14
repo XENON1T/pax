@@ -1,11 +1,8 @@
 import unittest
 import numpy as np
 
-from pax import core, datastructure, utils
-import os
-import sys
-sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
-import HitFinder  # flake8: noqa
+from pax import core, datastructure
+from pax.plugins.signal_processing import HitFinder, PulseProperties
 
 
 class TestHitFinder(unittest.TestCase):
@@ -23,8 +20,14 @@ class TestHitFinder(unittest.TestCase):
                                       'pax': {
                                           'plugin_group_names': ['test'],
                                           'encoder_plugin': None,
-                                          'test':               'HitFinder.FindHits'}})
-        plugin = self.pax.get_plugin_by_name('FindHits')
+                                          'decoder_plugin': None,
+                                          'test':               ['PulseProperties.PulseProperties',
+                                                                 'HitFinder.FindHits']},
+                                      'HitFinder.FindHits': {
+                                          'left_extension': 0,
+                                          'right_extension': 0
+                                      }
+                                  })
         for test_w, hit_bounds, pulse_min, pulse_max in (
             # Keep in mind the hitfinder flips the pulse...
             [np.zeros(100), [], 0, 0],
@@ -36,14 +39,14 @@ class TestHitFinder(unittest.TestCase):
             [self.peak_at(70, amplitude=-100, width=4) + self.peak_at(80, amplitude=-100, width=4),
              [[70, 73], [80, 83]], 0, 100],
         ):
-            e = datastructure.Event(n_channels=plugin.config['n_channels'],
+            e = datastructure.Event(n_channels=self.pax.config['DEFAULT']['n_channels'],
                                     start_time=0,
-                                    sample_duration=plugin.config['sample_duration'],
+                                    sample_duration=self.pax.config['DEFAULT']['sample_duration'],
                                     stop_time=int(1e6),
                                     pulses=[dict(left=0,
                                                  raw_data=np.array(test_w).astype(np.int16),
                                                  channel=1)])
-            e = plugin.transform_event(e)
+            e = self.pax.process_event(e)
             self.assertEqual(hit_bounds, [[hit['left'], hit['right']] for hit in e.all_hits])
             self.assertEqual(pulse_min, e.pulses[0].minimum)
             self.assertEqual(pulse_max, e.pulses[0].maximum)
@@ -51,8 +54,11 @@ class TestHitFinder(unittest.TestCase):
         delattr(self, 'pax')
 
     def test_intervals_above_threshold(self):
-        # Test of the "hitfinder part" of the hitfinder
+        """Test of the "hitfinder part" of the hitfinder
+        """
         for test_waveform, a in (
+            ([], []),
+            ([1], [[0, 0]]),
             ([0, 1, 2, 0, 4, -1, 60, 700, -4], [[1, 2], [4, 4], [6, 7]]),
             ([1, 1, 2, 0, 4, -1, 60, 700, -4], [[0, 2], [4, 4], [6, 7]]),
             ([1, 0, 2, 3, 4, -1, 60, 700, -4], [[0, 0], [2, 4], [6, 7]]),
@@ -61,10 +67,36 @@ class TestHitFinder(unittest.TestCase):
         ):
             result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
             hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
-                                                                  high_threshold=0,
-                                                                  low_threshold=0,
-                                                                  result_buffer=result_buffer,
-                                                                  dynamic_low_threshold_coeff=0)
+                                                                  threshold=0, left_extension=0, right_extension=0,
+                                                                  result_buffer=result_buffer)
+            found = result_buffer[:hits_found]
+            self.assertEqual(found.tolist(), a)
+
+    def test_left_right_extension(self):
+        """Test of the "hitfinder part" of the hitfinder, now with left and right extension enabled
+        """
+        for test_waveform, a in (
+            ([], []),
+
+            # Single interval tests
+            ([1], [[0, 0]]),
+            ([0, 1], [[0, 1]]),
+            ([0, 0, 1], [[1, 2]]),
+            ([0, 0, 1, 0], [[1, 3]]),
+            ([0, 0, 1, 0, 0], [[1, 4]]),
+            ([0, 0, 1, 0, 0, 0], [[1, 4]]),
+            ([0, 0, 1, 1, 0, 0, 0], [[1, 5]]),
+
+            # Competition between left and right extension
+            ([1, 0, 0, 1], [[0, 2], [3, 3]]),
+            ([1, 0, 0, 1, 0, 0, 0], [[0, 2], [3, 5]]),
+            ([1, 0, 0, 0, 1, 0, 0, 0], [[0, 2], [3, 6]]),
+            ([1, 0, 0, 0, 0, 1, 0, 0, 0], [[0, 2], [4, 7]]),
+        ):
+            result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
+            hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
+                                                                  threshold=0, left_extension=1, right_extension=2,
+                                                                  result_buffer=result_buffer)
             found = result_buffer[:hits_found]
             self.assertEqual(found.tolist(), a)
 
@@ -84,16 +116,17 @@ class TestHitFinder(unittest.TestCase):
             [42],
         ):
             w = np.array(w, dtype=np.float64)
-            baseline, baseline_increase, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, baseline_samples=10)
+            results = PulseProperties.compute_pulse_properties(w, baseline_samples=10)
+            baseline, baseline_increase, noise, min_w, max_w = results
             bl_before = np.mean(w[:min(len(w), 10)])
             bl_after = np.mean(w[-min(len(w), 10):])
-            self.assertEqual(baseline, max(bl_before, bl_after))
+            self.assertEqual(baseline, bl_before)
             self.assertEqual(baseline_increase, bl_after - bl_before)
             w -= baseline
             self.assertEqual(min_w, np.min(w))
             self.assertEqual(max_w, np.max(w))
             below_bl = w[w < 0]
-            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2/len(below_bl))))
+            self.assertAlmostEqual(noise, np.sqrt(np.sum(below_bl**2 / len(below_bl))))
 
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center

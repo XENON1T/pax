@@ -13,7 +13,8 @@ from time import strftime
 
 import numpy as np
 import pax    # for version
-from pax.datastructure import Event, ReconstructedPosition
+from pax import dsputils
+from pax.datastructure import Event, ReconstructedPosition, Peak
 
 
 class BasePlugin(object):
@@ -141,7 +142,7 @@ class OutputPlugin(ProcessPlugin):
 
 
 class ClusteringPlugin(TransformPlugin):
-    """Base class for clustering plugins"""
+    """Base class for peak building / clustering plugins"""
 
     def transform_event(self, event):
         self.event = event
@@ -158,6 +159,31 @@ class ClusteringPlugin(TransformPlugin):
 
     def finalize_event(self):
         pass
+
+    def build_peak(self, hits, detector, **kwargs):
+        """Return a peak object made from hits. Compute a few basic properties which are needed during the clustering
+        stages.
+        Any kwargs will be passed to the peak constructor.
+        """
+        hits.sort(order='left')     # Hits must always be in sorted time order
+
+        peak = Peak(detector=detector, hits=hits, **kwargs)
+
+        peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=hits['area'])
+        peak.n_contributing_channels = np.sum(peak.does_channel_contribute)
+
+        if peak.n_contributing_channels == 0:
+            raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
+
+        if peak.n_contributing_channels == 1:
+            peak.type = 'lone_hit'
+            peak.lone_hit_channel = hits[0]['channel']
+
+        peak.area = peak.area_per_channel.sum()
+        peak.left = peak.hits[0]['left']
+        peak.right = peak.hits['right'].max()
+
+        return peak
 
 
 class PosRecPlugin(TransformPlugin):

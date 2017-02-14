@@ -1,12 +1,10 @@
 import numpy as np
 
-from pax import plugin, datastructure
-from pax import dsputils
+from pax import plugin, dsputils
 
 
-class GapSizeClustering(plugin.TransformPlugin):
+class GapSizeClustering(plugin.ClusteringPlugin):
     """Cluster individual hits into rough groups = Peaks separated by at least max_gap_size_in_cluster
-    Also labels peak as 'lone_hit' if only one channel contributes
     """
 
     def startup(self):
@@ -28,16 +26,7 @@ class GapSizeClustering(plugin.TransformPlugin):
             cluster_indices = [0] + np.where(gaps > self.gap_threshold)[0].tolist() + [len(hits)]
             for i in range(len(cluster_indices) - 1):
                 hits_in_this_peak = hits[cluster_indices[i]:cluster_indices[i + 1]]
-                peak = datastructure.Peak(detector=detector,
-                                          hits=hits_in_this_peak)
-
-                # Area per channel must be computed here so RejectNoiseHits can use it
-                # unfortunate code duplication with BasicProperties!
-                peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config,
-                                                                        weights=hits_in_this_peak['area'])
-                if np.sum(peak.area_per_channel > 0) == 1:
-                    peak.type = 'lone_hit'
-
-                event.peaks.append(peak)
+                event.peaks.append(self.build_peak(hits=hits_in_this_peak,
+                                                   detector=detector))
 
         return event
