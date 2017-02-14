@@ -381,8 +381,6 @@ class Simulator(object):
             adc_wave *= self.config['pmt_circuit_load_resistor']    # Now in voltage
             adc_wave *= self.config['external_amplification']       # Now in voltage after amplifier
             adc_wave /= dv                                          # Now in float ADC counts above baseline
-            adc_wave = np.trunc(adc_wave)                           # Now in integer ADC counts "" ""
-            # Could round instead of trunc... who cares?
 
             # PMT signals are negative excursions, so flip them.
             adc_wave = - adc_wave
@@ -395,6 +393,7 @@ class Simulator(object):
                 chosen_noise_sample_numbers = np.random.randint(0,
                                                                 available_noise_samples - 1,
                                                                 needed_noise_samples)
+
                 # Extract the chosen noise samples and concatenate them
                 # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                 #  -- yeah making an index list with np.arange would work, but honestly??
@@ -402,18 +401,24 @@ class Simulator(object):
                     self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
                     for nsn in chosen_noise_sample_numbers
                 ])
+
                 # Adjust the noise amplitude if needed, then add it to the ADC wave
                 noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
                 if noise_amplitude != 1:
                     # Determine a rough baseline for the noise, then adjust towards it
                     baseline = np.mean(real_noise[:min(len(real_noise), 50)])
                     real_noise = baseline + noise_amplitude * (real_noise - baseline)
-                adc_wave += real_noise[:pulse_length]
+
+                # Add uniform [-0.5, 5] adc count, to account for digitization uncertainty on real noise sample
+                adc_wave += real_noise[:pulse_length] + np.random.uniform(-0.5, 0.5, size=pulse_length)
 
             else:
                 # If you don't want to superpose onto real noise,
                 # we should add a reference baseline
                 adc_wave += self.config['digitizer_reference_baseline']
+
+            # Convert to an integer signal. I'm using trunc here, maybe rounds is better, would have to check with CAEN
+            adc_wave = np.trunc(adc_wave)
 
             # Digitizers have finite number of bits per channel, so clip the signal.
             adc_wave = np.clip(adc_wave, 0, 2 ** (self.config['digitizer_bits']))
