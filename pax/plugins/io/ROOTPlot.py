@@ -21,8 +21,8 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
     def startup(self):
         self.output_dir = self.config['output_name']
         self.full_plot = False
-        print("ROOTPLOT")
-        print(self.config['rootplot_full'])
+#        print("ROOTPLOT")
+#        print(self.config['rootplot_full'])
         if self.config['rootplot_full']:
             self.full_plot = True
         self.samples_to_us = self.config['sample_duration'] / units.us
