@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.3.2 (2017-02-13)
+------------------
+* Fix (r,z) correction bug (#498)
+* Neural network update (#495)
+
+------------------
 6.3.1 (2017-02-09)
 ------------------
 * Fix crash due to edge case due to negative samples in hits (#490)
