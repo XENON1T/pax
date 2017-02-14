@@ -210,9 +210,5 @@ def build_hits(w, hit_bounds,
         hits_buffer[hit_i].center = (start + left + center) * dt
         hits_buffer[hit_i].index_of_maximum = start + left + argmax
         hits_buffer[hit_i].n_saturated = saturation_count
-
-        # In certain pathological cases (e.g. due to splitting hits later in LocalMinimumClustering)
-        # hits can have negative area or (even rarer) negative height.
-        # This leads to problems in later code, so we force a minimum area and height of 1e-9)
         hits_buffer[hit_i].area = area * adc_to_pe
         hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe
