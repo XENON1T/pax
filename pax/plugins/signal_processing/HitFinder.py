@@ -4,7 +4,7 @@ import numba
 import os
 
 from pax import plugin, datastructure, dsputils
-from pax.dsputils import find_intervals_above_threshold
+from pax.dsputils import find_intervals_above_threshold, extend_intervals, build_hits, find_split_points
 
 
 class FindHits(plugin.TransformPlugin):
@@ -112,14 +112,36 @@ class FindHits(plugin.TransformPlugin):
                 # Call the numba hit finder -- see its docstring for description
                 n_hits_found = find_intervals_above_threshold(w,
                                                               threshold=float(pulse.hitfinder_threshold),
-                                                              left_extension=left_extension,
-                                                              right_extension=right_extension,
                                                               result_buffer=hit_bounds_buffer)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
             pulse.n_hits_found = n_hits_found
             hit_bounds_found = hit_bounds_buffer[:n_hits_found]
+
+            if self.always_find_single_hit:
+                central_bounds = hit_bounds_found
+            else:
+                # Split the hits at sufficiently salient local minima
+                split_points = []
+                for hit_i in range(n_hits_found):
+                    l = hit_bounds_found[hit_i,0]
+                    r = hit_bounds_found[hit_i,1]
+                    split_points += [x + l for x in find_split_points(w[l:r], 0.5, 1.5)]
+
+                if len(split_points):
+                    split_points = np.array(split_points)
+
+                    hit_bounds_found = np.sort(np.concatenate([hit_bounds_found.ravel(),
+                                                               split_points,
+                                                               split_points + 1])).reshape(-1, 2).astype(np.int)
+
+                    pulse.n_hits_found = n_hits_found = len(hit_bounds_found)
+
+                # Extend the boundaries of each hit, to be sure we integrate everything.
+                # The original bounds are preserved: they are used in clustering
+                central_bounds = hit_bounds_found.copy()
+                extend_intervals(w, hit_bounds_found, left_extension, right_extension)
 
             # If no hits were found, this is a noise pulse: update the noise pulse count
             if n_hits_found == 0:
@@ -144,7 +166,7 @@ class FindHits(plugin.TransformPlugin):
             saturation_threshold = self.reference_baseline - pulse.baseline - 0.5
 
             build_hits(w, hit_bounds_found, hits_buffer,
-                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold)
+                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold, central_bounds)
             hits = hits_buffer[:n_hits_found].copy()
             hits_per_pulse.append(hits)
 
@@ -155,60 +177,3 @@ class FindHits(plugin.TransformPlugin):
             self.log.warning("Event has no pulses??!")
 
         return event
-
-
-@numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
-                      numba.from_dtype(datastructure.Hit.get_dtype())[:],
-                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64, numba.float64),
-           nopython=True)
-def build_hits(w, hit_bounds,
-               hits_buffer,
-               adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold):
-    """Populates hits_buffer with properties from hits indicated by hit_bounds.
-        hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w
-    Returns nothing.
-    """
-    for hit_i in range(len(hit_bounds)):
-        amplitude = -999.9
-        argmax = -1
-        area = 0.0
-        center = 0.0
-        deviation = 0.0
-        saturation_count = 0
-        left = hit_bounds[hit_i, 0]
-        right = hit_bounds[hit_i, 1]
-        for i, x in enumerate(w[left:right + 1]):
-            if x > amplitude:
-                amplitude = x
-                argmax = i
-            if x > saturation_threshold:
-                saturation_count += 1
-            area += x
-            center += x * i
-
-        # During gain calibration, or if the low threshold is set to negative values,
-        # the hitfinder can include regions with negative amplitudes
-        # In rare cases this can make the area come out at 0, in which case this code
-        # would throw a divide by zero exception.
-        if area != 0:
-            center /= area
-            for i, x in enumerate(w[left:right + 1]):
-                deviation += x * abs(i - center)
-            deviation /= area
-
-        # Store the hit properties
-        hits_buffer[hit_i].channel = channel
-        hits_buffer[hit_i].found_in_pulse = pulse_i
-        hits_buffer[hit_i].noise_sigma = noise_sigma_pe
-        hits_buffer[hit_i].left = left + start
-        hits_buffer[hit_i].right = right + start
-        hits_buffer[hit_i].sum_absolute_deviation = deviation
-        hits_buffer[hit_i].center = (start + left + center) * dt
-        hits_buffer[hit_i].index_of_maximum = start + left + argmax
-        hits_buffer[hit_i].n_saturated = saturation_count
-
-        # In certain pathological cases (e.g. due to splitting hits later in LocalMinimumClustering)
-        # hits can have negative area or (even rarer) negative height.
-        # This leads to problems in later code, so we force a minimum area and height of 1e-9)
-        hits_buffer[hit_i].area = max(1e-9, area * adc_to_pe)
-        hits_buffer[hit_i].height = max(1e-9, w[argmax + left] * adc_to_pe)

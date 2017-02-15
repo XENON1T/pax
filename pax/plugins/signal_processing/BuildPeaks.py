@@ -21,7 +21,7 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                                   (event.all_hits['channel'] <= channels[-1])]
             if len(hits) == 0:
                 continue
-            hits.sort(order='left')
+            hits.sort(order='left_central')
             gaps = dsputils.gaps_between_hits(hits)
             cluster_indices = [0] + np.where(gaps > self.gap_threshold)[0].tolist() + [len(hits)]
             for i in range(len(cluster_indices) - 1):

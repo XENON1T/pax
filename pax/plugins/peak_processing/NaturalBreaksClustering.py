@@ -40,15 +40,20 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
 
         self.log.debug("Clustering hits %d-%d" % (hits[0]['center'], hits[-1]['center']))
 
-        # Compute gaps between hits, select large enough gaps to test
-        gaps = dsputils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
-        selection = gaps > self.config['min_gap_size_for_break'] / self.dt
-        split_indices = np.arange(1, len(gaps) + 1)[selection]
-        gaps = gaps[selection]
+        # import matplotlib.pyplot as plt
+        # for h in peak.hits:
+        #     #plt.axvspan(h['left_central'], h['right_central'], color='k', alpha=0.1)
+        #     if h['left_central'] < 515 and h['right_central'] > 515:
+        #         print(h['channel'], h['found_in_pulse'])
+        # plt.show()
+
+        peak.hits.sort(order='left_central')
+        selection = np.diff(peak.hits['left_central']) > 0
+        split_indices = np.arange(1, len(peak.hits))[selection]
 
         # Look for good split points
-        gos_observed = np.zeros(len(gaps))
-        compute_every_split_goodness(gaps, split_indices,
+        gos_observed = np.zeros(len(split_indices))
+        compute_every_split_goodness(split_indices,
                                      hits['center'], hits['sum_absolute_deviation'], hits['area'],
                                      gos_observed, self.config['rescale_factor'])
 
@@ -62,14 +67,8 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
             # Should we split? If so, recurse.
             if split_goodness > split_threshold:
                 self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i, split_goodness, split_threshold))
-                peak_l = self.build_peak(hits=hits[:split_i],
-                                         detector=peak.detector,
-                                         birthing_split_goodness=split_goodness,
-                                         birthing_split_fraction=np.sum(hits['area'][:split_i]) / peak.area)
-                peak_r = self.build_peak(hits=hits[split_i:],
-                                         detector=peak.detector,
-                                         birthing_split_goodness=split_goodness,
-                                         birthing_split_fraction=np.sum(hits['area'][split_i:]) / peak.area)
+                # split_peak takes an index in the peak, not the event!
+                peak_l, peak_r = self.split_peak(peak, [peak.hits[split_i]['left_central'] - peak.left - 1])
                 return self.cluster_peak(peak_l) + self.cluster_peak(peak_r)
             else:
                 self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
@@ -134,15 +133,14 @@ def compute_split_goodness(split_index, center, deviation, area, rescale_factor)
     return 1 - result
 
 
-@numba.jit(numba.void(numba.int64[:], numba.int64[:],
+@numba.jit(numba.void(numba.int64[:],
                       numba.float64[:], numba.float64[:], numba.float64[:],
                       numba.float64[:], numba.float64),
            nopython=True)
-def compute_every_split_goodness(gaps, split_indices,
+def compute_every_split_goodness(split_indices,
                                  center, deviation, area,
                                  results, rescale_factor):
     """Computes the "goodness of split" for several split points: see compute_split_goodness"""
-    for gap_i, gap in enumerate(gaps):
+    for i, split_i in enumerate(split_indices):
         # Index of hit to split on = index first hit that will go to right cluster
-        split_i = split_indices[gap_i]
-        results[gap_i] = compute_split_goodness(split_i, center, deviation, area, rescale_factor)
+        results[i] = compute_split_goodness(split_i, center, deviation, area, rescale_factor)

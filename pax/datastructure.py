@@ -102,6 +102,9 @@ class Hit(StrictModel):
     left = 0                 #: Index/sample of left bound (inclusive) of hit in event.
     right = 0                #: Index/sample of right bound (INCLUSIVE!!) of hit in event.
 
+    left_central = 0         #: Index/sample of the left bound of the central (above treshold) part of the hit in event
+    right_central = 0        #: Index/sample of the right bound of the central (above treshold) part of the hit in event
+
     @property
     def length(self):
         """Length of the hit (in samples)"""

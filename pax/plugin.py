@@ -14,7 +14,7 @@ from time import strftime
 import numpy as np
 import pax    # for version
 from pax import dsputils
-from pax.datastructure import Event, ReconstructedPosition, Peak
+from pax.datastructure import Event, ReconstructedPosition, Peak, Hit
 
 
 class BasePlugin(object):
@@ -150,22 +150,31 @@ class ClusteringPlugin(TransformPlugin):
         for peak in event.peaks:
             new_peaks += self.cluster_peak(peak)
         event.peaks = new_peaks
-        self.finalize_event()
+
+        # Update the event.all_hits field (for plotting), since new hits could have been created
+        # Note we must separately get out the rejected hits, they are not in any peak...
+        self.event.all_hits = np.concatenate([p.hits for p in self.event.peaks] +
+                                             [self.event.all_hits[self.event.all_hits['is_rejected']]])
+
+        # Restores order after shenanigans here
+        # Important if someone uses (dict_)group_by from recarray tools later
+        # As is done, for example in the hitfinder diagnostic plots... if you don't do this you get really strange
+        # things there (missing hits were things were split, which makes you think there is a bug
+        # in LocalMinimumClustering, but actually there isn't...)
+        self.event.all_hits.sort(order='found_in_pulse')
+
         return event
 
     def cluster_peak(self, peak):
         """Takes peak and returns LIST of peaks"""
         raise NotImplementedError
 
-    def finalize_event(self):
-        pass
-
     def build_peak(self, hits, detector, **kwargs):
         """Return a peak object made from hits. Compute a few basic properties which are needed during the clustering
         stages.
         Any kwargs will be passed to the peak constructor.
         """
-        hits.sort(order='left')     # Hits must always be in sorted time order
+        hits.sort(order='left_central')     # Hits must always be in sorted time order
 
         peak = Peak(detector=detector, hits=hits, **kwargs)
 
@@ -184,6 +193,78 @@ class ClusteringPlugin(TransformPlugin):
         peak.right = peak.hits['right'].max()
 
         return peak
+
+    def split_peak(self, peak, split_points):
+        """Yields new peaks split from peak at split_points = sample indices within peak
+        Samples at the split points will fall to the right (so if we split [0, 5] on 2, you get [0, 1] and [2, 5]).
+        Hits that straddle a split point are themselves split into two hits: peak.hits is updated.
+        """
+        # First, split hits that straddle the split points
+        # Hits may have to be split several times; for each split point we modify the 'hits' list, splitting only
+        # the hits we need.
+        hits = peak.hits
+        for x in split_points:
+            x += peak.left   # Convert to index in event
+
+            # Select hits that must be split: start before x and end after it.
+            selection = (hits['left'] <= x) & (hits['right'] > x)
+            hits_to_split = hits[selection]
+
+            # new_hits will be a list of hit arrays, which we concatenate later to make the new 'hits' list
+            # Start with the hits that don't have to be split: we definitely want to retain those!
+            new_hits = [hits[True ^ selection]]
+
+            for h in hits_to_split:
+                pulse_i = h['found_in_pulse']
+                pulse = self.event.pulses[pulse_i]
+
+                # Get the pulse waveform in ADC counts above baseline (because it's what build_hits expect)
+                baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
+                w = baseline_to_subtract - pulse.raw_data.astype(np.float64)
+
+                # Use the hitfinder's build_hits to compute the properties of these hits
+                # Damn this is ugly... but at least we don't have duplicate property computation code
+                hits_buffer = np.zeros(2, dtype=Hit.get_dtype())
+                adc_to_pe = dsputils.adc_to_pe(self.config, h['channel'])
+                hit_bounds = np.array([[h['left'], x], [x+1, h['right']]], dtype=np.int64)
+                hit_bounds -= pulse.left   # build_hits expects hit bounds relative to pulse start
+                dsputils.build_hits(w,
+                           hit_bounds=hit_bounds,
+                           hits_buffer=hits_buffer,
+                           adc_to_pe=adc_to_pe,
+                           channel=h['channel'],
+                           noise_sigma_pe=pulse.noise_sigma * adc_to_pe,
+                           dt=self.config['sample_duration'],
+                           start=pulse.left,
+                           pulse_i=pulse_i,
+                           saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5,
+                           central_bounds=hit_bounds)       # TODO: Recompute central_bounds in intelligent way
+
+                new_hits.append(hits_buffer)
+
+            # Now remake the hits list, then go on to the next peak.
+            hits = np.concatenate(new_hits)
+
+        # Next, split the peaks, sorting hits to the correct peak by their maximum index.
+        # Iterate over left, right bounds of the new peaks
+        boundaries = list(zip([0] + [y+1 for y in split_points], split_points + [float('inf')]))
+        for l, r in boundaries:
+            # Convert to index in event
+            l += peak.left
+            r += peak.left
+
+            # Select hits which have their maximum within this peak bounds
+            # The last new peak must also contain hits at the right bound (though this is unlikely to happen)
+            hs = hits[(hits['index_of_maximum'] >= l) &
+                      (hits['index_of_maximum'] <= r)]
+
+            if not len(hs):
+                print(l, r, hits['index_of_maximum'])
+                raise RuntimeError("Attempt to create a peak without hits!")
+
+            r = r if r < float('inf') else peak.right
+
+            yield self.build_peak(hits=hs, detector=peak.detector, left=l, right=r)
 
 
 class PosRecPlugin(TransformPlugin):

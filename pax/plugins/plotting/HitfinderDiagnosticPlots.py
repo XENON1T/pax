@@ -45,6 +45,7 @@ class HitfinderDiagnosticPlots(plugin.TransformPlugin):
         hits_in_pulse = dict_group_by(event.all_hits, 'found_in_pulse')
 
         for pulse_i, pulse in enumerate(tqdm(event.pulses, desc='Making hitfinder diagnostic plots')):
+
             # Get the hits that were found in this pulse
             hits = hits_in_pulse.get(pulse_i, np.array([], datastructure.Hit.get_dtype()))
 
