@@ -74,8 +74,8 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         self.setRootGStyle()
         
         namestring = '%s_%s' % (event.dataset_name, event.event_number)
-        outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
-        self.outfile = ROOT.TFile(outfile, 'RECREATE')
+        #outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
+        #self.outfile = ROOT.TFile(outfile, 'RECREATE')
 
         outfile_dotC = os.path.join(self.output_dir, "event_" + namestring + ".C")
 
