@@ -95,6 +95,7 @@ def get_detector_by_channel(config):
             detector_by_channel[ch] = name
     return detector_by_channel
 
+
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64, numba.int64),
            nopython=True)
 def extend_intervals(w, intervals, left_extension, right_extension):

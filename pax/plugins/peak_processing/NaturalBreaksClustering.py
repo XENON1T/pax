@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy import stats
 
 from pax import plugin, dsputils
 
@@ -20,6 +21,10 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
 
     def startup(self):
         self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'], k=1)
+        if 's1_split_goodness_threshold' in self.config:
+            self.s1_min_split_goodness = InterpolatedUnivariateSpline(*self.config['s1_split_goodness_threshold'], k=1)
+        else:
+            self.s1_min_split_goodness = None
         self.dt = self.config['sample_duration']
 
     def cluster_peak(self, peak):
@@ -56,7 +61,16 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
             max_split_ii = np.argmax(gos_observed)
             split_i = split_indices[max_split_ii]
             split_goodness = gos_observed[max_split_ii]
+
             split_threshold = self.min_split_goodness(np.log10(peak.area))
+
+            # Use the S1 split threshold if the signal (group) is reasonably small, and based on area fraction top
+            # it cannot possibly be an S2.
+            if self.s1_min_split_goodness is not None and peak.area < self.config['s1_max_size']:
+                s2_aft_distr = stats.binom(int(round(peak.area)), self.config['s2_min_mean_area_fraction_top'])
+                p_s2 = s2_aft_distr.cdf(peak.area * peak.area_fraction_top)
+                if p_s2 < self.config['p_s2_aft_threshold']:
+                    split_threshold = self.s1_min_split_goodness(np.log10(peak.area))
 
             # Should we split? If so, recurse.
             if split_goodness > split_threshold:

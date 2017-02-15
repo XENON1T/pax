@@ -144,6 +144,11 @@ class OutputPlugin(ProcessPlugin):
 class ClusteringPlugin(TransformPlugin):
     """Base class for peak building / clustering plugins"""
 
+    def _pre_startup(self):
+        self.first_top_ch = np.min(np.array(self.config['channels_top']))
+        self.last_top_ch = np.max(np.array(self.config['channels_top']))
+        TransformPlugin._pre_startup(self)
+
     def transform_event(self, event):
         self.event = event
         new_peaks = []
@@ -180,6 +185,7 @@ class ClusteringPlugin(TransformPlugin):
             peak.lone_hit_channel = hits[0]['channel']
 
         peak.area = peak.area_per_channel.sum()
+        peak.area_fraction_top = peak.area_per_channel[self.first_top_ch:self.last_top_ch].sum() / peak.area
         peak.left = peak.hits[0]['left']
         peak.right = peak.hits['right'].max()
 
