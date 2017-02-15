@@ -98,7 +98,7 @@ def main():
         if args.rootplot:
             override_dict['pax']['output_name'] = args.rootplot
             override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
-            override_dict['pax']['rootplot_full'] = False
+            override_dict['pax'] = {"rootplot_full": False}
         if args.rootplot_full:
             override_dict['pax']['output_name'] = args.rootplot_full
             override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
