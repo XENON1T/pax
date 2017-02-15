@@ -7,16 +7,19 @@ import numpy as np
 import pytz
 import datetime
 
-from itertools import islice, count                
-from pax import plugin, units
+import gzip
+import shutil
 
+from itertools import islice, count                
+from six import iteritems
+from pax import plugin, units
 
 def epoch_to_human_time(timestamp):
         # Unfortunately the python datetime, explicitly choose UTC timezone (default is local)
         tz = pytz.timezone('UTC')
         return datetime.datetime.fromtimestamp(timestamp / units.s, tz=tz).strftime("%Y/%m/%d, %H:%M:%S")  
 
-class ROOTWaveformDisplay(plugin.OutputPlugin):
+class ROOTSumWaveformDump(plugin.OutputPlugin):
     
     def startup(self):
         self.output_dir = self.config['output_name']
@@ -28,6 +31,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             os.makedirs(self.output_dir)
 
         ROOT.gROOT.SetBatch(True)
+
         self.peak_colors = {"lone_hit": 40, "s1": 4, "s2": 2, "unknown": 29, "noise": 30}
 
         self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
@@ -41,62 +45,128 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         self.plines = []
         self.latexes = []
         
+    def setRootGStyle(self):
+        ROOT.gStyle.SetOptStat(0)
+        ROOT.gStyle.SetOptFit(0)
+        ROOT.gStyle.SetLegendBorderSize(0)
+        ROOT.gStyle.SetLegendFillColor(0)
+
+        ROOT.gStyle.SetCanvasColor(0)
+        ROOT.gStyle.SetLegendTextSize(0.04)
+        ROOT.gStyle.SetFrameBorderMode(0)
+        ROOT.gStyle.SetPadBorderMode(0)
+
+        ROOT.gStyle.SetPadColor(1)
+        ROOT.gStyle.SetPadLeftMargin(0.05)
+        ROOT.gStyle.SetPadRightMargin(0.02)
+        ROOT.gStyle.SetPadBottomMargin(0.10)
+
+        ROOT.gStyle.SetTitleFont(132,"t")
+        ROOT.gStyle.SetLabelFont(132,"xyz")
+        ROOT.gStyle.SetTitleFont(132,"xyz")
+
+        self.colorwheel = [ROOT.kGray+3, ROOT.kGray, ROOT.kMagenta+2, ROOT.kRed+2, ROOT.kGreen+2]
+
+
+
     def write_event(self, event):
         
-        # Super simple. Just make a sum waveform and dump it
+        self.setRootGStyle()
+        
         namestring = '%s_%s' % (event.dataset_name, event.event_number)
         outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
         self.outfile = ROOT.TFile(outfile, 'RECREATE')
+
+        outfile_dotC = os.path.join(self.output_dir, "event_" + namestring + ".C")
 
         # Borrow liberally from xerawdp
         titlestring = 'Event %s from %s Recorded at %s UTC, %09d ns' % (
             event.event_number, event.dataset_name,
             epoch_to_human_time(event.start_time / units.ns),
             (event.start_time/units.ns) % (units.s))        
-        win = ROOT.TCanvas("canvas", titlestring, 1200, 1000)
-        #win.Divide(1,2);
+        win = ROOT.TCanvas("canvas", titlestring, 1600, 600)
 
-        sum_pad = ROOT.TPad("sum_waveform_pad", "sum_waveform_pad",0.0, 0.6, 1.0, 1.0, 0)
-        detail_pad_0 = ROOT.TPad("detail_0_pad", "detail_0_pad", 0.0, 0.3, 0.25, 0.6, 0)
-        detail_pad_1 = ROOT.TPad("detail_1_pad", "detail_1_pad", 0.25, 0.3, 0.5, 0.6, 0)
-        detail_pad_2 = ROOT.TPad("detail_2_pad", "detail_2_pad", 0.5, 0.3, 0.75, 0.6, 0)
-        detail_pad_3 = ROOT.TPad("detail_3_pad", "detail_3_pad", 0.75, 0.3, 1.0, 0.6, 0)
-        hitplot_pad = ROOT.TPad("hit_plot_pad", "hit_plot_pad", 0.0, 0.0, 1.0, 0.3, 0) 
 
-        sum_pad.SetRightMargin(0.01)
-        sum_pad.SetLeftMargin(0.05)
-        
-        sum_pad.Draw()
-        detail_pad_0.Draw()
-        detail_pad_1.Draw()
-        detail_pad_2.Draw()
-        detail_pad_3.Draw()
-        hitplot_pad.Draw()
-        
-        # Plot Sum Waveform
-        sum_pad.cd()
-        sum_waveform_x = np.arange(0, event.length()-1, 
+        # ROOT.TH1D: bin[0]=underflow, bin[-1]=overflow
+        sum_waveform_x = np.arange(0, event.length()+1, 
                                    dtype=np.float32)
 
-        for w in self.config['waveforms_to_plot']:
-            waveform = event.get_sum_waveform(w['internal_name'])
-            h = ROOT.TH1D("g",titlestring,len(sum_waveform_x),0,
-                          self.samples_to_us*(len(sum_waveform_x)-1))
-            for i, s in enumerate(waveform.samples):
-                h.SetBinContent(i, s)
-            h.SetStats(0)
-            h.GetXaxis().SetTitle("Time [#mus]")
-            h.GetYaxis().SetTitleOffset(0.3)
-            h.GetYaxis().SetTitleSize(0.05)
-            h.GetXaxis().SetTitleOffset(0.8)
-            h.GetXaxis().SetTitleSize(0.05)
-            h.GetYaxis().SetTitle("Amplitude [pe/bin]")
-            h.Draw("same")
+        leg = ROOT.TLegend(0.85,0.75,0.98,0.90)
+        leg2 = ROOT.TLegend(0.85,0.60,0.98,0.75)
+        leg.SetFillStyle(0)
+        leg2.SetFillStyle(0)
 
-        # Add peak labels and pretty boxes
+        hlist = []
+        ymin, ymax = 0, 0
+        for jj, w in enumerate(self.config['waveforms_to_plot']):
+            if jj>8:
+                break
+            waveform = event.get_sum_waveform(w['internal_name'])
+            hist_name = "g_{}".format(jj)
+            hlist.append(ROOT.TH1D(hist_name, "", len(sum_waveform_x),0,
+                          self.samples_to_us*(len(sum_waveform_x)-1)))
+            hlist[jj].SetLineColor(self.colorwheel[jj%len(self.colorwheel)])
+            for i, s in enumerate(waveform.samples):
+                hlist[jj].SetBinContent(i+1, s)
+            hlist[jj].SetLineWidth(1)
+
+            if jj == 0:
+                hlist[jj].SetTitle(titlestring)
+                hlist[jj].GetXaxis().SetTitle("Time [#mus]")
+                hlist[jj].GetYaxis().SetTitleOffset(0.5)
+                hlist[jj].GetYaxis().SetTitleSize(0.05)
+                hlist[jj].GetXaxis().SetTitleOffset(0.8)
+                hlist[jj].GetXaxis().SetTitleSize(0.05)
+                hlist[jj].GetYaxis().SetTitle("Amplitude [pe/bin]")
+                hlist[jj].Draw("")
+            else:
+                hlist[jj].Draw("same")
+
+            ymin = min(ymin, np.amin(waveform.samples))
+            ymax = max(ymax, np.amax(waveform.samples))
+            lhentry = leg.AddEntry(hlist[-1], w['plot_label'], "l")
+            lhentry.SetTextFont(43)
+            lhentry.SetTextSize(22)
+
+        yoffset = 0.05*ymax
+        hlist[0].GetYaxis().SetRangeUser(ymin-yoffset, ymax+yoffset)
+
+       # Add peak labels and pretty boxes
+       # Semi-transparent colors ('SetLineColorAlpha') apparently won't work
         peaks = {}
-        boxes = []
-        text = []
+        boxs1 = ROOT.TBox()
+        boxs1.SetLineColor(0)
+        boxs1.SetFillStyle(3003)
+        boxs1.SetFillColor(self.peak_colors['s1'])
+        boxs2 = ROOT.TBox()
+        boxs2.SetLineColor(0)
+        boxs2.SetFillStyle(3003)
+        boxs2.SetFillColor(self.peak_colors['s2'])
+        boxlh = ROOT.TBox()
+        boxlh.SetLineColor(0)
+        boxlh.SetFillStyle(3003)
+        boxlh.SetFillColor(self.peak_colors['lone_hit'])
+        boxun = ROOT.TBox()
+        boxun.SetLineColor(0)
+        boxun.SetFillStyle(3003)
+        boxun.SetFillColor(self.peak_colors['unknown'])
+        vls1 = ROOT.TLine()
+        vls1.SetLineColor(self.peak_colors['s1'])
+        vls1.SetLineWidth(1)
+        vls1.SetLineStyle(1)
+        vls2 = ROOT.TLine()
+        vls2.SetLineColor(self.peak_colors['s2'])
+        vls2.SetLineWidth(1)
+        vls2.SetLineStyle(1)
+        vllh = ROOT.TLine()
+        vllh.SetLineColor(self.peak_colors['lone_hit'])
+        vllh.SetLineWidth(1)
+        vllh.SetLineStyle(1)
+        vlun = ROOT.TLine()
+        vlun.SetLineColor(self.peak_colors['unknown'])
+        vlun.SetLineWidth(1)
+        vlun.SetLineStyle(1)
+        
         s1 = 0
         s2 = 0
         for peak in event.peaks:
@@ -105,83 +175,107 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
             peaks[peak.type]["x"].append(peak.index_of_maximum * self.samples_to_us)
             peaks[peak.type]["y"].append(peak.height)
 
-            if peak.type == 's1' or peak.type == 's2':
-                boxes.append(ROOT.TBox(peak.left*self.samples_to_us, 0,
-                                       peak.right*self.samples_to_us, peak.height))
-                boxes[len(boxes)-1].SetFillStyle(0)
-                boxes[len(boxes)-1].SetLineColorAlpha(self.peak_colors[peak.type], 0.2)
-                boxes[len(boxes)-1].SetLineStyle(3)
-                boxes[len(boxes)-1].Draw("same")            
+            if peak.type == 's1' or peak.type == 's2' or peak.type == 'lone_hit' or peak.type == 'unknown':
+                if peak.type == 's1':
+                    boxs1.DrawBox(peak.left*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                    vls1.DrawLine(peak.left*self.samples_to_us, 0, peak.left*self.samples_to_us, peak.height)
+                    vls1.DrawLine(peak.right*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                elif peak.type == 's2':
+                    boxs2.DrawBox(peak.left*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                    vls2.DrawLine(peak.left*self.samples_to_us, 0, peak.left*self.samples_to_us, peak.height)
+                    vls2.DrawLine(peak.right*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                elif peak.type == 'lone_hit':
+                    boxlh.DrawBox(peak.left*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                    vllh.DrawLine(peak.left*self.samples_to_us, 0, peak.left*self.samples_to_us, peak.height)
+                    vllh.DrawLine(peak.right*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                elif peak.type == 'unknown':
+                    boxun.DrawBox(peak.left*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
+                    vlun.DrawLine(peak.left*self.samples_to_us, 0, peak.left*self.samples_to_us, peak.height)
+                    vlun.DrawLine(peak.right*self.samples_to_us, 0, peak.right*self.samples_to_us, peak.height)
 
-        # Labels, want them sorted
-        for i, peak in enumerate(event.s2s()):
-            if i > 1:
-                break
-            label = "s2["+str(s2)+"]: " + "{:.2f}".format(peak.area)
-            if len(peak.contributing_channels)<5:
-                label += str(peak.contributing_channels)
-            else:
-                label += "["+str(len(peak.contributing_channels))+" channels]"
-            s2+=1              
-            text.append(ROOT.TText(peak.left*self.samples_to_us, peak.height, label))
-            text[len(text)-1].SetTextColor(self.peak_colors[peak.type])
-            text[len(text)-1].SetTextSize(0.02)
-            text[len(text)-1].Draw("same")
-        for i, peak in enumerate(event.s1s()):
-            if i > 1:
-                break
-            label = "s1["+str(s1)+"]: " + "{:.2f}".format(peak.area)
-            if len(peak.contributing_channels)<5:
-                label += str(peak.contributing_channels)
-            else:
-                label += "["+str(len(peak.contributing_channels))+" channels]"  
-            s1+=1
-            text.append(ROOT.TText(peak.left*self.samples_to_us, peak.height, label))
-            text[len(text)-1].SetTextColor(self.peak_colors[peak.type])
-            text[len(text)-1].SetTextSize(0.02)
-            text[len(text)-1].Draw("same")      
-
-                                
                
         # Polymarkers don't like being overwritten I guess, so make a container
-        pms = {}
-        for peaktype, plist in peaks.items():            
-            pms[peaktype] = ROOT.TPolyMarker();
-            pms[peaktype].SetMarkerStyle(23);
+        marker = []
+        legmarker = []
+        mstyle = 23
+        msize = 1.7
+    
+        for peaktype, plist in iteritems(peaks):            
+            marker.append(ROOT.TMarker())
+            ## For whatever reasons only TPolyMarkers are displayed in different colors in the legend
+            legmarker.append(ROOT.TPolyMarker())
+            marker[-1].SetMarkerStyle(mstyle)
+            marker[-1].SetMarkerSize(msize)
+            legmarker[-1].SetMarkerStyle(mstyle)
+            legmarker[-1].SetMarkerSize(msize)
+            mcolor = 0
             if peaktype in self.peak_colors:
-                pms[peaktype].SetMarkerColor(self.peak_colors[peaktype]);
+                mcolor = self.peak_colors[peaktype]
+            marker[-1].SetMarkerColor(mcolor)
+            legmarker[-1].SetMarkerColor(mcolor)
+            lmentry = leg2.AddEntry(legmarker[-1], "{}".format(peaktype), "P")
+            lmentry.SetTextFont(43)
+            lmentry.SetTextSize(22)
+            for px, py in zip(plist['x'],plist['y']):
+                marker[-1].DrawMarker(px,py)
+
+        # Put histograms (in reversed order) above boxes and markers
+        for hj in hlist[::-1]:
+            hj.Draw("same")
+
+
+        # Labels
+        self.ts1 = ROOT.TLatex()
+        self.ts1.SetTextAlign(12)
+        self.ts1.SetTextColor(self.peak_colors['s1'])
+        self.ts1.SetTextFont(43)
+        self.ts1.SetTextSize(24)
+        self.ts2 = ROOT.TLatex()
+        self.ts2.SetTextAlign(12)
+        self.ts2.SetTextColor(self.peak_colors['s2'])
+        self.ts2.SetTextFont(43)
+        self.ts2.SetTextSize(24)
+        for i, peak in enumerate(event.s2s()):
+            if i > 12:
+                break
+            label = "  s2["+str(s2)+"]: " + "{:.1e}PE ".format(peak.area)
+            if len(peak.contributing_channels)<5:
+                label += str(peak.contributing_channels)
             else:
-                pms[peaktype].SetMarkerColor(0)
-            pms[peaktype].SetMarkerSize(1.1);            
-            pms[peaktype].SetPolyMarker(len(plist['x']), np.array(plist['x']), np.array(plist['y']))
-            pms[peaktype].Draw("same")
+                label += "("+str(len(peak.contributing_channels))+")"
+            s2+=1              
+            self.ts2.DrawLatex(peak.index_of_maximum*self.samples_to_us, peak.height, label)
+        for i, peak in enumerate(event.s1s()):
+            if i > 7:
+                break
+            label = "  s1["+str(s1)+"]: " + "{:.1e}pe ".format(peak.area)
+            if len(peak.contributing_channels)<5:
+                label += str(peak.contributing_channels)
+            else:
+                label += "("+str(len(peak.contributing_channels))+")"  
+            s1+=1
+            self.ts1.DrawText(peak.index_of_maximum*self.samples_to_us, peak.height, label)
 
 
-
-        # Make the 2D displays
-        latex = ROOT.TLatex()
-        latex.SetTextAlign(12)
-        latex.SetTextSize(.06)
-        latex.SetTextColor(1)
-        detail_pad_0.cd()
-        latex.DrawLatex(0.3,0.97,"s1[0] top")
-        detail_pad_1.cd()
-        latex.DrawLatex(0.3,0.97,"s1[0] bottom")
-        detail_pad_2.cd()
-        latex.DrawLatex(0.3,0.97,"s2[0] top")
-        detail_pad_3.cd()
-        latex.DrawLatex(0.3,0.97,"s2[0] bottom")
-
-        self.Draw2DDisplay(event, 's1', 'top', 0, detail_pad_0)
-        self.Draw2DDisplay(event, 's1', 'bottom', 0, detail_pad_1)
-        self.Draw2DDisplay(event, 's2', 'top', 0, detail_pad_2)
-        self.Draw2DDisplay(event, 's2', 'bottom', 0, detail_pad_3)
-            
+        ## Draw Legends and update canvas
+        leg.Draw()
+        leg2.Draw()
         win.Update()
-        self.outfile.cd()
-        win.Write()
-        #self.outfile.Write()
-        self.outfile.Close()
+
+        ## Dump canvas to ROOT macro (.C file)
+        win.SaveAs(outfile_dotC)
+        ## Compress ROOT macro (.C.gz) and remove original file:
+        with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(outfile_dotC)
+
+        ## Uncomment if .ROOT file is desired:
+        # self.outfile.cd()
+        # win.Write()
+        # self.outfile.Write()
+        # self.outfile.Close()
+
+
 
         
     def Draw2DDisplay(self, event, peaktype, tb, index, pad):
