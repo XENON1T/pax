@@ -76,7 +76,8 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
                            dt=self.config['sample_duration'],
                            start=pulse.left,
                            pulse_i=pulse_i,
-                           saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5)
+                           saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5,
+                           central_bounds=hit_bounds)       # TODO: Recompute central bounds in an intelligent way...
 
                 # Remove hits with 0 or negative area (very rare, but possible due to rigid integration bound)
                 hits_buffer = hits_buffer[hits_buffer['area'] > 0]

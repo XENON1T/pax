@@ -4,7 +4,6 @@ import numba
 import os
 
 from pax import plugin, datastructure, dsputils
-from pax.dsputils import find_intervals_above_threshold
 
 
 class FindHits(plugin.TransformPlugin):
@@ -108,18 +107,25 @@ class FindHits(plugin.TransformPlugin):
                 # The config specifies a single range to integrate. Useful for gain calibration
                 hit_bounds_buffer[0] = self.always_find_single_hit
                 n_hits_found = 1
+
             else:
                 # Call the numba hit finder -- see its docstring for description
-                n_hits_found = find_intervals_above_threshold(w,
-                                                              threshold=float(pulse.hitfinder_threshold),
-                                                              left_extension=left_extension,
-                                                              right_extension=right_extension,
-                                                              result_buffer=hit_bounds_buffer)
+                n_hits_found = dsputils.find_intervals_above_threshold(w,
+                                                                       threshold=float(pulse.hitfinder_threshold),
+                                                                       result_buffer=hit_bounds_buffer)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
             pulse.n_hits_found = n_hits_found
             hit_bounds_found = hit_bounds_buffer[:n_hits_found]
+
+            if self.always_find_single_hit:
+                central_bounds = hit_bounds_found
+            else:
+                # Extend the boundaries of each hit, to be sure we integrate everything.
+                # The original bounds are preserved: they are used in clustering
+                central_bounds = hit_bounds_found.copy()
+                dsputils.extend_intervals(w, hit_bounds_found, left_extension, right_extension)
 
             # If no hits were found, this is a noise pulse: update the noise pulse count
             if n_hits_found == 0:
@@ -144,7 +150,7 @@ class FindHits(plugin.TransformPlugin):
             saturation_threshold = self.reference_baseline - pulse.baseline - 0.5
 
             build_hits(w, hit_bounds_found, hits_buffer,
-                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold)
+                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold, central_bounds)
             hits = hits_buffer[:n_hits_found].copy()
             hits_per_pulse.append(hits)
 
@@ -163,11 +169,13 @@ class FindHits(plugin.TransformPlugin):
 
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
                       numba.from_dtype(datastructure.Hit.get_dtype())[:],
-                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64, numba.float64),
+                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64, numba.float64,
+                      numba.int64[:, :]),
            nopython=True)
 def build_hits(w, hit_bounds,
                hits_buffer,
-               adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold):
+               adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold,
+               central_bounds):
     """Populates hits_buffer with properties from hits indicated by hit_bounds.
         hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w
     Returns nothing.
@@ -212,3 +220,6 @@ def build_hits(w, hit_bounds,
         hits_buffer[hit_i].n_saturated = saturation_count
         hits_buffer[hit_i].area = area * adc_to_pe
         hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe
+
+        hits_buffer[hit_i].left_central = central_bounds[hit_i][0] + start
+        hits_buffer[hit_i].right_central = central_bounds[hit_i][1] + start
