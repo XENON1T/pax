@@ -4,8 +4,6 @@ Event display using ROOT framework
 import ROOT  # sigh
 import os
 import numpy as np
-import pytz
-import datetime
 
 import gzip
 import shutil
@@ -14,11 +12,7 @@ from itertools import islice
 from six import iteritems
 from pax import plugin, units
 
-
-def epoch_to_human_time(timestamp):
-    # Unfortunately the python datetime, explicitly choose UTC timezone (default is local)
-    tz = pytz.timezone('UTC')
-    return datetime.datetime.fromtimestamp(timestamp / units.s, tz=tz).strftime("%Y/%m/%d, %H:%M:%S")
+from pax.plugins.plotting.Plotting import epoch_to_human_time
 
 
 class ROOTSumWaveformDump(plugin.OutputPlugin):
