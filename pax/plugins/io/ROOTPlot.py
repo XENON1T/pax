@@ -74,8 +74,6 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         self.setRootGStyle()
         
         namestring = '%s_%s' % (event.dataset_name, event.event_number)
-        #outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
-        #self.outfile = ROOT.TFile(outfile, 'RECREATE')
 
         outfile_dotC = os.path.join(self.output_dir, "event_" + namestring + ".C")
 
@@ -225,6 +223,15 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
 
 
         # Labels
+        maxNS1Labels = 3
+        maxNS2Labels = 3
+        if 'number_of_labeled_s1' in self.config:
+            maxNS1Labels = int(self.config['number_of_labeled_s1'])
+            print ("number_of_labeled_s1 = {}".format(maxNS1Labels))
+        if 'number_of_labeled_s2' in self.config:
+            maxNS2Labels = int(self.config['number_of_labeled_s2'])
+            print ("number_of_labeled_s2 = {}".format(maxNS2Labels))
+
         self.ts1 = ROOT.TLatex()
         self.ts1.SetTextAlign(12)
         self.ts1.SetTextColor(self.peak_colors['s1'])
@@ -236,7 +243,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         self.ts2.SetTextFont(43)
         self.ts2.SetTextSize(24)
         for i, peak in enumerate(event.s2s()):
-            if i > 12:
+            if i >= maxNS2Labels:
                 break
             label = "  s2["+str(s2)+"]: " + "{:.1e}PE ".format(peak.area)
             if len(peak.contributing_channels)<5:
@@ -246,7 +253,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             s2+=1              
             self.ts2.DrawLatex(peak.index_of_maximum*self.samples_to_us, peak.height, label)
         for i, peak in enumerate(event.s1s()):
-            if i > 7:
+            if i >= maxNS1Labels:
                 break
             label = "  s1["+str(s1)+"]: " + "{:.1e}pe ".format(peak.area)
             if len(peak.contributing_channels)<5:
@@ -270,7 +277,9 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         os.remove(outfile_dotC)
 
         ## Uncomment if .ROOT file is desired:
-        # self.outfile.cd()
+        # outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
+        # self.outfile = ROOT.TFile(outfile, 'RECREATE')
+        # win.Update()
         # win.Write()
         # self.outfile.Write()
         # self.outfile.Close()
