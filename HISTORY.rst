@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+6.3.3 (2017-02-14)
+------------------
+* Fix for rare edge cases (#499)
+* ROOT-based event display (#503)
+* Fax update: afterpulses, gains, S2 AFT (#502)
+* Add run number to plot_dir filename (#500)
+
+------------------
 6.3.2 (2017-02-13)
 ------------------
 * Fix (r,z) correction bug (#498)
