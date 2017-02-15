@@ -91,13 +91,14 @@ class PlotBase(plugin.OutputPlugin):
         if not self.hates_tight_layout:
             plt.tight_layout()
         if self.output_dir:
+            filename = self.output_dir + '/%06d_%06d' % (self.config['run_number'], event_number)
             if self.config['plot_format'] == 'pdf':
-                plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
+                plt.savefig(filename + '.pdf', format='pdf')
             elif self.config['plot_format'] == 'pickle':
-                with open(self.output_dir + '/%06d.pickle' % event_number, "wb") as outfile:
+                with open(filename + '.pickle', "wb") as outfile:
                     pickle.dump(plt.gcf(), outfile)
             else:
-                plt.savefig(self.output_dir + '/%06d.png' % event_number)
+                plt.savefig(filename + '.png')
         else:
             plt.show(block=self.block_view)
             if not self.block_view:
