@@ -50,7 +50,7 @@ class NaturalBreaksClustering(plugin.ClusteringPlugin):
         gos_observed = np.zeros(len(gaps))
         compute_every_split_goodness(gaps, split_indices,
                                      hits['center'], hits['sum_absolute_deviation'], hits['area'],
-                                     gos_observed)
+                                     gos_observed, self.config['rescale_factor'])
 
         # Find the split point with the largest goodness of split
         if len(gos_observed):
