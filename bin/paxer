@@ -89,12 +89,20 @@ def main():
             override_dict['pax']['output'].append(plugin_name)
 
     # Overrides for plotting
-    if args.plot_to_dir or args.plot or args.plot_interactive:
+    if args.plot_to_dir or args.plot or args.plot_interactive or args.rootplot or args.rootplot_full:
         override_dict['pax']['pre_output'] = []    # Avoid dumping the stuff we want to plot!
         override_dict['pax']['encoder_plugin'] = None
         if args.plot:
             override_dict['pax']['output_name'] = 'SCREEN'
             override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
+        if args.rootplot:
+            override_dict['pax']['output_name'] = args.rootplot
+            override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
+            override_dict['pax'] = {"rootplot_full": False}
+        if args.rootplot_full:
+            override_dict['pax']['output_name'] = args.rootplot_full
+            override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
+            override_dict['ROOTPlot'] = {'rootplot_full': True }
         if args.plot_to_dir:
             override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
             override_dict['pax']['output_name'] = args.plot_to_dir
@@ -207,6 +215,10 @@ def get_argsparser(input_plugin_aliases, output_plugin_aliases):
                                         const=True,
                                         help='Plot summed waveforms on screen. '
                                              'Equivalent to --output_type plot --output SCREEN.')
+    plotting_control_group.add_argument('--rootplot',
+                                        help='Save waveform in ROOT format. Give argument as the ouput folder.')
+    plotting_control_group.add_argument('--rootplot_full',
+                                         help='Save waveform to ROOT with all pulses')
     plotting_control_group.add_argument('--plot_interactive',
                                         action='store_const',
                                         const=True,
