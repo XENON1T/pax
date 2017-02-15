@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin,  datastructure, exceptions
+from pax import plugin, exceptions
 
 
 class SortPulses(plugin.TransformPlugin):
@@ -97,7 +97,7 @@ class CheckBoundsAndCount(plugin.TransformPlugin):
                             'event bounds (%s-%s)! See issue #43.' % (pulse_i, channel, start_index, end_index,
                                                                       0, event_length - 1))
                     if self.allow_pulse_completely_outside:
-                        self.log.warning(text)
+                        self.log.debug(text)
                         pulses_to_ignore.append(pulse_i)
                         continue
                     else:
@@ -125,10 +125,10 @@ class CheckBoundsAndCount(plugin.TransformPlugin):
                 # Update the pulse data, so hit finder won't look at old un-truncated pulse
                 # Explicit casts necessary since we've disabled type checking for pulse class for speed in event builder
                 # and otherwise numpy ints would get in and break e.g. BSON output
-                event.pulses[pulse_i] = datastructure.Pulse(left=int(start_index),
-                                                            right=int(end_index),
-                                                            channel=int(channel),
-                                                            raw_data=pulse_wave)
+                pulse.left = int(start_index)
+                pulse.right = int(end_index)
+                pulse.channel = int(channel)
+                pulse.raw_data = pulse_wave
 
         # Remove the to-be-ignored-pulses
         event.pulses = [p for p_i, p in enumerate(event.pulses) if p_i not in pulses_to_ignore]

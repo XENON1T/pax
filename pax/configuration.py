@@ -23,7 +23,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
 
     configp = ConfigParser(inline_comment_prefixes='#',
                            interpolation=ExtendedInterpolation(),
-                           strict=True,                           
+                           strict=True,
                            default_section='Why_doesnt_configparser_let_me_disable_DEFAULT')
 
     # Allow for case-sensitive configuration keys
@@ -146,6 +146,10 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
 
             if not run_doc:
                 raise InvalidConfigurationError("Unable to find a run named %s!" % run_name)
+
+            # Add the run number for later use
+            evaled_config.setdefault('DEFAULT', {})
+            evaled_config['DEFAULT']['run_number'] = run_doc['number']
 
         else:
             raise InvalidConfigurationError("Cannot get configuration from runs db: give run_number or input_name!")

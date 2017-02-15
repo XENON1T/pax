@@ -6,9 +6,6 @@ from pax import plugin, dsputils
 
 class BasicProperties(plugin.TransformPlugin):
     """Computes basic properties of each peak, based on the hits.
-    Also sets lone_hit for peaks that have one hit.
-    Yes, this is done also in BuildPeaks (and has to be done there, as the noise rejection relies on it)
-    but new lone hits may have happened due to the noise rejection & clustering
     """
 
     def transform_event(self, event):
@@ -16,14 +13,12 @@ class BasicProperties(plugin.TransformPlugin):
         last_top_ch = np.max(np.array(self.config['channels_top']))
 
         for peak in event.peaks:
+            # area, area_per_channel, left, right are already computed in ClusterPlugin.build_peak
+            # lone hit marking is also done there already.
             hits = peak.hits
             if len(hits) == 0:
                 raise ValueError("Can't compute properties of an empty peak!")
 
-            peak.left = hits['left'].min()
-            peak.right = hits['right'].max()
-
-            peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=hits['area'])
             peak.hits_per_channel = dsputils.count_hits_per_channel(peak, self.config).astype(np.int16)
             n_saturated_tot = hits['n_saturated'].sum()
             if n_saturated_tot:
@@ -34,11 +29,9 @@ class BasicProperties(plugin.TransformPlugin):
 
             peak.mean_amplitude_to_noise = np.average(hits['height']/hits['noise_sigma'], weights=hits['area'])
 
-            peak.area = np.sum(peak.area_per_channel)
             peak.n_hits = np.sum(peak.hits_per_channel)
             peak.n_saturated_samples = np.sum(peak.n_saturated_per_channel)
             peak.n_saturated_channels = len(np.where(peak.n_saturated_per_channel)[0])
-            peak.n_contributing_channels = len(peak.contributing_channels)
 
             # Compute top fraction
             peak.area_fraction_top = np.sum(peak.area_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
@@ -48,15 +41,6 @@ class BasicProperties(plugin.TransformPlugin):
             peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hits['center'], hits['area'])
             peak.hit_time_std **= 0.5  # Convert variance to std
             peak.n_contributing_channels_top = np.sum((peak.area_per_channel[first_top_ch:last_top_ch + 1] > 0))
-
-            if peak.n_contributing_channels == 0:
-                raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
-
-            if peak.n_contributing_channels == 1:
-                peak.type = 'lone_hit'
-                channel = hits[0]['channel']
-                event.lone_hits_per_channel[channel] += 1
-                peak.lone_hit_channel = channel
 
             # Store some properties of the largest hit
             largest_hit_i = np.argmax(hits['area'])
@@ -95,14 +79,18 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...
             # We may remove one from the data structure, but it's a useful sanity check
             # (particularly since some hits got removed in the noise rejection)
-            if np.sum(w) == 0:
-                self.log.warning("Sum waveform of peak %d-%d (%0.2f pe area) sums to zero... unusual!"
+
+            # Don't weigh negative samples for computation of center of gravity
+            weights = np.clip(w, 0, float('inf'))
+            if not np.sum(weights) > 0:
+                self.log.warning("Sum waveform of peak %d-%d (%0.2f pe area) sums to a nonpositive value... unusual!"
                                  " Cannot align peak's sum waveform, storing zeros instead." % (peak.left,
                                                                                                 peak.right, peak.area))
                 peak.center_time = float('nan')
                 continue
             else:
-                peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
+                peak.center_time = (peak.left + np.average(np.arange(len(w)),
+                                                           weights=weights)) * dt
 
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
