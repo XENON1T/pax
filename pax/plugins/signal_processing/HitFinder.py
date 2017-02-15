@@ -150,6 +150,10 @@ class FindHits(plugin.TransformPlugin):
 
         if len(hits_per_pulse):
             event.all_hits = np.concatenate(hits_per_pulse)
+
+            # Remove hits with 0 or negative area (very rare, but possible due to rigid integration bound)
+            event.all_hits = event.all_hits[event.all_hits['area'] > 0]
+
             self.log.debug("Found %d hits in %d pulses" % (len(event.all_hits), len(event.pulses)))
         else:
             self.log.warning("Event has no pulses??!")
@@ -206,9 +210,5 @@ def build_hits(w, hit_bounds,
         hits_buffer[hit_i].center = (start + left + center) * dt
         hits_buffer[hit_i].index_of_maximum = start + left + argmax
         hits_buffer[hit_i].n_saturated = saturation_count
-
-        # In certain pathological cases (e.g. due to splitting hits later in LocalMinimumClustering)
-        # hits can have negative area or (even rarer) negative height.
-        # This leads to problems in later code, so we force a minimum area and height of 1e-9)
-        hits_buffer[hit_i].area = max(1e-9, area * adc_to_pe)
-        hits_buffer[hit_i].height = max(1e-9, w[argmax + left] * adc_to_pe)
+        hits_buffer[hit_i].area = area * adc_to_pe
+        hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe

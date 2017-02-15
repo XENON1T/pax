@@ -78,6 +78,9 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
                            pulse_i=pulse_i,
                            saturation_threshold=self.config['digitizer_reference_baseline'] - pulse.baseline - 0.5)
 
+                # Remove hits with 0 or negative area (very rare, but possible due to rigid integration bound)
+                hits_buffer = hits_buffer[hits_buffer['area'] > 0]
+
                 new_hits.append(hits_buffer)
 
             # Now remake the hits list, then go on to the next peak.
@@ -95,6 +98,13 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
             # The last new peak must also contain hits at the right bound (though this is unlikely to happen)
             hs = hits[(hits['index_of_maximum'] >= l) &
                       (hits['index_of_maximum'] <= r)]
+
+            if not len(hs):
+                # Hits have probably been removed by area > 0 condition
+                self.log.info("Localminimumclustering requested creation of peak %d-%d without hits. "
+                              "This is a possible outcome if there are large oscillations in one channel, "
+                              "but it should be very rare." % (l, r))
+                continue
 
             r = r if r < float('inf') else peak.right
 

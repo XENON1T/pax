@@ -61,6 +61,12 @@ class DesaturatePulses(plugin.TransformPlugin):
             w = self.waveform_in_pe(pulse)
             ratio = w[reference_slice].sum()/sumw[reference_slice].sum()
 
+            # not < is preferred over >, since it will catch nan
+            if not ratio < self.config.get('min_reference_area_ratio', 1):
+                # The pulse is saturated, but insufficient information is available in the other channels
+                # to reliably reconstruct it
+                continue
+
             # Reconstruct the waveform in the saturated region according to this ratio.
             # The waveform should never be reduced due to this (then we are sure the correction is making things worse)
             w[saturated] = np.clip(sumw[saturated] * ratio, w[saturated], float('inf'))

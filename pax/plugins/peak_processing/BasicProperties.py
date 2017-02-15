@@ -79,16 +79,18 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...
             # We may remove one from the data structure, but it's a useful sanity check
             # (particularly since some hits got removed in the noise rejection)
-            if np.sum(w) == 0:
-                self.log.warning("Sum waveform of peak %d-%d (%0.2f pe area) sums to zero... unusual!"
+
+            # Don't weigh negative samples for computation of center of gravity
+            weights = np.clip(w, 0, float('inf'))
+            if not np.sum(weights) > 0:
+                self.log.warning("Sum waveform of peak %d-%d (%0.2f pe area) sums to a nonpositive value... unusual!"
                                  " Cannot align peak's sum waveform, storing zeros instead." % (peak.left,
                                                                                                 peak.right, peak.area))
                 peak.center_time = float('nan')
                 continue
             else:
                 peak.center_time = (peak.left + np.average(np.arange(len(w)),
-                                                           weights=np.clip(w, 0, float('inf')))) * dt
-                # Cut out negative samples for computation of center of gravity
+                                                           weights=weights)) * dt
 
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
