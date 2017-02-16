@@ -261,9 +261,9 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         # Dump canvas to ROOT macro (.C file)
         win.SaveAs(outfile_dotC)
         # Compress ROOT macro (.C.gz) and remove original file:
-        with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-        os.remove(outfile_dotC)
+        # with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
+        #    shutil.copyfileobj(f_in, f_out)
+        # os.remove(outfile_dotC)
 
         # Uncomment if .ROOT file is desired:
         # outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
