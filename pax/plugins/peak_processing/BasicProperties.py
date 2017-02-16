@@ -101,9 +101,14 @@ class SumWaveformProperties(plugin.TransformPlugin):
             peak.height = w[max_idx]
 
             # Compute fraction of area in central deciles
-            peak.area_midpoint, peak.range_area_decile = compute_area_deciles(w)
-            peak.range_area_decile *= dt
-            peak.area_midpoint += peak.left * dt
+            # TODO: reactivate tests after refactor
+            area_times = np.ones(21) * float('nan')
+            integrate_until_fraction(w, fractions_desired=np.linspace(0, 1, 21), results=area_times)
+            area_times *= dt
+            area_midpoint = area_times[10]
+            peak.range_area_decile = area_times[10:] - area_times[10::-1]
+            peak.area_decile_from_midpoint = area_times[::2] - area_midpoint
+            peak.area_decile_from_maximum = area_times[::2] - (peak.index_of_maximum - peak.left) * dt
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
@@ -123,18 +128,6 @@ class CountCoincidentNoisePulses(plugin.TransformPlugin):
                 if nop.left <= peak.right and nop.right >= peak.left:
                     peak.n_noise_pulses += 1
         return event
-
-
-def compute_area_deciles(w):
-    """Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w
-    e.g. range_area_decile[5] = range of 50% area = distance (in samples)
-    between point of 25% area and 75% area (with boundary samples added fractionally).
-    First element (0) of array is always zero, last element (10) is the length of w in samples.
-    """
-    fractions_desired = np.linspace(0, 1, 21)
-    index_of_area_fraction = np.ones(len(fractions_desired)) * float('nan')
-    integrate_until_fraction(w, fractions_desired, index_of_area_fraction)
-    return index_of_area_fraction[10], (index_of_area_fraction[10:] - index_of_area_fraction[10::-1]),
 
 
 # @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),

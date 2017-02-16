@@ -281,6 +281,12 @@ class Peak(StrictModel):
     #: First element (0) is always zero, last element (10) is the full range of the peak.
     range_area_decile = np.zeros(11, dtype=np.float)
 
+    #: Time (ns) from the area decile point to the area midpoint.
+    area_decile_from_midpoint = np.zeros(11, dtype=np.float)
+
+    #: Time (ns) from the area decile point to the maximum
+    area_decile_from_maximum = np.zeros(11, dtype=np.float)
+
     @property
     def range_50p_area(self):
         return self.range_area_decile[5]
