@@ -188,7 +188,28 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         for hj in hlist[::-1]:
             hj.Draw("same")
 
-        # Labels
+
+        ## plot TLatex labels to indicate non-TPC peaks
+        tlatex_nonTPC = ROOT.TLatex()
+        tlatex_nonTPC.SetTextAlign(12)
+        default_nonTPC_color = ROOT.kBlack
+        tlatex_nonTPC.SetTextColor(default_nonTPC_color)
+        tlatex_nonTPC.SetTextFont(43)
+        tlatex_nonTPC.SetTextSize(24)
+
+        peakdetails = event.get_peaks_by_type(desired_type='all', detector='all')
+        for i, peak in enumerate(peakdetails):
+            if peak.detector == 'tpc':
+                continue
+            if peak.type.lower() in self.considered_peak_types:
+                tlatex_nonTPC.SetTextColor(self.peak_colors[peak.type.lower()])
+            else:
+                tlatex_nonTPC.SetTextColor(default_nonTPC_color)
+            label = "  {} in {}".format(peak.type.lower(), peak.detector.upper())
+            tlatex_nonTPC.DrawLatex(peak.index_of_maximum * self.samples_to_us, peak.height, label)
+
+
+        # Plot TLatex labels to interesting (i.e., largest) peaks
         maxNS1Labels = 3
         maxNS2Labels = 3
         maxNLHLabels = 3
