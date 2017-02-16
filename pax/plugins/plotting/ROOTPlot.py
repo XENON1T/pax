@@ -27,8 +27,8 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
 
         ROOT.gROOT.SetBatch(True)
 
-        self.considered_peak_types = ["s1", "s2", "lone_hit", "unknown"]
-        self.peak_colors = {"lone_hit": 40, "s1": 4, "s2": 2, "unknown": 29, "noise": 30}
+        self.considered_peak_types = ["s1", "s2", "unknown"]
+        self.peak_colors = {"s1": 4, "s2": 2, "unknown": 29, "noise": 30}
 
         self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
                                         self.config['pmts'][ch]['position']['y']]
@@ -130,7 +130,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         boxs2 = ROOT.TBox()
         boxlh = ROOT.TBox()
         boxun = ROOT.TBox()
-        boxes = {'s1':boxs1, 's2':boxs2, 'lone_hit':boxlh, 'unknown':boxun}
+        boxes = {'s1':boxs1, 's2':boxs2, 'unknown':boxun}
         for peaktype, tbox in iteritems(boxes):
             tbox.SetLineColor(0)
             tbox.SetFillStyle(3003)
@@ -140,7 +140,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         vls2 = ROOT.TLine()
         vllh = ROOT.TLine()
         vlun = ROOT.TLine()
-        vlines = {'s1':vls1, 's2':vls2, 'lone_hit':vllh, 'unknown':vlun}
+        vlines = {'s1':vls1, 's2':vls2, 'unknown':vlun}
         for peaktype, tline in iteritems(vlines):
             tline.SetLineColor(self.peak_colors[peaktype])
             tline.SetLineWidth(1)
@@ -176,6 +176,10 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             mcolor = 0
             if peaktype in self.peak_colors:
                 mcolor = self.peak_colors[peaktype]
+
+            if mcolor == 0:
+                continue
+
             marker[-1].SetMarkerColor(mcolor)
             legmarker[-1].SetMarkerColor(mcolor)
             lmentry = leg2.AddEntry(legmarker[-1], "{}".format(peaktype), "P")
@@ -199,7 +203,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
 
         peakdetails = event.get_peaks_by_type(desired_type='all', detector='all')
         for i, peak in enumerate(peakdetails):
-            if peak.detector == 'tpc':
+            if peak.detector == 'tpc' or peak.detector == 'sum_wv':
                 continue
             if peak.type.lower() in self.considered_peak_types:
                 tlatex_nonTPC.SetTextColor(self.peak_colors[peak.type.lower()])
@@ -219,18 +223,16 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             maxNS1Labels = int(self.config['number_of_labeled_s1'])
         if 'number_of_labeled_s2' in self.config:
             maxNS2Labels = int(self.config['number_of_labeled_s2'])
-        if 'number_of_labeled_lone_hit' in self.config:
-            maxNLHLabels = int(self.config['number_of_labeled_lone_hit'])
         if 'number_of_labeled_unknown' in self.config:
             maxNUNLabels = int(self.config['number_of_labeled_unknown'])
 
-        maxLabels = {'s1':maxNS1Labels, 's2':maxNS2Labels, 'lone_hit':maxNLHLabels, 'unknown':maxNUNLabels}
+        maxLabels = {'s1':maxNS1Labels, 's2':maxNS2Labels, 'unknown':maxNUNLabels}
 
         tls1 = ROOT.TLatex()
         tls2 = ROOT.TLatex()
         tllh = ROOT.TLatex()
         tlun = ROOT.TLatex()
-        tlatex = {'s1':tls1, 's2':tls2, 'lone_hit':tllh, 'unknown':tlun}
+        tlatex = {'s1':tls1, 's2':tls2, 'unknown':tlun}
         
         for peaktype,tlab in iteritems(tlatex):
             tlab.SetTextAlign(12)
@@ -238,13 +240,26 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             tlab.SetTextFont(43)
             tlab.SetTextSize(24)
 
-        ## assessing peaks by type
+        # assessing peaks by type
         for peaktype in self.considered_peak_types:
             peakdetails = event.get_peaks_by_type(desired_type=peaktype)
             for i, peak in enumerate(peakdetails):
+
                 if i >= maxLabels[peaktype]:
                     break
-                label = "  {}[{}]:{:.1e}PE ".format(peaktype,i,peak.area)
+
+                label = "  {}[{}]:{:.1e} pe ".format(peaktype,i,peak.area)
+
+                # Star the main interaction peaks
+                if peaktype == 's1' and event.interactions[0].s1 >= 0:
+                    if peak is event.peaks[event.interactions[0].s1]:
+                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+                elif peaktype == 's2' and event.interactions[0].s2 >= 0:
+                    if peak is event.peaks[event.interactions[0].s2]:
+                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+
+                label = label.replace("e+0", "e")
+
                 if len(peak.contributing_channels) < 5:
                     ## if there are less than 5 PMTs contributing to a peak, list them by name:
                     label += "{{{}}}".format(", ".join(["PMT{}".format(pmt) for pmt in map(str, peak.contributing_channels)]))
