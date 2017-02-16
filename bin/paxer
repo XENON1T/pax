@@ -101,11 +101,11 @@ def main():
             override_dict['pax']['output'] = 'ROOTPlot.ROOTSumWaveformDump'
         if args.rootplot:
             override_dict['pax']['output_name'] = args.rootplot
-            override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
+            override_dict['pax']['output'] = 'ROOTPlot.ROOTSumWaveformDump'
             override_dict['pax'] = {"rootplot_full": False}
         if args.rootplot_full:
             override_dict['pax']['output_name'] = args.rootplot_full
-            override_dict['pax']['output'] = 'ROOTPlot.ROOTWaveformDisplay'
+            override_dict['pax']['output'] = 'ROOTPlot.ROOTSumWaveformDump'
             override_dict['ROOTPlot'] = {'rootplot_full': True }
         if args.plot_to_dir:
             override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
