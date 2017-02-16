@@ -27,6 +27,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
 
         ROOT.gROOT.SetBatch(True)
 
+        self.considered_peak_types = ["s1", "s2", "lone_hit", "unknown"]
         self.peak_colors = {"lone_hit": 40, "s1": 4, "s2": 2, "unknown": 29, "noise": 30}
 
         self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
@@ -124,64 +125,39 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         # Add peak labels and pretty boxes
         # Semi-transparent colors ('SetLineColorAlpha') apparently won't work
         peaks = {}
+        boxes = {}
         boxs1 = ROOT.TBox()
-        boxs1.SetLineColor(0)
-        boxs1.SetFillStyle(3003)
-        boxs1.SetFillColor(self.peak_colors['s1'])
         boxs2 = ROOT.TBox()
-        boxs2.SetLineColor(0)
-        boxs2.SetFillStyle(3003)
-        boxs2.SetFillColor(self.peak_colors['s2'])
         boxlh = ROOT.TBox()
-        boxlh.SetLineColor(0)
-        boxlh.SetFillStyle(3003)
-        boxlh.SetFillColor(self.peak_colors['lone_hit'])
         boxun = ROOT.TBox()
-        boxun.SetLineColor(0)
-        boxun.SetFillStyle(3003)
-        boxun.SetFillColor(self.peak_colors['unknown'])
-        vls1 = ROOT.TLine()
-        vls1.SetLineColor(self.peak_colors['s1'])
-        vls1.SetLineWidth(1)
-        vls1.SetLineStyle(1)
-        vls2 = ROOT.TLine()
-        vls2.SetLineColor(self.peak_colors['s2'])
-        vls2.SetLineWidth(1)
-        vls2.SetLineStyle(1)
-        vllh = ROOT.TLine()
-        vllh.SetLineColor(self.peak_colors['lone_hit'])
-        vllh.SetLineWidth(1)
-        vllh.SetLineStyle(1)
-        vlun = ROOT.TLine()
-        vlun.SetLineColor(self.peak_colors['unknown'])
-        vlun.SetLineWidth(1)
-        vlun.SetLineStyle(1)
+        boxes = {'s1':boxs1, 's2':boxs2, 'lone_hit':boxlh, 'unknown':boxun}
+        for peaktype, tbox in iteritems(boxes):
+            tbox.SetLineColor(0)
+            tbox.SetFillStyle(3003)
+            tbox.SetFillColor(self.peak_colors[peaktype])
 
-        s1 = 0
-        s2 = 0
+        vls1 = ROOT.TLine()
+        vls2 = ROOT.TLine()
+        vllh = ROOT.TLine()
+        vlun = ROOT.TLine()
+        vlines = {'s1':vls1, 's2':vls2, 'lone_hit':vllh, 'unknown':vlun}
+        for peaktype, tline in iteritems(vlines):
+            tline.SetLineColor(self.peak_colors[peaktype])
+            tline.SetLineWidth(1)
+            tline.SetLineStyle(1)
+
         for peak in event.peaks:
             if peak.type not in peaks:
                 peaks[peak.type] = {"x": [], "y": []}
             peaks[peak.type]["x"].append(peak.index_of_maximum * self.samples_to_us)
             peaks[peak.type]["y"].append(peak.height)
-
-            if peak.type == 's1' or peak.type == 's2' or peak.type == 'lone_hit' or peak.type == 'unknown':
-                if peak.type == 's1':
-                    boxs1.DrawBox(peak.left * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                    vls1.DrawLine(peak.left * self.samples_to_us, 0, peak.left * self.samples_to_us, peak.height)
-                    vls1.DrawLine(peak.right * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                elif peak.type == 's2':
-                    boxs2.DrawBox(peak.left * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                    vls2.DrawLine(peak.left * self.samples_to_us, 0, peak.left * self.samples_to_us, peak.height)
-                    vls2.DrawLine(peak.right * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                elif peak.type == 'lone_hit':
-                    boxlh.DrawBox(peak.left * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                    vllh.DrawLine(peak.left * self.samples_to_us, 0, peak.left * self.samples_to_us, peak.height)
-                    vllh.DrawLine(peak.right * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                elif peak.type == 'unknown':
-                    boxun.DrawBox(peak.left * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
-                    vlun.DrawLine(peak.left * self.samples_to_us, 0, peak.left * self.samples_to_us, peak.height)
-                    vlun.DrawLine(peak.right * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
+            
+            # Loop considered peaks and draw TBoxes and TLines:
+            if peak.type in self.considered_peak_types:
+                boxes[peak.type].DrawBox(peak.left * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
+                vlines[peak.type].DrawLine(peak.left * self.samples_to_us, 0, peak.left * self.samples_to_us, peak.height)
+                vlines[peak.type].DrawLine(peak.right * self.samples_to_us, 0, peak.right * self.samples_to_us, peak.height)
+            
 
         # Polymarkers don't like being overwritten I guess, so make a container
         marker = []
@@ -215,43 +191,46 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         # Labels
         maxNS1Labels = 3
         maxNS2Labels = 3
+        maxNLHLabels = 3
+        maxNUNLabels = 3
+
         if 'number_of_labeled_s1' in self.config:
             maxNS1Labels = int(self.config['number_of_labeled_s1'])
-            print("number_of_labeled_s1 = {}".format(maxNS1Labels))
         if 'number_of_labeled_s2' in self.config:
             maxNS2Labels = int(self.config['number_of_labeled_s2'])
-            print("number_of_labeled_s2 = {}".format(maxNS2Labels))
+        if 'number_of_labeled_lone_hit' in self.config:
+            maxNLHLabels = int(self.config['number_of_labeled_lone_hit'])
+        if 'number_of_labeled_unknown' in self.config:
+            maxNUNLabels = int(self.config['number_of_labeled_unknown'])
 
-        self.ts1 = ROOT.TLatex()
-        self.ts1.SetTextAlign(12)
-        self.ts1.SetTextColor(self.peak_colors['s1'])
-        self.ts1.SetTextFont(43)
-        self.ts1.SetTextSize(24)
-        self.ts2 = ROOT.TLatex()
-        self.ts2.SetTextAlign(12)
-        self.ts2.SetTextColor(self.peak_colors['s2'])
-        self.ts2.SetTextFont(43)
-        self.ts2.SetTextSize(24)
-        for i, peak in enumerate(event.s2s()):
-            if i >= maxNS2Labels:
-                break
-            label = "  s2[" + str(s2) + "]: " + "{:.1e}PE ".format(peak.area)
-            if len(peak.contributing_channels) < 5:
-                label += str(peak.contributing_channels)
-            else:
-                label += "(" + str(len(peak.contributing_channels)) + ")"
-            s2 += 1
-            self.ts2.DrawLatex(peak.index_of_maximum * self.samples_to_us, peak.height, label)
-        for i, peak in enumerate(event.s1s()):
-            if i >= maxNS1Labels:
-                break
-            label = "  s1[" + str(s1) + "]: " + "{:.1e}pe ".format(peak.area)
-            if len(peak.contributing_channels) < 5:
-                label += str(peak.contributing_channels)
-            else:
-                label += "(" + str(len(peak.contributing_channels)) + ")"
-            s1 += 1
-            self.ts1.DrawText(peak.index_of_maximum * self.samples_to_us, peak.height, label)
+        maxLabels = {'s1':maxNS1Labels, 's2':maxNS2Labels, 'lone_hit':maxNLHLabels, 'unknown':maxNUNLabels}
+
+        tls1 = ROOT.TLatex()
+        tls2 = ROOT.TLatex()
+        tllh = ROOT.TLatex()
+        tlun = ROOT.TLatex()
+        tlatex = {'s1':tls1, 's2':tls2, 'lone_hit':tllh, 'unknown':tlun}
+        
+        for peaktype,tlab in iteritems(tlatex):
+            tlab.SetTextAlign(12)
+            tlab.SetTextColor(self.peak_colors[peaktype])
+            tlab.SetTextFont(43)
+            tlab.SetTextSize(24)
+
+        ## assessing peaks by type
+        for peaktype in self.considered_peak_types:
+            peakdetails = event.get_peaks_by_type(desired_type=peaktype)
+            for i, peak in enumerate(peakdetails):
+                if i >= maxLabels[peaktype]:
+                    break
+                label = "  {}[{}]:{:.1e}PE ".format(peaktype,i,peak.area)
+                if len(peak.contributing_channels) < 5:
+                    ## if there are less than 5 PMTs contributing to a peak, list them by name:
+                    label += "{{{}}}".format(", ".join(["PMT{}".format(pmt) for pmt in map(str, peak.contributing_channels)]))
+                else:
+                    ## if there are 5 or more PMTs that contribute to a peak, print their total number only:
+                    label += "({})".format(len(peak.contributing_channels))
+                tlatex[peaktype].DrawLatex(peak.index_of_maximum * self.samples_to_us, peak.height, label)
 
         # Draw Legends and update canvas
         leg.Draw()
@@ -261,9 +240,11 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         # Dump canvas to ROOT macro (.C file)
         win.SaveAs(outfile_dotC)
         # Compress ROOT macro (.C.gz) and remove original file:
-        # with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
-        #    shutil.copyfileobj(f_in, f_out)
-        # os.remove(outfile_dotC)
+        if 'compress_output' in self.config:
+            if self.config['compress_output']:
+                with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
+                   shutil.copyfileobj(f_in, f_out)
+                os.remove(outfile_dotC)
 
         # Uncomment if .ROOT file is desired:
         # outfile = os.path.join(self.output_dir, "event_" + namestring + ".root")
