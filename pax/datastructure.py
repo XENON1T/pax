@@ -205,6 +205,12 @@ class Peak(StrictModel):
     #: Multiplicative correction on S2 due to LCE variations
     s2_spatial_correction = 1.0
 
+    #: Multiplicative correction on S2 top due to LCE variations
+    s2_top_spatial_correction = 1.0
+
+    #: Multiplicative correction on S2 bottom due to LCE variations
+    s2_bottom_spatial_correction = 1.0
+
     #: Multiplicative correction on S2 due to saturation
     s2_saturation_correction = 1.0
 
