@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event builder &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>Event builder &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
     <link rel="next" title="Waveform simulator docs" href="simulator.html" />
     <link rel="prev" title="Plugins" href="plugin.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -45,218 +46,8 @@
 <div class="section" id="core-routines">
 <h2>Core routines<a class="headerlink" href="#core-routines" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.io.MongoDB">
-<span id="mongodb-interface"></span><h2>MongoDB interface<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
-<p>Interfacing to MongoDB</p>
-<p>MongoDB is used as a data backend within the DAQ.  For example, &#8216;kodiaq&#8217;, which
-reads out the digitizers, will write data to MongoDB.  This data from kodiaq can
-either be triggered or untriggered. In the case of untriggered, an event builder
-must be run on the data and will result in triggered data.  Input and output
-classes are provided for MongoDB access.  More information is in the docstrings.</p>
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoBase">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoBase</code><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.refresh_run_doc">
-<code class="descname">refresh_run_doc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.refresh_run_doc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.refresh_run_doc" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the internal run doc within this class
-(does not change anything in the runs database)</p>
-<p>This is useful for example checking if a run has ended.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.subcollection">
-<code class="descname">subcollection</code><span class="sig-paren">(</span><em>number</em>, <em>host_i=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.subcollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.subcollection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return pymongo collection object for subcollection number in the run
-Caches subcollection handles for you, since it seems to take time to ask for the collection
-every event
-Actually this turned out to be some other bug... probably we can remove collection caching now.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.subcollection_name">
-<code class="descname">subcollection_name</code><span class="sig-paren">(</span><em>number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.subcollection_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.subcollection_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return name of subcollection number in the run</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.subcollection_with_time">
-<code class="descname">subcollection_with_time</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.subcollection_with_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.subcollection_with_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the number of the subcollection which contains pulses which start at time
-time: pax units (ns) since start of run</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoBase.time_range_query">
-<code class="descname">time_range_query</code><span class="sig-paren">(</span><em>start=None</em>, <em>stop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoBase.time_range_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoBase.time_range_query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns Mongo query to find pulses that START in [start, stop)
-Start and stop are each specified in pax units since start of the run.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBClearUntriggered</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a>, <a class="reference internal" href="pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase" title="pax.plugins.io.MongoDB.MongoBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.MongoBase</span></code></a></p>
-<p>Clears data whose events have been built from MongoDB&gt;
-Will do NOTHING unless delete_data = True in config.
-This must run as part of the output group, so it gets the events in order.</p>
-<dl class="docutils">
-<dt>If split_collections:</dt>
-<dd>Drop sub collections when events from subsequent collections start arriving.
-Drop all remaining subcollections on shutdown</dd>
-<dt>Else (single collection mode):</dt>
-<dd>Keeps track of which time is safe to delete, then deletes data from the collection in batches.
-At shutdown, drop the collection</dd>
-</dl>
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.delete_pulses">
-<code class="descname">delete_pulses</code><span class="sig-paren">(</span><em>collection</em>, <em>start_mongo_time</em>, <em>stop_mongo_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.delete_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.delete_pulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deletes all pulses in collection between start_mongo_time (inclusive) and stop_mongo_time (exclusive),
-both in mongo time units (not pax units!).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.do_input_check">
-<code class="descname">do_input_check</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.do_input_check" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.do_output_check">
-<code class="descname">do_output_check</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.do_output_check" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named">
-<code class="descname">drop_collection_named</code><span class="sig-paren">(</span><em>collection_name</em>, <em>executor=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.drop_collection_named"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.drop_collection_named" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drop the collection named collection_name from db, rescueing acquisition monitor pulses first.
-if executor is passed, will execute the drop command via the pool it represents.</p>
-<p>This function is NOT parallelizable itself, don&#8217;t pass it to an executor!
-We need to block while rescuing acquisition monitor pulses: otherwise, we would get to the final cleanup in
-shutdown() while there are still collections being rescued.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.last_subcollection_not_yet_deleted">
-<code class="descname">last_subcollection_not_yet_deleted</code><em class="property"> = 0</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.last_subcollection_not_yet_deleted" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.last_time_deleted">
-<code class="descname">last_time_deleted</code><em class="property"> = 0</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.last_time_deleted" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.rescue_acquisition_monitor_pulses">
-<code class="descname">rescue_acquisition_monitor_pulses</code><span class="sig-paren">(</span><em>collection</em>, <em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.rescue_acquisition_monitor_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.rescue_acquisition_monitor_pulses" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Saves all acquisition monitor pulses from collection the acquisition monitor data file.</dt>
-<dd><ul class="first last simple">
-<li>collection: pymongo object (not collection name!)</li>
-<li>query: optional query inside the collection (e.g. for a specific time range).</li>
-</ul>
-</dd>
-</dl>
-<p>The condition to select pulses from the acquistion monitor module will be added to this.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.shutdown">
-<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBClearUntriggered.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event_proxy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBClearUntriggered.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBClearUntriggered.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBReadUntriggered</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a>, <a class="reference internal" href="pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase" title="pax.plugins.io.MongoDB.MongoBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.MongoBase</span></code></a></p>
-<p>Read pulse times from MongoDB, pass them to the trigger,
-and send off EventProxy&#8217;s for MongoDBReadUntriggeredFiller.</p>
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.do_output_check">
-<code class="descname">do_output_check</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.do_output_check" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">
-<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.latest_subcollection">
-<code class="descname">latest_subcollection</code><em class="property"> = 0</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.latest_subcollection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.refresh_run_info">
-<code class="descname">refresh_run_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.refresh_run_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.refresh_run_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Refreshes the run doc and last pulse time information.
-Also updates the pipeline status info with the current queue length</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBReadUntriggeredFiller</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a>, <a class="reference internal" href="pax.plugins.io.html#pax.plugins.io.MongoDB.MongoBase" title="pax.plugins.io.MongoDB.MongoBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.MongoBase</span></code></a></p>
-<p>Read pulse data into event ranges provided by trigger MongoDBReadUntriggered.
-This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.</p>
-<dl class="attribute">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.do_input_check">
-<code class="descname">do_input_check</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.do_input_check" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event_proxy</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.io.MongoDB.get_pulses">
-<code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">get_pulses</code><span class="sig-paren">(</span><em>client_maker_config</em>, <em>input_info</em>, <em>collection_name</em>, <em>query</em>, <em>host</em>, <em>get_area=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#get_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.get_pulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find pulse times according to query using monary.
-Returns four numpy arrays: times, modules, channels, areas.
-Areas consists of zeros unless get_area = True, in which we also fetch the &#8216;integral&#8217; field.</p>
-<p>The monary client is created inside this function, so we could run it with ProcessPoolExecutor.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.io.MongoDB.pax_to_human_time">
-<code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">pax_to_human_time</code><span class="sig-paren">(</span><em>num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#pax_to_human_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.pax_to_human_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts a pax time to a human-readable representation</p>
-</dd></dl>
-
+<div class="section" id="mongodb-interface">
+<h2>MongoDB interface<a class="headerlink" href="#mongodb-interface" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -270,7 +61,7 @@ Areas consists of zeros unless get_area = True, in which we also fetch the &#821
   <ul>
 <li><a class="reference internal" href="#">Event builder</a><ul>
 <li><a class="reference internal" href="#core-routines">Core routines</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">MongoDB interface</a></li>
+<li><a class="reference internal" href="#mongodb-interface">MongoDB interface</a></li>
 </ul>
 </li>
 </ul>
@@ -293,14 +84,11 @@ Areas consists of zeros unless get_area = True, in which we also fetch the &#821
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -311,8 +99,8 @@ Areas consists of zeros unless get_area = True, in which we also fetch the &#821
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/eventbuilder.txt"

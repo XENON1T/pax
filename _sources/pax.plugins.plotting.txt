@@ -1,0 +1,30 @@
+pax.plugins.plotting package
+============================
+
+Submodules
+----------
+
+pax.plugins.plotting.HitfinderDiagnosticPlots module
+----------------------------------------------------
+
+.. automodule:: pax.plugins.plotting.HitfinderDiagnosticPlots
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.plotting.Plotting module
+------------------------------------
+
+.. automodule:: pax.plugins.plotting.Plotting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.plotting
+    :members:
+    :undoc-members:
+    :show-inheritance:

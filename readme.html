@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>Installation prerequisites &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
     <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -49,7 +50,7 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 </ul>
 <a class="reference external image-reference" href="https://travis-ci.org/XENON1T/pax"><img alt="https://travis-ci.org/XENON1T/pax.svg?branch=master" src="https://travis-ci.org/XENON1T/pax.svg?branch=master" /></a>
 <a class="reference external image-reference" href="https://coveralls.io/r/XENON1T/pax?branch=master"><img alt="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" src="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" /></a>
-<a class="reference external image-reference" href="https://gitter.im/XENON1T/pax"><img src="http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg" /></a>
+<a class="reference external image-reference" href="https://gitter.im/XENON1T/pax"><img alt="http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg" src="http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg" /></a>
 <div class="section" id="installation-prerequisites">
 <h1>Installation prerequisites<a class="headerlink" href="#installation-prerequisites" title="Permalink to this headline">¶</a></h1>
 <p>We will assume you are installing on Mac or Linux here. For installation on Windows,
@@ -59,9 +60,9 @@ see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#ca
 <div class="section" id="installing-python-3-and-anaconda-libraries">
 <h2>Installing Python 3 and Anaconda Libraries<a class="headerlink" href="#installing-python-3-and-anaconda-libraries" title="Permalink to this headline">¶</a></h2>
 <p>Pax is written in Python; we recommend the scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. To install this in Linux do:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
-bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc and specify the installation directory
-conda install -q conda=4.1.1
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">repo</span><span class="o">.</span><span class="n">continuum</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="n">Anaconda3</span><span class="o">-</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="o">.</span><span class="n">sh</span>  <span class="c1"># Linux</span>
+<span class="n">bash</span> <span class="n">Anaconda3</span><span class="o">-</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="o">.</span><span class="n">sh</span>  <span class="c1"># Say &#39;yes&#39; to appending to .bashrc and specify the installation directory</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">q</span> <span class="n">conda</span><span class="o">=</span><span class="mf">4.1</span><span class="o">.</span><span class="mi">1</span>
 </pre></div>
 </div>
 <hr class="docutils" />
@@ -70,30 +71,30 @@ conda install -q conda=4.1.1
 <blockquote>
 <div><a class="reference external" href="http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh">http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh</a></div></blockquote>
 <p>In the directory containing the file above, run the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc and specify the installation directory
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">bash</span> <span class="n">Anaconda3</span><span class="o">-</span><span class="mf">2.4</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">MacOSX</span><span class="o">-</span><span class="n">x86_64</span><span class="o">.</span><span class="n">sh</span>  <span class="c1"># Say &#39;yes&#39; to appending to .bashrc and specify the installation directory</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="setting-up-the-anaconda-libraries">
 <h2>Setting Up the Anaconda Libraries<a class="headerlink" href="#setting-up-the-anaconda-libraries" title="Permalink to this headline">¶</a></h2>
 <p>For both Linux and Mac OS X:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>export PATH=~/anaconda3/bin:$PATH  # If installed in default location, otherwise replace with the
+<div class="highlight-default"><div class="highlight"><pre><span></span>export PATH=~/anaconda3/bin:$PATH  # If installed in default location, otherwise replace with the
                                    # path you specified above or the path of the central installation
 </pre></div>
 </div>
 <p>You need to point Anaconda to the physics-specific packages e.g. ROOT.  You can do this by running the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>conda config --add channels http://conda.anaconda.org/NLeSC
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">add</span> <span class="n">channels</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">conda</span><span class="o">.</span><span class="n">anaconda</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">NLeSC</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="check-that-no-other-root-is-seen">
 <h2>Check that no other ROOT is seen<a class="headerlink" href="#check-that-no-other-root-is-seen" title="Permalink to this headline">¶</a></h2>
 <p>Several people have encountered ROOT incompatibility issues when installing pax. Before continuing, we advise you to check that no other ROOT version that can be seen by your terminal, e.g try:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">root</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">root</span>
 </pre></div>
 </div>
 <p>Which should return <code class="docutils literal"><span class="pre">bash:</span> <span class="pre">root:</span> <span class="pre">command</span> <span class="pre">not</span> <span class="pre">found</span></code>.  Also check that Python cannot see ROOT:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>python -c &quot;import ROOT&quot;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;import ROOT&quot;</span>
 </pre></div>
 </div>
 <p>should say <code class="docutils literal"><span class="pre">ImportError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'ROOT'</span></code>.</p>
@@ -104,14 +105,14 @@ conda install -q conda=4.1.1
 <p>Pax depends on several other python packages. While most python packages will install automatically,
 some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries
 for your platform using the <cite>conda</cite> tool as follows. Make sure to replace &lt;environment_name&gt; with the desired name of your environment (usually it is &#8216;pax&#8217; for central installations) in the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>conda install -q conda=4.1.1
-conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">q</span> <span class="n">conda</span><span class="o">=</span><span class="mf">4.1</span><span class="o">.</span><span class="mi">1</span>
+<span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="o">&lt;</span><span class="n">environment_name</span><span class="o">&gt;</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.4</span> <span class="n">root</span><span class="o">=</span><span class="mi">6</span> <span class="n">numpy</span> <span class="n">scipy</span><span class="o">=</span><span class="mf">0.16</span> <span class="n">matplotlib</span> <span class="n">pandas</span> <span class="n">cython</span> <span class="n">h5py</span> <span class="n">numba</span> <span class="n">pip</span> <span class="n">python</span><span class="o">-</span><span class="n">snappy</span> <span class="n">pytables</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span> <span class="n">rootpy</span> <span class="n">pymongo</span> <span class="n">psutil</span> <span class="n">jupyter</span> <span class="n">dask</span> <span class="n">root_pandas</span>
 </pre></div>
 </div>
 <p>If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.</p>
 <p>Note the command to install an old version of conda above: if you use the latest conda (as of October 2016) everything will appear to install, but you&#8217;ll end up with a version of python where you can&#8217;t import ROOT (so pax won&#8217;t work if you need ROOT support). For more information, see <a class="reference external" href="https://github.com/remenska/root-conda-recipes/issues/6">https://github.com/remenska/root-conda-recipes/issues/6</a>.</p>
 <p>Whenever you want to use <cite>pax</cite>, you have to run the following command to set it up your environment (containing all the dependencies):</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>source activate &lt;environment_name&gt;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="n">activate</span> <span class="o">&lt;</span><span class="n">environment_name</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (&lt;environment_name&gt;) at the beginning of your command line.</p>
@@ -121,14 +122,14 @@ conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 matp
 <div>sudo apt-get install build-essential</div></blockquote>
 <p>to setup the necessary compilers.</p>
 <p>On a Mac, please run the following to make sure that ROOT works:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">xcode</span><span class="o">-</span><span class="n">select</span> <span class="o">--</span><span class="n">install</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">xcode</span><span class="o">-</span><span class="n">select</span> <span class="o">--</span><span class="n">install</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="git-and-github">
 <h2>Git and Github<a class="headerlink" href="#git-and-github" title="Permalink to this headline">¶</a></h2>
 <p>You must have <cite>git</cite> installed, which you can test by running at the command line:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">git</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span>
 </pre></div>
 </div>
 <p>To get the code of pax, you need access to the private XENON1T github repository.  You can get this by emailing the <cite>pax</cite> developers.</p>
@@ -141,7 +142,7 @@ conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 matp
 <div class="section" id="option-1-user-installation">
 <h2>Option 1: User installation<a class="headerlink" href="#option-1-user-installation" title="Permalink to this headline">¶</a></h2>
 <p>In this option the pax code will be hidden away somewhere deep in python&#8217;s directory structure so you won&#8217;t accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>pip install git+https://github.com/XENON1T/pax.git
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">XENON1T</span><span class="o">/</span><span class="n">pax</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 <p>To update to a newer version, add ` &#8211;upgrade`` to the command above (or just run the same command again).</p>
@@ -150,11 +151,11 @@ conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 matp
 <h2>Option 2: Developer installation<a class="headerlink" href="#option-2-developer-installation" title="Permalink to this headline">¶</a></h2>
 <p>In this option you&#8217;ll know where the code is, so you can look at it, play with it, and if you change anything you don&#8217;t need to reinstall for your changes to take effect... However, be aware you are using the very latest (&#8216;nightly&#8217;) version of pax, which may contain more bugs (but often contains less bugs).</p>
 <p>First <cite>cd</cite> to the folder you want pax to be installed. Then run:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>git clone https://github.com/XENON1T/pax.git
-source activate &lt;environment_name&gt;  # Make sure you specify your own environment
-                                    # when using a central installation of Anaconda
-cd pax
-python setup.py develop
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">XENON1T</span><span class="o">/</span><span class="n">pax</span><span class="o">.</span><span class="n">git</span>
+<span class="n">source</span> <span class="n">activate</span> <span class="o">&lt;</span><span class="n">environment_name</span><span class="o">&gt;</span>  <span class="c1"># Make sure you specify your own environment</span>
+                                    <span class="c1"># when using a central installation of Anaconda</span>
+<span class="n">cd</span> <span class="n">pax</span>
+<span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span>
 </pre></div>
 </div>
 <p>To update to the latest pax, go to the directory with pax and run <cite>git pull</cite>.</p>
@@ -164,7 +165,7 @@ python setup.py develop
 <div class="section" id="to-check-if-your-installation-is-working">
 <h2>To check if your installation is working<a class="headerlink" href="#to-check-if-your-installation-is-working" title="Permalink to this headline">¶</a></h2>
 <p>Execute:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="n">version</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="n">version</span>
 </pre></div>
 </div>
 <p>or</p>
@@ -178,16 +179,16 @@ python setup.py develop
 <p>This section assumes that pax is installed, either from the instructions above
 or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
 <p>Now you should be able to run the command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="n">help</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
 <p>from anywhere, which will give you a list of other command line options. If you have a graphical display, try <cite>paxer &#8211;plot</cite> and <cite>paxer &#8211;plot_interactive</cite>. You can select some data with the <cite>&#8211;input</cite> option:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot --config=&quot;XENON100&quot;
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="nb">input</span> <span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">xenon100</span><span class="o">/</span><span class="n">run_14</span><span class="o">/</span><span class="n">xe100_150213_1411</span><span class="o">/</span><span class="n">xe100_150213_1411_000000</span><span class="o">.</span><span class="n">xed</span> <span class="o">--</span><span class="n">event</span> <span class="mi">0</span> <span class="o">--</span><span class="n">plot</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="s2">&quot;XENON100&quot;</span>
 </pre></div>
 </div>
 <p>If you want to do something nonstandard, you can create your own configuration file
 like <cite>my_file.ini</cite>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
 <span class="n">parent_configuration</span> <span class="o">=</span> <span class="s1">&#39;XENON100&#39;</span>
 <span class="nb">input</span> <span class="o">=</span> <span class="s1">&#39;XED.ReadXED&#39;</span>
 <span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
@@ -195,12 +196,12 @@ like <cite>my_file.ini</cite>:</p>
          <span class="p">]</span>
 
 <span class="p">[</span><span class="n">Plotting</span><span class="p">]</span>
-<span class="n">log_scale_entire_event</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="n">log_scale_entire_event</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="c1">#output_name = &#39;plots&#39;  # Uncomment to write plot to disk</span>
 </pre></div>
 </div>
 <p>You can load this file with <cite>paxer</cite> by using the <cite>config_path</cite> option:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">paxer</span> <span class="o">--</span><span class="n">config_path</span> <span class="n">my_file</span><span class="o">.</span><span class="n">ini</span> <span class="o">--</span><span class="nb">input</span> <span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">xenon100</span><span class="o">/</span><span class="n">run_14</span><span class="o">/</span><span class="n">xe100_150213_1411</span><span class="o">/</span><span class="n">xe100_150213_1411_000000</span><span class="o">.</span><span class="n">xed</span> <span class="o">--</span><span class="n">event</span> <span class="mi">0</span>
 </pre></div>
 </div>
 <p>You can uncomment the <cite>output_dir</cite> line to write the plots to a file.  Also, try
@@ -253,14 +254,11 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -271,8 +269,8 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/readme.txt"

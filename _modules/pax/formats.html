@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.formats &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>pax.formats &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -55,7 +56,7 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;TableWriter&#39;</span><span class="p">)</span>
 
@@ -73,11 +74,11 @@
 <div class="viewcode-block" id="TableFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat">[docs]</a><span class="k">class</span> <span class="nc">TableFormat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for bulk output formats</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">supports_append</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">supports_append</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;DIRECTORY&#39;</span>   <span class="c1"># Leave to None for database insertion or something</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">base_logger</span><span class="p">):</span>
@@ -107,9 +108,9 @@
 
 <div class="viewcode-block" id="NumpyDump"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump">[docs]</a><span class="k">class</span> <span class="nc">NumpyDump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;npz&#39;</span>
-    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">f</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="NumpyDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">name</span>
@@ -117,14 +118,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="NumpyDump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="NumpyDump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="NumpyDump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+<div class="viewcode-block" id="NumpyDump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span></div>
 
@@ -138,9 +139,9 @@
 
 <div class="viewcode-block" id="HDF5Dump"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump">[docs]</a><span class="k">class</span> <span class="nc">HDF5Dump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;hdf5&#39;</span>
-    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="HDF5Dump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
@@ -151,12 +152,12 @@
 <div class="viewcode-block" id="HDF5Dump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">records</span><span class="p">,</span> <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">records</span><span class="p">,</span> <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,),</span>
                                           <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>   <span class="c1"># hdfview doesn&#39;t like lzf?</span>
-                                          <span class="n">shuffle</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                                          <span class="n">fletcher32</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                                          <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">fletcher32</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s2">&quot;Fatal error in creating HDF5 table </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s2">&quot;First record to write was was:&quot;</span><span class="p">)</span>
@@ -167,8 +168,8 @@
                 <span class="n">dataset</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="n">oldlen</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="p">),))</span>
                 <span class="n">dataset</span><span class="p">[</span><span class="n">oldlen</span><span class="p">:]</span> <span class="o">=</span> <span class="n">records</span></div>
 
-<div class="viewcode-block" id="HDF5Dump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+<div class="viewcode-block" id="HDF5Dump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">df_name</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span></div>
 
@@ -190,9 +191,9 @@
 <span class="sd">    by converting the numpy types to their respective ROOT types.</span>
 <span class="sd">    This is &quot;&quot;&quot;</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;root&#39;</span>
-    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1"># Lookup dictionary for converting python numpy types to</span>
     <span class="c1"># ROOT types, strings are handled seperately!</span>
@@ -215,11 +216,12 @@
         <span class="n">base_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The tabular ROOT output is old and may crash!&quot;</span><span class="p">)</span>
         <span class="c1"># Avoid importing ROOT until it is needed</span>
         <span class="kn">import</span> <span class="nn">ROOT</span>   <span class="c1"># noqa</span>
+        <span class="n">ROOT</span><span class="o">.</span><span class="n">gROOT</span><span class="o">.</span><span class="n">SetBatch</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span> <span class="o">=</span> <span class="n">ROOT</span>
 
         <span class="c1"># This line makes sure all TTree objects are NOT owned</span>
         <span class="c1"># by python, avoiding segfaults when garbage collecting</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">_creates</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">_creates</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1"># DON&#39;T use the Python3 super trick here, we want this code to run in python2 as well!</span>
         <span class="n">TableFormat</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -337,8 +339,8 @@
 <span class="c1">##</span>
 
 <div class="viewcode-block" id="PandasFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat">[docs]</a><span class="k">class</span> <span class="nc">PandasFormat</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
-    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="PandasFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">name</span></div>
@@ -378,10 +380,10 @@
 
 
 <div class="viewcode-block" id="PandasHDF5"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5">[docs]</a><span class="k">class</span> <span class="nc">PandasHDF5</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
-    <span class="n">supports_append</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_append</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">string_data_length</span> <span class="o">=</span> <span class="mi">32</span>     <span class="c1"># HACK, should come from config...</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;hdf5&#39;</span>
 
@@ -402,16 +404,16 @@
             <span class="c1"># Look for string fields (dtype=object), we should pre-set a length for them</span>
             <span class="n">string_fields</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;table&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;table&#39;</span><span class="p">,</span>
                               <span class="n">min_itemsize</span><span class="o">=</span><span class="p">{</span><span class="n">field_name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">string_data_length</span>
                                             <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">string_fields</span><span class="p">})</span></div>
 
-<div class="viewcode-block" id="PandasHDF5.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PandasHDF5.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">end</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">df_name</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_records</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">df_name</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_records</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">data_types_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -419,7 +421,7 @@
 
 <div class="viewcode-block" id="PandasHDF5.n_in_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.n_in_data">[docs]</a>    <span class="k">def</span> <span class="nf">n_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">df_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No </span><span class="si">%s</span><span class="s2"> present in HDF5 file... you sure this is good data?&quot;</span> <span class="o">%</span> <span class="n">df_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">df_name</span><span class="p">])</span></div></div>
@@ -453,14 +455,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -471,8 +470,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

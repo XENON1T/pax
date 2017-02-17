@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>pax.plugins.peak_processing.NaturalBreaksClustering &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -40,12 +41,11 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.plugins.peak_processing.NaturalBreaksClustering</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numba</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">InterpolatedUnivariateSpline</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">InterpolatedUnivariateSpline</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">dsputils</span>
 
 
 <div class="viewcode-block" id="NaturalBreaksClustering"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering">[docs]</a><span class="k">class</span> <span class="nc">NaturalBreaksClustering</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">ClusteringPlugin</span><span class="p">):</span>
@@ -71,7 +71,6 @@
 <span class="sd">        Will set interior_split_goodness and birthing_split_goodness attributes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span>
-        <span class="n">hits</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
         <span class="n">n_hits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
         <span class="c1"># Handle trivial cases</span>
@@ -82,7 +81,6 @@
             <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Clustering hits </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">]))</span>
-        <span class="n">area_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
 
         <span class="c1"># Compute gaps between hits, select large enough gaps to test</span>
         <span class="n">gaps</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>            <span class="c1"># Remember first &quot;gap&quot; is zero: throw it away</span>
@@ -101,19 +99,19 @@
             <span class="n">max_split_ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">gos_observed</span><span class="p">)</span>
             <span class="n">split_i</span> <span class="o">=</span> <span class="n">split_indices</span><span class="p">[</span><span class="n">max_split_ii</span><span class="p">]</span>
             <span class="n">split_goodness</span> <span class="o">=</span> <span class="n">gos_observed</span><span class="p">[</span><span class="n">max_split_ii</span><span class="p">]</span>
-            <span class="n">split_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">area_tot</span><span class="p">))</span>
+            <span class="n">split_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">))</span>
 
             <span class="c1"># Should we split? If so, recurse.</span>
             <span class="k">if</span> <span class="n">split_goodness</span> <span class="o">&gt;</span> <span class="n">split_threshold</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SPLITTING at </span><span class="si">%d</span><span class="s2">  (</span><span class="si">%s</span><span class="s2"> &gt; </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">split_goodness</span><span class="p">,</span> <span class="n">split_threshold</span><span class="p">))</span>
-                <span class="n">peak_l</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[:</span><span class="n">split_i</span><span class="p">],</span>
-                                            <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
-                                            <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
-                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][:</span><span class="n">split_i</span><span class="p">])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
-                <span class="n">peak_r</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="n">split_i</span><span class="p">:],</span>
-                                            <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
-                                            <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
-                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">split_i</span><span class="p">:])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
+                <span class="n">peak_l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[:</span><span class="n">split_i</span><span class="p">],</span>
+                                         <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
+                                         <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
+                                         <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][:</span><span class="n">split_i</span><span class="p">])</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+                <span class="n">peak_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="n">split_i</span><span class="p">:],</span>
+                                         <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
+                                         <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
+                                         <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">split_i</span><span class="p">:])</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_peak</span><span class="p">(</span><span class="n">peak_l</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_peak</span><span class="p">(</span><span class="n">peak_r</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Proposed split at </span><span class="si">%d</span><span class="s2"> not good enough (</span><span class="si">%0.3f</span><span class="s2"> &lt; </span><span class="si">%0.3f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
@@ -122,13 +120,13 @@
             <span class="c1"># If we get here, no clustering was needed</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">interior_split_goodness</span> <span class="o">=</span> <span class="n">split_goodness</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">interior_split_fraction</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][:</span><span class="n">max_split_ii</span><span class="p">]),</span>
-                                               <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">max_split_ii</span><span class="p">:]))</span> <span class="o">/</span> <span class="n">area_tot</span>
+                                               <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">max_split_ii</span><span class="p">:]))</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
 
         <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span></div></div>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_sad_fallback</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">areas</span><span class="p">,</span> <span class="n">fallback</span><span class="p">):</span>
     <span class="c1"># While there is a one-pass algorithm for variance, I haven&#39;t found one for sad.. maybe it doesn&#39;t exists</span>
     <span class="c1"># First calculate the weighted mean.</span>
@@ -146,10 +144,10 @@
     <span class="k">return</span> <span class="n">sad</span>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span>
                          <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span>
                          <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <div class="viewcode-block" id="compute_every_split_goodness"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.compute_every_split_goodness">[docs]</a><span class="k">def</span> <span class="nf">compute_every_split_goodness</span><span class="p">(</span><span class="n">gaps</span><span class="p">,</span> <span class="n">split_indices</span><span class="p">,</span>
                                  <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span>
                                  <span class="n">results</span><span class="p">):</span>
@@ -160,8 +158,8 @@
         <span class="n">results</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_split_goodness</span><span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span></div>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <div class="viewcode-block" id="compute_split_goodness"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.compute_split_goodness">[docs]</a><span class="k">def</span> <span class="nf">compute_split_goodness</span><span class="p">(</span><span class="n">split_index</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return &quot;goodness of split&quot; for splitting hits &gt;= split_index into right cluster, &lt; into left.</span>
 <span class="sd">       left, right: left, right indices of hits</span>
@@ -195,14 +193,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -213,8 +208,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.plotting.HitfinderDiagnosticPlots &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '6.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.plugins.plotting.HitfinderDiagnosticPlots</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">textwrap</span> <span class="k">import</span> <span class="n">dedent</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax.recarray_tools</span> <span class="k">import</span> <span class="n">dict_group_by</span>
+
+
+<div class="viewcode-block" id="HitfinderDiagnosticPlots"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots">[docs]</a><span class="k">class</span> <span class="nc">HitfinderDiagnosticPlots</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make some useful diagnostic plots of the hitfinder&#39;s behaviour.</span>
+
+<span class="sd">    The &#39;make_diagnostic_plots&#39; option controls when to make these plots</span>
+<span class="sd">    (since it takes a very long time to make them all).</span>
+<span class="sd">        never - obvious. This is the default, which you always want to use this in production.</span>
+<span class="sd">        always - obvious</span>
+<span class="sd">        no hits - only pulses which have no hits</span>
+<span class="sd">        hits only - only pulses which have hits</span>
+<span class="sd">        tricky cases - pulses with hits that only just crossed the threshold, or no hits but almost one</span>
+<span class="sd">        saturated - pulses whose ADC waveform is maximum (clips outside the dynamic range)</span>
+
+<span class="sd">    &#39;make_diagnostic_plots_in&#39; sets the directory where the diagnostic plots are created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HitfinderDiagnosticPlots.startup"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;make_diagnostic_plots&#39;</span><span class="p">,</span> <span class="s1">&#39;never&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;make_diagnostic_plots_in&#39;</span><span class="p">,</span> <span class="s1">&#39;hitfinder_diagnostic_plots&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HitfinderDiagnosticPlots.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">event</span>
+
+        <span class="c1"># Get the pulse-to-hit mapping</span>
+        <span class="c1"># Note this relies on the hits being sorted by found_in_pulse</span>
+        <span class="c1"># (probably shouldn&#39;t have rolled our own fake pandas for recarrays...)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Reconstructing hit/pulse mapping&quot;</span><span class="p">)</span>
+        <span class="n">hits_in_pulse</span> <span class="o">=</span> <span class="n">dict_group_by</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">,</span> <span class="s1">&#39;found_in_pulse&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Making hitfinder diagnostic plots&#39;</span><span class="p">)):</span>
+            <span class="c1"># Get the hits that were found in this pulse</span>
+            <span class="n">hits</span> <span class="o">=</span> <span class="n">hits_in_pulse</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pulse_i</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">()))</span>
+
+            <span class="c1"># Reconstruct some variables we had in the hitfinder. Some code duplication unfortunately...</span>
+            <span class="c1"># that&#39;s the price we pay for having diagnostic plotting cleanly separated from the hitfinder.</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">right</span>
+
+            <span class="n">hit_bounds_found</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">hit_bounds_found</span> <span class="o">-=</span> <span class="n">start</span>
+
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
+
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">channel</span>
+            <span class="n">adc_to_pe</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+            <span class="n">noise_sigma_pe</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">hitfinder_threshold</span>
+            <span class="n">saturation_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span>
+            <span class="n">is_saturated</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;=</span> <span class="n">saturation_threshold</span>
+
+            <span class="c1"># Do we need to show this pulse? If not: continue</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;tricky cases&#39;</span><span class="p">:</span>
+                <span class="c1"># Always show pulse if noise level is very high</span>
+                <span class="k">if</span> <span class="n">noise_sigma_pe</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># Show pulse if it nearly went over threshold</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Show pulse if any of its hit nearly didn&#39;t go over threshold</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">height</span> <span class="o">&lt;</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">threshold</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
+                                   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">))]):</span>
+                            <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;no hits&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;baseline shifts&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">baseline_increase</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;hits only&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;saturated&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_saturated</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;negative&#39;</span><span class="p">:</span>
+                <span class="c1"># Select only pulses which had hits whose area and or height were originally negative</span>
+                <span class="c1"># (the hitfinder helpfully capped them at 1e-9, so they&#39;re not actually negative...)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">6</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">6</span><span class="p">))):</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s1">&#39;always&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid make_diagnostic_plots option: </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span><span class="p">)</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+            <span class="n">data_for_title</span> <span class="o">=</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Event </span><span class="si">%s</span><span class="s1">, pulse </span><span class="si">%d</span><span class="s1">-</span><span class="si">%d</span><span class="s1">, Channel </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">)</span>
+            <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+            <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span> <span class="o">.</span><span class="mi">85</span><span class="p">))</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">,</span> <span class="o">.</span><span class="mi">85</span><span class="p">))</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Sample number (</span><span class="si">%s</span><span class="s2"> ns)&quot;</span> <span class="o">%</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;ADC counts above baseline&quot;</span><span class="p">)</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;pe / sample&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Plot the signal and noise levels</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s1">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Noise level&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Minimum&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Mark the hit ranges &amp; center of gravity point</span>
+            <span class="k">for</span> <span class="n">hit_i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">):</span>
+                <span class="n">ax1</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+            <span class="c1"># Make sure the y-scales match</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">)</span>
+
+            <span class="c1"># Add pulse / hit information</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">largest_hit</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])]</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">,</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            Pulse maximum: </span><span class="si">{pulse.maximum:.5g}</span><span class="s2"></span>
+<span class="s2">                            Pulse minimum: </span><span class="si">{pulse.minimum:.5g}</span><span class="s2"></span>
+<span class="s2">                              (both in ADCc above baseline)</span>
+<span class="s2">                            Pulse baseline: </span><span class="si">{pulse.baseline}</span><span class="s2"></span>
+<span class="s2">                              (in ADCc above reference baseline)</span>
+<span class="s2">                            Baseline increase: </span><span class="si">{pulse.baseline_increase:.2f}</span><span class="s2"></span>
+
+<span class="s2">                            Gain in this PMT: </span><span class="si">{gain:.3g}</span><span class="s2"></span>
+
+<span class="s2">                            Noise level: </span><span class="si">{pulse.noise_sigma:.2f}</span><span class="s2"> ADCc</span>
+<span class="s2">                            Hitfinder threshold: </span><span class="si">{pulse.hitfinder_threshold}</span><span class="s2"> ADCc</span>
+
+<span class="s2">                            Largest hit info (</span><span class="si">{left}</span><span class="s2">-</span><span class="si">{right}</span><span class="s2">):</span>
+<span class="s2">                            Area: </span><span class="si">{hit_area:.5g}</span><span class="s2"> pe</span>
+<span class="s2">                            Height: </span><span class="si">{hit_height:.4g}</span><span class="s2"> pe</span>
+<span class="s2">                            Saturated samples: </span><span class="si">{hit_n_saturated}</span><span class="s2"></span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pulse</span><span class="o">=</span><span class="n">pulse</span><span class="p">,</span>
+                                       <span class="n">gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">],</span>
+                                       <span class="n">left</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                       <span class="n">right</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                       <span class="n">hit_area</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">],</span>
+                                       <span class="n">hit_height</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">],</span>
+                                       <span class="n">hit_n_saturated</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;n_saturated&#39;</span><span class="p">])),</span>
+                            <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Finish the plot, save, close</span>
+            <span class="n">leg</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="n">leg</span><span class="o">.</span><span class="n">get_frame</span><span class="p">()</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">,</span>
+                                     <span class="s1">&#39;event</span><span class="si">%04d</span><span class="s1">_pulse</span><span class="si">%05d</span><span class="s1">-</span><span class="si">%05d</span><span class="s1">_ch</span><span class="si">%03d</span><span class="s1">.png&#39;</span> <span class="o">%</span> <span class="n">data_for_title</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

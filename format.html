@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>Event format &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Installation and setup" href="faq.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -329,6 +330,12 @@ floats have rounding that result in loss of precision.</p>
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Interaction.r_correction">
+<code class="descname">r_correction</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Interaction.r_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>R correction that has been added to r. Subtract it from interaction.r to recover the uncorrected r position</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1">
 <code class="descname">s1</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Interaction.s1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index (in event.peaks) of the s1 peak of this interaction</p>
@@ -376,13 +383,6 @@ floats have rounding that result in loss of precision.</p>
 <dd><p>Multiplicative correction on S2 due to electron lifetime</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Interaction.set_position">
-<code class="descname">set_position</code><span class="sig-paren">(</span><em>recpos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Interaction.set_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Interaction.set_position" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the x, y position of the interaction
-based on a <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a> object</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.x">
 <code class="descname">x</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.x" title="Permalink to this definition">¶</a></dt>
@@ -416,8 +416,14 @@ based on a <a class="reference internal" href="pax.html#pax.datastructure.Recons
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.z">
 <code class="descname">z</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.z" title="Permalink to this definition">¶</a></dt>
-<dd><p>z position (cm) calculated from drift time.
-This - (drift time - drift time of gate) * drift velocity</p>
+<dd><p>z position (cm) of the interaction,
+This starts from - (drift time - drift time of gate) * drift velocity, then applies the (r,z) correction</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.z_correction">
+<code class="descname">z_correction</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Interaction.z_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Z correction that has been added to z. Subtract it from interaction.z to recover the uncorrected z position</p>
 </dd></dl>
 
 </dd></dl>
@@ -578,6 +584,16 @@ For the root output, this gets converted back to a list of Hit classes (then to 
 <dd><p>Boolean array of n_channels which indicates if there was ADC saturation in any hit
 in that channel during the peak</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.largest_hit_area">
+<code class="descname">largest_hit_area</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Peak.largest_hit_area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.largest_hit_channel">
+<code class="descname">largest_hit_channel</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.largest_hit_channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.left">
@@ -935,23 +951,28 @@ raw_data field is never stored.</p>
 <dt id="pax.datastructure.Pulse.baseline">
 <code class="descname">baseline</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline" title="Permalink to this definition">¶</a></dt>
 <dd><p>Baseline, in ADC counts relative to reference baseline &#8211; but float!
-This is the highest (in signal direction, lowest in raw ADC) of the two baselines computed
-at the start and at the end of the pulse.
-Use the sign of the baseline_increase field to figure out which: if positive, it is the one at the end.</p>
+This is computed on the first few samples at the start of the pulse.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.baseline_increase">
 <code class="descname">baseline_increase</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline_increase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Baseline at end of the pulse (relative to reference) - baseline at start of pulse (relative to reference)
-E.g. if it is positive, the baseline increased in signal-like direction = decreased in raw ADC.</p>
+E.g. if this is positive, the baseline increased in signal-like direction = decreased in raw ADC.
+Depending on the PMTs used and baselining length, this may not reflect an actual baseline increase but just
+a long tail of a photoelectron pulse</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.channel">
 <code class="descname">channel</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Pulse.channel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Channel number the pulse belongs to</p>
+<dd><p>Channel number the pulse belongs to.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Pulse.hitfinder_threshold">
+<code class="descname">hitfinder_threshold</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Pulse.hitfinder_threshold" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.left">
@@ -993,13 +1014,14 @@ For example, 0 is the first sample that could exist in the event, 1 the second, 
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.raw_data">
 <code class="descname">raw_data</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Pulse.raw_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raw wave data (numpy array of int16, raw ADC counts)</p>
+<dd><p>Raw wave data (numpy array of int16, raw ADC counts).
+This is just what you get from the ADC, not corrected or modified in any way</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.right">
 <code class="descname">right</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Pulse.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop index/sample of this pulse (INCLUSIVE!)</p>
+<dd><p>Stop index/sample of this pulse (INCLUSIVE). For example, this is 1 for a 2-sample event.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1045,14 +1067,11 @@ For example, 0 is the first sample that could exist in the event, 1 the second, 
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1063,8 +1082,8 @@ For example, 0 is the first sample that could exist in the event, 1 the second, 
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/format.txt"

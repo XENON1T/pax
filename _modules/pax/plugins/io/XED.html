@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.XED &mdash; Processor for Analyzing XENON1T 6.0.2 documentation</title>
+    <title>pax.plugins.io.XED &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.0.2',
+        VERSION:     '6.3.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.0.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -57,20 +58,20 @@
 <span class="sd">The write plugin always writes zle0 XED files with bzip2 data compression.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">bz2</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">six</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span><span class="p">,</span> <span class="n">EventProxy</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="k">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span><span class="p">,</span> <span class="n">EventProxy</span>
 
-<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
+<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="k">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span>
 
 
 <span class="n">xed_file_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
@@ -235,7 +236,7 @@
 
 
 <div class="viewcode-block" id="DecodeXED"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.DecodeXED">[docs]</a><span class="k">class</span> <span class="nc">DecodeXED</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
-    <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">do_input_check</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="DecodeXED.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.DecodeXED.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
         <span class="n">event_number</span> <span class="o">=</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">event_number</span>
@@ -327,7 +328,7 @@
 <div class="viewcode-block" id="WriteXED.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="WriteXED.skip_control_word"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.skip_control_word">[docs]</a>    <span class="k">def</span> <span class="nf">skip_control_word</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_skip</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">to_skip</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -350,7 +351,7 @@
 
 <div class="viewcode-block" id="WriteXED.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.WriteXED.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
         <span class="n">event_data</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span>
 
@@ -358,11 +359,11 @@
         <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">pulses_in_channel</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">channel</span><span class="p">):</span>
             <span class="n">pulses_in_channel</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pulses_in_channel</span><span class="p">)</span>
             <span class="n">channel_data</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span>
-            <span class="n">prevpulse</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">prevpulse</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pulses_in_channel</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">left</span><span class="p">):</span>
                 <span class="c1"># Write skip control word, unless we&#39;re at the very start</span>
                 <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">prevpulse</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">prevpulse</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">skip</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">prevpulse</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="mi">1</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">skip</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
@@ -448,7 +449,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">current_xed</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="bp">None</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_event_number</span> <span class="o">=</span> <span class="kc">None</span></div></div>
 
 
 <span class="k">def</span> <span class="nf">_dict_to_numpy_recarray</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
@@ -475,14 +476,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -493,8 +491,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 
