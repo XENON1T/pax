@@ -118,24 +118,29 @@ class WaveformSimulator(plugin.InputPlugin):
             x = r * np.cos(phi)
             y = r * np.sin(phi)
 
-        arriving_photon_times_top,  arriving_photon_times_bottom = self.simulator.queue_signal(photon_times, x, y,
-                                           # Generate S2 hitpattern "at the anode": cue for simulator to use S2 LCE map
-                                           z=-self.config['gate_to_anode_distance'])
+        arriving_photon_times_top,  arriving_photon_times_bottom = self.simulator.queue_signal(
+            photon_times,
+            x,
+            y,
+            # Generate S2 hitpattern "at the anode": cue for simulator to use S2 LCE map
+            z=-self.config['gate_to_anode_distance'])
         peak_top_fraction = float(len(arriving_photon_times_top)) / float(
-            len(arriving_photon_times_bottom) + len(arriving_photon_times_top) )
-        self.store_true_peak('s2',
-                                          g4_id,
-                                          t,
-                                          x,
-                                          y,
-                                          z,
-                                          np.concatenate((
-                                                                   arriving_photon_times_top,
-                                                                   arriving_photon_times_bottom
-                                                                   )
-                                                                  ),
-                                          electron_times,
-                                          )
+            len(arriving_photon_times_bottom) + len(arriving_photon_times_top))
+        self.store_true_peak(
+            's2',
+            g4_id,
+            t,
+            x,
+            y,
+            z,
+            np.concatenate((
+                arriving_photon_times_top,
+                arriving_photon_times_bottom
+                )
+            ),
+            electron_times,
+            peak_top_fraction,
+            )
         return None
 
     def s1(self, photons, recoil_type, g4_id=-1, t=0., x=0., y=0., z=0.):
@@ -149,27 +154,27 @@ class WaveformSimulator(plugin.InputPlugin):
         photon_times = self.simulator.s1_photons(photons, recoil_type, x, y, z, t)
         if not len(photon_times):
             return None
-        arriving_photon_times_top, arriving_photon_times_bottom =  self.simulator.queue_signal(
+        arriving_photon_times_top, arriving_photon_times_bottom = self.simulator.queue_signal(
                                                                                                photon_times,
                                                                                                x=x,
                                                                                                y=y,
                                                                                                z=z
                                                                                               )
         peak_top_fraction = float(len(arriving_photon_times_top)) / float(
-            len(arriving_photon_times_bottom) + len(arriving_photon_times_top) )
-        self.store_true_peak('s1',
-                                         g4_id,
-                                         t,
-                                         x,
-                                         y,
-                                         z,
-                                         np.concatenate((
-                                                                   arriving_photon_times_top,
-                                                                   arriving_photon_times_bottom
-                                                                   )
-                                                                  ),
-                                         peak_top_fraction = peak_top_fraction,
-                                         )
+            len(arriving_photon_times_bottom) + len(arriving_photon_times_top))
+        self.store_true_peak(
+            's1',
+            g4_id,
+            t,
+            x,
+            y,
+            z,
+            np.concatenate((
+                arriving_photon_times_top,
+                arriving_photon_times_bottom
+                )),
+            peak_top_fraction,
+            )
         return None
 
     def s2_after_pulses(self, g4_id=-1):
@@ -227,27 +232,27 @@ class WaveformSimulator(plugin.InputPlugin):
                 Y[electron_id]
                 )
             # queue the photons caused by the s2 after pulses
-            arriving_photon_times_top, arriving_photon_times_bottom =  self.simulator.queue_signal(
+            arriving_photon_times_top, arriving_photon_times_bottom = self.simulator.queue_signal(
                 s2_ap_photon_times,
                 X[electron_id],
                 Y[electron_id],
                 -self.config['gate_to_anode_distance']
                 )
             peak_top_fraction = float(len(arriving_photon_times_top)) / float(
-                len(arriving_photon_times_bottom) + len(arriving_photon_times_top) )
-            self.store_true_peak('photoionization_afterpulse',
-                                          g4_id,
-                                          t = s2_ap_electron_time,
-                                          x = X[electron_id],
-                                          y = Y[electron_id],
-                                          z = -self.config['gate_to_anode_distance'],
-                                          photon_times = np.concatenate((
-                                                                   arriving_photon_times_top,
-                                                                   arriving_photon_times_bottom
-                                                                   )
-                                                                  ),
-                                          peak_top_fraction = peak_top_fraction,
-                                          )
+                len(arriving_photon_times_bottom) + len(arriving_photon_times_top))
+            self.store_true_peak(
+                'photoionization_afterpulse',
+                g4_id,
+                t=s2_ap_electron_time,
+                x=X[electron_id],
+                y=Y[electron_id],
+                z=-self.config['gate_to_anode_distance'],
+                photon_times=np.concatenate((
+                    arriving_photon_times_top,
+                    arriving_photon_times_bottom
+                    )),
+                peak_top_fraction=peak_top_fraction,
+                )
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()

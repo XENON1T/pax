@@ -338,7 +338,7 @@ class Simulator(object):
                                                         n_rvs=n_afterpulses))
 
             # If none of the setting specified, do not make afterpulses
-            ap_gains = [ x*y for x, y in zip(ap_gains, ap_amplifications) ]
+            ap_gains = [x*y for x, y in zip(ap_gains, ap_amplifications)]
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
 
