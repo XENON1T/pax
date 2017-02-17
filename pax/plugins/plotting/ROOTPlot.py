@@ -251,13 +251,12 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
                 label = "  {}[{}]:{:.1e} pe ".format(peaktype,i,peak.area)
 
                 # Star the main interaction peaks
-                if len(event.interactions):
-                    if peaktype == 's1' and event.interactions[0].s1 >= 0:
-                        if peak is event.peaks[event.interactions[0].s1]:
-                            label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
-                    elif peaktype == 's2' and event.interactions[0].s2 >= 0:
-                        if peak is event.peaks[event.interactions[0].s2]:
-                            label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+                if peaktype == 's1' and len(event.interactions) and event.interactions[0].s1 >= 0:
+                    if peak is event.peaks[event.interactions[0].s1]:
+                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+                elif peaktype == 's2' and len(event.interactions) and event.interactions[0].s2 >= 0:
+                    if peak is event.peaks[event.interactions[0].s2]:
+                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
 
                 label = label.replace("e+0", "e")
 
