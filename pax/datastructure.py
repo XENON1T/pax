@@ -250,7 +250,7 @@ class Peak(StrictModel):
     largest_hit_area = float('nan')
 
     # Channel of the largest hit in the peak
-    largest_hit_channel = 0
+    largest_hit_channel = INT_NAN
 
     @property
     def does_channel_contribute(self):
@@ -261,6 +261,10 @@ class Peak(StrictModel):
     def contributing_channels(self):
         """List of channels which contribute one or more hits to this peak"""
         return np.where(self.does_channel_contribute)[0]
+
+    #: Number of channels that have a hit maximum within a short (configurable) window around the peak's sum
+    #: waveform maximum.
+    tight_coincidence = INT_NAN
 
     ##
     # Time distribution information
@@ -282,10 +286,9 @@ class Peak(StrictModel):
     range_area_decile = np.zeros(11, dtype=np.float)
 
     #: Time (ns) from the area decile point to the area midpoint.
+    #: If you want to know the time until some other point (say the sum waveform maximum),
+    #: just add the difference between that point and the area midpoint.
     area_decile_from_midpoint = np.zeros(11, dtype=np.float)
-
-    #: Time (ns) from the area decile point to the maximum
-    area_decile_from_maximum = np.zeros(11, dtype=np.float)
 
     @property
     def range_50p_area(self):

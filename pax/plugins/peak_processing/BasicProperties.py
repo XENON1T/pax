@@ -54,12 +54,14 @@ class SumWaveformProperties(plugin.TransformPlugin):
     """Computes properties based on the hits-only sum waveform"""
 
     def startup(self):
-        self.wv_field_len = int(self.config['peak_waveform_length'] / self.config['sample_duration']) + 1
+        self.dt = dt = self.config['sample_duration']
+        self.wv_field_len = int(self.config['peak_waveform_length'] / dt) + 1
+        self.tight_coincidence_samples = self.config['tight_coincidence_window'] // dt
         if not self.wv_field_len % 2:
             raise ValueError('peak_waveform_length must be an even multiple of the sample size')
 
     def transform_event(self, event):
-        dt = event.sample_duration
+        dt = self.dt
         field_length = self.wv_field_len
         for peak in event.peaks:
             peak.sum_waveform = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
@@ -100,15 +102,22 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # Amplitude at the maximum
             peak.height = w[max_idx]
 
-            # Compute fraction of area in central deciles
+            # Compute area decile points
             # TODO: reactivate tests after refactor
             area_times = np.ones(21) * float('nan')
             integrate_until_fraction(w, fractions_desired=np.linspace(0, 1, 21), results=area_times)
             area_times *= dt
             area_midpoint = area_times[10]
+
+            # Store widths and rise times
             peak.range_area_decile = area_times[10:] - area_times[10::-1]
             peak.area_decile_from_midpoint = area_times[::2] - area_midpoint
-            peak.area_decile_from_maximum = area_times[::2] - (peak.index_of_maximum - peak.left) * dt
+
+            # Compute a tight coincidence count (useful for distinguishing S1s from junk)
+            x = peak.hits['index_of_maximum']
+            l = peak.index_of_maximum - self.tight_coincidence_samples
+            r = peak.index_of_maximum + self.tight_coincidence_samples
+            peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
