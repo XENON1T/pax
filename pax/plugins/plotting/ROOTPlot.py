@@ -251,20 +251,21 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
                 label = "  {}[{}]:{:.1e} pe ".format(peaktype,i,peak.area)
 
                 # Star the main interaction peaks
-                if peaktype == 's1' and event.interactions[0].s1 >= 0:
-                    if peak is event.peaks[event.interactions[0].s1]:
-                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
-                elif peaktype == 's2' and event.interactions[0].s2 >= 0:
-                    if peak is event.peaks[event.interactions[0].s2]:
-                        label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+                if len(event.interactions):
+                    if peaktype == 's1' and event.interactions[0].s1 >= 0:
+                        if peak is event.peaks[event.interactions[0].s1]:
+                            label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
+                    elif peaktype == 's2' and event.interactions[0].s2 >= 0:
+                        if peak is event.peaks[event.interactions[0].s2]:
+                            label = "  {}[{}]*:{:.1e} pe ".format(peaktype,i,peak.area)
 
                 label = label.replace("e+0", "e")
 
                 if len(peak.contributing_channels) < 5:
-                    ## if there are less than 5 PMTs contributing to a peak, list them by name:
+                    # if there are less than 5 PMTs contributing to a peak, list them by name:
                     label += "{{{}}}".format(", ".join(["PMT{}".format(pmt) for pmt in map(str, peak.contributing_channels)]))
                 else:
-                    ## if there are 5 or more PMTs that contribute to a peak, print their total number only:
+                    # if there are 5 or more PMTs that contribute to a peak, print their total number only:
                     label += "({})".format(len(peak.contributing_channels))
                 tlatex[peaktype].DrawLatex(peak.index_of_maximum * self.samples_to_us, peak.height, label)
 
