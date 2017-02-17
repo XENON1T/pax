@@ -13,7 +13,7 @@ class S2SpatialCorrection(plugin.TransformPlugin):
         if 'xy_posrec_preference' not in self.config:
             raise ValueError('Configuration for %s must contain xy_posrec_preference' % self.name)
         self.s2_light_yield_map = self.processor.simulator.s2_light_yield_map
-        
+
     def transform_event(self, event):
 
         for peak in event.peaks:
