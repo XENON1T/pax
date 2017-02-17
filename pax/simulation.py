@@ -277,13 +277,21 @@ class Simulator(object):
 
             # Add PMT afterpulses
             ap_times = []
+            ap_amplifications = []
             ap_gains = []
             # if we have specify the pmt afterpulses in each PMT channel
             if self.config['each_pmt_afterpulse_types']:
+                if not self.config['each_pmt_afterpulse_types'][channel]:
+                    continue
                 for ap_data in self.config['each_pmt_afterpulse_types'][channel].values():
+                    if not ap_data:
+                        continue
+                    # print(ap_data)
                     # How many photons will make this kind of afterpulse?
-                    n_afterpulses = np.random.binomial(n=len(photon_detection_times),
-                                                       p=ap_data['p'])
+                    n_afterpulses = np.random.binomial(
+                            n=len(photon_detection_times),
+                            p=ap_data['p']
+                            )
                     if not n_afterpulses:
                         continue
                     # Find the time and gain of the afterpulses
@@ -291,6 +299,15 @@ class Simulator(object):
                     dist_kwargs['size'] = n_afterpulses
                     ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
                                     getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
+                    if 'amp_mean' in ap_data:
+                        ap_amplifications.extend(truncated_gauss_rvs(
+                                    my_mean=ap_data['amp_mean'],
+                                    my_std=ap_data['amp_rms'],
+                                    left_boundary=0,
+                                    right_boundary=float('inf'),
+                                    n_rvs=n_afterpulses))
+                    else:
+                        ap_amplifications.extend([1.]*n_afterpulses)
                     ap_gains.extend(truncated_gauss_rvs(my_mean=self.config['gains'][channel],
                                                         my_std=self.config['gain_sigmas'][channel],
                                                         left_boundary=0,
@@ -321,7 +338,7 @@ class Simulator(object):
                                                         n_rvs=n_afterpulses))
 
             # If none of the setting specified, do not make afterpulses
-
+            ap_gains = [ x*y for x, y in zip(ap_gains, ap_amplifications) ]
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
 
