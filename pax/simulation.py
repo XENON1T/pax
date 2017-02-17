@@ -215,9 +215,16 @@ class Simulator(object):
         q = np.split(photon_timings, np.cumsum(hitp))
         assert len(q[-1]) == 0
         q = q[:-1]
+        all_arriving_times_top = np.array([])
+        all_arriving_times_bottom = np.array([])
         for channel_i, photon_times in enumerate(q):
             self.arrival_times_per_channel[channel_i] = np.concatenate((self.arrival_times_per_channel[channel_i],
                                                                         photon_times))
+            if channel_i in self.config['channels_top']:
+                all_arriving_times_top = np.concatenate((all_arriving_times_top, photon_times))
+            elif channel_i in self.config['channels_bottom']:
+                all_arriving_times_bottom = np.concatenate((all_arriving_times_bottom, photon_times))
+        return (all_arriving_times_top, all_arriving_times_bottom)
 
     def make_pax_event(self):
         """Simulate PMT response to the queued photon signals
