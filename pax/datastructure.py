@@ -7,6 +7,7 @@ NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
+import operator
 from collections import namedtuple
 import numpy as np
 import six
@@ -719,7 +720,7 @@ class Event(StrictModel):
         """
         return int(self.duration() / self.sample_duration)
 
-    def s1s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
+    def s1s(self, detector='tpc', sort_key=('tight_coincidence', 'area'), reverse=True):  # noqa
         """List of S1 (scintillation) signals in this event
         In the ROOT class output, this returns a list of integer indices in event.peaks
         Inside pax, returns a list of :class:`pax.datastructure.Peak` objects
@@ -792,8 +793,10 @@ class Event(StrictModel):
             peaks.append(peak)
 
         # Sort the peaks by your sort key
+        if isinstance(sort_key, (str, bytes)):
+            sort_key = [sort_key]
         peaks = sorted(peaks,
-                       key=lambda x: getattr(x, sort_key),
+                       key=operator.attrgetter(*sort_key),
                        reverse=reverse)
 
         return peaks
