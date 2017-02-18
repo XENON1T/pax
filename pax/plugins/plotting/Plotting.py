@@ -863,12 +863,8 @@ class PeakViewer(PlotBase):
         except ValueError:
             peak_text += "Position reconstruction failed!"
         else:
-            peak_text += 'Chi2Gamma: %0.1f, /area_top: %0.1f, /channels_top: %0.1f\n' % (
-                pos.goodness_of_fit,
-                pos.goodness_of_fit / (peak.area_fraction_top * peak.area
-                                       if peak.area_fraction_top != 0 else float('nan')),
-                pos.goodness_of_fit / (peak.n_contributing_channels_top
-                                       if peak.n_contributing_channels_top != 0 else float('nan')))
+            peak_text += 'Top hitpattern reconstruction: (%0.2f, %0.2f), gof %0.1f.\n' % (
+                pos.x, pos.y, pos.goodness_of_fit)
         peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm\n' % (peak.top_hitpattern_spread,
                                                                         peak.bottom_hitpattern_spread)
         pos3d = peak.get_reconstructed_position_from_algorithm('PosRecThreeDPatternFit')
