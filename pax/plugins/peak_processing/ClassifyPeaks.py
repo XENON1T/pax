@@ -12,20 +12,25 @@ class AdHocClassification1T(plugin.TransformPlugin):
     def transform_event(self, event):
 
         for peak in event.peaks:
-            # Don't work on noise and lone_hit
+            # Don't work on noise and lone hit
             if peak.type in ('noise', 'lone_hit'):
                 continue
 
-            # Peaks with a low coincidence level are labeled 'unknown' immediately
-            if peak.tight_coincidence <= 2:
-                peak.type = 'unknown'
-                continue
-
-            # Peaks that rise fast are S1s, the rest are S2s
             if -peak.area_decile_from_midpoint[1] < self.s1_rise_time_bound(peak.area):
-                peak.type = 's1'
+                # Peak rises fast, could be S1
+                if peak.tight_coincidence <= 2:
+                    # Too few PMTs contributing, hard to distinguish from junk
+                    peak.type = 'unknown'
+                else:
+                    peak.type = 's1'
             else:
-                peak.type = 's2'
+                # No fast rise
+                if peak.n_contributing_channels > 4:
+                    # Large enough: can be S2
+                    peak.type = 's2'
+                else:
+                    # Too few contributing channels, not really S2
+                    peak.type = 'unknown'
 
         return event
 
