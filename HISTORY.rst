@@ -3,7 +3,16 @@
 History
 -------
 ---------
----------
+
+
+------------------
+6.4.1 (2017-02-18)
+------------------
+* Fix classification minus sign error
+* Fix waveform simulator internal bug
+
+
+------------------
 6.4.0 (2017-02-17)
 ------------------
 * New classification based on new properties. Order S1s by coincidence. (#510)
