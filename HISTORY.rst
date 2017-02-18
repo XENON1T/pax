@@ -2,6 +2,17 @@
 
 History
 -------
+---------
+---------
+6.4.0 (2017-02-17)
+------------------
+* New classification based on new properties. Order S1s by coincidence. (#510)
+* Cluster based on central regions of hits (#504)
+* Simulator: aft truth info, update for S2, afterpulse gains, fix dead PMT double counting (#516)
+* Simulator: Update SE gain, double PE emission (#507)
+* Update (r,z) correction map (#512)
+* Update S2(x,y) correction map, top and bottom correction map (#515)
+* Fix saturated PMT accounting config typo (#513)
 
 ------------------
 6.3.3 (2017-02-14)
