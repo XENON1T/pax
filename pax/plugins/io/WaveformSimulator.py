@@ -173,7 +173,7 @@ class WaveformSimulator(plugin.InputPlugin):
                 arriving_photon_times_top,
                 arriving_photon_times_bottom
                 )),
-            peak_top_fraction,
+            peak_top_fraction=peak_top_fraction,
             )
         return None
 
