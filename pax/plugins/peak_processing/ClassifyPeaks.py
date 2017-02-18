@@ -22,7 +22,7 @@ class AdHocClassification1T(plugin.TransformPlugin):
                 continue
 
             # Peaks that rise fast are S1s, the rest are S2s
-            if -peak.area_decile_from_midpoint[1] > self.s1_rise_time_bound(peak.area):
+            if -peak.area_decile_from_midpoint[1] < self.s1_rise_time_bound(peak.area):
                 peak.type = 's1'
             else:
                 peak.type = 's2'
