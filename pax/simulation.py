@@ -264,6 +264,13 @@ class Simulator(object):
 
             photon_detection_times = np.array(photon_detection_times)
 
+            # Add double photoelectron emission
+            if len(photon_detection_times):
+                n_dpe = np.random.binomial(len(photon_detection_times), p=self.config['p_double_pe_emision'])
+                if n_dpe:
+                    dpe_times = np.random.choice(photon_detection_times, n_dpe, replace=False)
+                    photon_detection_times = np.concatenate([photon_detection_times, dpe_times])
+
             log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
