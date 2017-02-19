@@ -511,8 +511,10 @@ class Simulator(object):
         if n_photons == 0:
             return np.array([])
 
-        if recoil_type.lower() == 'er':
+        if self.config.get('s1_model_type') == 'simple':
+            return t + np.random.exponential(self.config['s1_decay_time'], size=n_photons)
 
+        if recoil_type.lower() == 'er':
             # How many of these are primary excimers? Others arise through recombination.
             n_primaries = np.random.binomial(n=n_photons, p=self.config['s1_ER_primary_excimer_fraction'])
 
