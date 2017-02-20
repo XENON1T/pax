@@ -66,7 +66,7 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda install -q conda=4.1.1
+  #- conda install -q conda=4.1.1
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
