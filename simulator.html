@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Waveform simulator docs &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>Waveform simulator docs &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="index.html" />
     <link rel="next" title="Contributing" href="contributing.html" />
     <link rel="prev" title="Event builder" href="eventbuilder.html" />
    
@@ -324,7 +324,7 @@ Defaults to s1_default_recombination_time.</li>
 
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.s2_after_pulses">
-<code class="descname">s2_after_pulses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.s2_after_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2_after_pulses" title="Permalink to this definition">¶</a></dt>
+<code class="descname">s2_after_pulses</code><span class="sig-paren">(</span><em>g4_id=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.s2_after_pulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2_after_pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>:simulate the s2 after pulses
 :the after pulses are assumed to be uniformly distributed in X-Y,
 :so are not related to where the photon is generated
@@ -349,7 +349,7 @@ Defaults to s1_default_recombination_time.</li>
 
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">
-<code class="descname">store_true_peak</code><span class="sig-paren">(</span><em>peak_type</em>, <em>g4_id</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
+<code class="descname">store_true_peak</code><span class="sig-paren">(</span><em>peak_type</em>, <em>g4_id</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=()</em>, <em>peak_top_fraction=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves the truth information about a peak (s1 or s2)</p>
 </dd></dl>
 

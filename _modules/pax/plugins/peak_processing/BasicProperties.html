@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.BasicProperties &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.plugins.peak_processing.BasicProperties &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -97,12 +97,14 @@
     <span class="sd">&quot;&quot;&quot;Computes properties based on the hits-only sum waveform&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SumWaveformProperties.startup"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;peak_waveform_length&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;peak_waveform_length&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tight_coincidence_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tight_coincidence_window&#39;</span><span class="p">]</span> <span class="o">//</span> <span class="n">dt</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;peak_waveform_length must be an even multiple of the sample size&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SumWaveformProperties.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
         <span class="n">field_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wv_field_len</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">field_length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -143,10 +145,22 @@
             <span class="c1"># Amplitude at the maximum</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
 
-            <span class="c1"># Compute fraction of area in central deciles</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">area_midpoint</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span> <span class="o">=</span> <span class="n">compute_area_deciles</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span> <span class="o">*=</span> <span class="n">dt</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">area_midpoint</span> <span class="o">+=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">*</span> <span class="n">dt</span>
+            <span class="c1"># Compute area decile points</span>
+            <span class="c1"># TODO: reactivate tests after refactor</span>
+            <span class="n">area_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">21</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+            <span class="n">integrate_until_fraction</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">fractions_desired</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span> <span class="n">results</span><span class="o">=</span><span class="n">area_times</span><span class="p">)</span>
+            <span class="n">area_times</span> <span class="o">*=</span> <span class="n">dt</span>
+            <span class="n">area_midpoint</span> <span class="o">=</span> <span class="n">area_times</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+            <span class="c1"># Store widths and rise times</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span> <span class="o">=</span> <span class="n">area_times</span><span class="p">[</span><span class="mi">10</span><span class="p">:]</span> <span class="o">-</span> <span class="n">area_times</span><span class="p">[</span><span class="mi">10</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area_decile_from_midpoint</span> <span class="o">=</span> <span class="n">area_times</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">area_midpoint</span>
+
+            <span class="c1"># Compute a tight coincidence count (useful for distinguishing S1s from junk)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;index_of_maximum&#39;</span><span class="p">]</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tight_coincidence_samples</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tight_coincidence_samples</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">tight_coincidence</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">][(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">l</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">)]))</span>
 
             <span class="c1"># Store the waveform; for tpc also store the top waveform</span>
             <span class="n">put_w_in_center_of_field</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">sum_waveform</span><span class="p">,</span> <span class="n">cog_idx</span><span class="p">)</span>
@@ -166,18 +180,6 @@
                 <span class="k">if</span> <span class="n">nop</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;=</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="ow">and</span> <span class="n">nop</span><span class="o">.</span><span class="n">right</span> <span class="o">&gt;=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
                     <span class="n">peak</span><span class="o">.</span><span class="n">n_noise_pulses</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">event</span></div></div>
-
-
-<div class="viewcode-block" id="compute_area_deciles"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.BasicProperties.compute_area_deciles">[docs]</a><span class="k">def</span> <span class="nf">compute_area_deciles</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w</span>
-<span class="sd">    e.g. range_area_decile[5] = range of 50% area = distance (in samples)</span>
-<span class="sd">    between point of 25% area and 75% area (with boundary samples added fractionally).</span>
-<span class="sd">    First element (0) of array is always zero, last element (10) is the length of w in samples.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">fractions_desired</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
-    <span class="n">index_of_area_fraction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fractions_desired</span><span class="p">))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
-    <span class="n">integrate_until_fraction</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">fractions_desired</span><span class="p">,</span> <span class="n">index_of_area_fraction</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="p">(</span><span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">:]</span> <span class="o">-</span> <span class="n">index_of_area_fraction</span><span class="p">[</span><span class="mi">10</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span></div>
 
 
 <span class="c1"># @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),</span>

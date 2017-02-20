@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing package &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.plugins.interaction_processing package &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -77,7 +77,8 @@ S1 and S2 x, y, z corrections, S1 hitpattern fit</p>
 </dd>
 </dl>
 <p>Mo more than pair_n_s2s S2s and pair_n_s1s S1s will be paired with each other
-Pairing will start from the largest S1 and S2, then move down S2s in area and eventually down S1s in area</p>
+Pairing will start from the S1 with largest tight_coincidence and the largest S2,
+then move down S2s in tight_coincidence and eventually down S1s in area.</p>
 <p>xy_posrec_preference = [&#8216;algo1&#8217;, &#8216;algo2&#8217;, ...]</p>
 <dl class="method">
 <dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.startup">

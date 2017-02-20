@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing package &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.plugins.peak_processing package &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -87,15 +87,6 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.plugins.peak_processing.BasicProperties.compute_area_deciles">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">compute_area_deciles</code><span class="sig-paren">(</span><em>w</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#compute_area_deciles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.compute_area_deciles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w
-e.g. range_area_decile[5] = range of 50% area = distance (in samples)
-between point of 25% area and 75% area (with boundary samples added fractionally).
-First element (0) of array is always zero, last element (10) is the length of w in samples.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="pax.plugins.peak_processing.BasicProperties.integrate_until_fraction">
 <code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">integrate_until_fraction</code><span class="sig-paren">(</span><em>w</em>, <em>fractions_desired</em>, <em>results</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#integrate_until_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.integrate_until_fraction" title="Permalink to this definition">¶</a></dt>
 <dd><p>For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
@@ -137,6 +128,11 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 <dt id="pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T">
 <em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.ClassifyPeaks.</code><code class="descname">AdHocClassification1T</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/ClassifyPeaks.html#AdHocClassification1T"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<dl class="method">
+<dt id="pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/ClassifyPeaks.html#AdHocClassification1T.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.transform_event">
 <code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/ClassifyPeaks.html#AdHocClassification1T.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.transform_event" title="Permalink to this definition">¶</a></dt>

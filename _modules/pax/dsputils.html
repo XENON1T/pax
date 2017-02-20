@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.dsputils &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -60,14 +60,14 @@
     <span class="k">if</span> <span class="n">n_hits</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">gaps</span>
     <span class="c1"># Keep a running right boundary</span>
-    <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span>
-    <span class="n">last_left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span>
+    <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right_central</span>
+    <span class="n">last_left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left_central</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-        <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">last_left</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hits should be sorted by left boundary!&quot;</span><span class="p">)</span>
-        <span class="n">last_left</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span>
+        <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">right_central</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span> <span class="o">&lt;</span> <span class="n">last_left</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hits should be sorted by left_central&quot;</span><span class="p">)</span>
+        <span class="n">last_left</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span>
     <span class="k">return</span> <span class="n">gaps</span></div>
 
 
@@ -139,30 +139,56 @@
     <span class="k">return</span> <span class="n">detector_by_channel</span></div>
 
 
-<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../pax.html#pax.dsputils.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">left_extension</span><span class="p">,</span> <span class="n">right_extension</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">):</span>
+<div class="viewcode-block" id="extend_intervals"><a class="viewcode-back" href="../../pax.html#pax.dsputils.extend_intervals">[docs]</a><span class="k">def</span> <span class="nf">extend_intervals</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">intervals</span><span class="p">,</span> <span class="n">left_extension</span><span class="p">,</span> <span class="n">right_extension</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extends intervals on w by left_extension to left and right_extension to right, never exceeding w&#39;s bounds</span>
+<span class="sd">    :param w: Waveform intervals live on. Only used for edges (kind of pointless to pass...)</span>
+<span class="sd">    :param intervals: numpy N*2 array of ints of interval bounds</span>
+<span class="sd">    :param left_extension: Extend intervals left by this number of samples,</span>
+<span class="sd">                           or as far as possible until the end of another interval / the end of w.</span>
+<span class="sd">    :param right_extension: Same, extend to right.</span>
+<span class="sd">    :return: None, modifes intervals in place</span>
+<span class="sd">    When two intervals&#39; extension claims compete, right extension has priority.</span>
+<span class="sd">    Boundary indices are inclusive, i.e. without any extension settings, the right boundary is the last index</span>
+<span class="sd">    which was still above low_threshold</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_intervals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+    <span class="n">last_index_in_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># Right extension</span>
+    <span class="k">if</span> <span class="n">right_extension</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_intervals</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n_intervals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">max_possible_r</span> <span class="o">=</span> <span class="n">last_index_in_w</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">max_possible_r</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_possible_r</span><span class="p">,</span> <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">right_extension</span><span class="p">)</span>
+
+    <span class="c1"># Left extension</span>
+    <span class="k">if</span> <span class="n">left_extension</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_intervals</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">min_possible_l</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">min_possible_l</span> <span class="o">=</span> <span class="n">intervals</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_possible_l</span><span class="p">,</span> <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">left_extension</span><span class="p">)</span></div>
+
+
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../pax.html#pax.dsputils.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fills result_buffer with l, r bounds of intervals in w &gt; threshold.</span>
 <span class="sd">    :param w: Waveform to do hitfinding in</span>
 <span class="sd">    :param threshold: Threshold for including an interval</span>
-<span class="sd">    :param left_extension: When an interval above threshold is found, extend it left by this number of samples,</span>
-<span class="sd">                           or as far as possible until the end of another interval.</span>
-<span class="sd">    :param right_extension: Same, extend to right.</span>
 <span class="sd">    :param result_buffer: numpy N*2 array of ints, will be filled by function.</span>
 <span class="sd">                          if more than N intervals are found, none past the first N will be processed.</span>
 <span class="sd">    :returns : number of intervals processed</span>
-
-<span class="sd">    When two intervals&#39; extension claims compete, right extension has priority.</span>
-
-<span class="sd">    Boundary indices are inclusive, i.e. without any extension settings, the right boundary is the last index</span>
-<span class="sd">    which was still above low_threshold</span>
+<span class="sd">    Boundary indices are inclusive, i.e. the right boundary is the last index which was &gt; threshold</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">result_buffer_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_buffer</span><span class="p">)</span>
     <span class="n">last_index_in_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
-    <span class="c1">##</span>
-    <span class="c1"># Step 1: Find intervals above threshold</span>
-    <span class="c1">##</span>
     <span class="n">in_interval</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">current_interval</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">current_interval_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -191,29 +217,6 @@
                 <span class="k">break</span>
 
     <span class="n">n_intervals</span> <span class="o">=</span> <span class="n">current_interval</span>      <span class="c1"># No +1, as current_interval was incremented also when the last interval closed</span>
-
-    <span class="c1">##</span>
-    <span class="c1"># Step 2: Right extension</span>
-    <span class="c1">##</span>
-    <span class="k">if</span> <span class="n">right_extension</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_intervals</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n_intervals</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">max_possible_r</span> <span class="o">=</span> <span class="n">last_index_in_w</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">max_possible_r</span> <span class="o">=</span> <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_possible_r</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">right_extension</span><span class="p">)</span>
-
-    <span class="c1">##</span>
-    <span class="c1"># Step 3: Left extension</span>
-    <span class="c1">##</span>
-    <span class="k">if</span> <span class="n">left_extension</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_intervals</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">min_possible_l</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">min_possible_l</span> <span class="o">=</span> <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_possible_l</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">left_extension</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="n">n_intervals</span></div>
 </pre></div>
 

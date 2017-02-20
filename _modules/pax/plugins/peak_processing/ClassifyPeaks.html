@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.ClassifyPeaks &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.plugins.peak_processing.ClassifyPeaks &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -42,95 +42,38 @@
             
   <h1>Source code for pax.plugins.peak_processing.ClassifyPeaks</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">interpolate</span>
 
 
 <div class="viewcode-block" id="AdHocClassification1T"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T">[docs]</a><span class="k">class</span> <span class="nc">AdHocClassification1T</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
 
+<div class="viewcode-block" id="AdHocClassification1T.startup"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1_rise_time_bound</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+                                                       <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">70</span><span class="p">],</span>
+                                                       <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="AdHocClassification1T.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification1T.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;revert_to_old&#39;</span><span class="p">):</span>
-            <span class="c1">##</span>
-            <span class="c1"># OLD CLASSIFICATION, will be deleted soonish</span>
-            <span class="c1">##</span>
-            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-                <span class="c1"># Don&#39;t work on noise and lone_hit</span>
-                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">):</span>
-                    <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t work on noise and lone hit</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
 
-                <span class="n">area</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
-                <span class="n">width</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">area</span><span class="o">**</span><span class="mi">3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="o">-</span><span class="n">peak</span><span class="o">.</span><span class="n">area_decile_from_midpoint</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_rise_time_bound</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">):</span>
+                <span class="c1"># Peak rises fast, could be S1</span>
+                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">tight_coincidence</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># Too few PMTs contributing, hard to distinguish from junk</span>
                     <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
-
-                <span class="k">elif</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="k">else</span><span class="p">:</span>
                     <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
-
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># No fast rise</span>
+                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="c1"># Large enough: can be S2</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mf">3.5e2</span> <span class="o">/</span> <span class="n">area</span><span class="o">**</span><span class="mf">0.1</span> <span class="ow">or</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">area</span><span class="p">:</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1">##</span>
-            <span class="c1"># NEW CLASSIFICATION</span>
-            <span class="c1">##</span>
-            <span class="n">min_s2_aft</span> <span class="o">=</span> <span class="mf">0.3</span>
-
-            <span class="n">x_s1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span>  <span class="mi">40</span> <span class="o">+</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">9</span><span class="p">,</span>  <span class="mi">70</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">121</span><span class="p">])</span>
-            <span class="n">y_s1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span>  <span class="mf">0.7</span><span class="p">,</span>      <span class="mf">0.3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>     <span class="mi">0</span><span class="p">])</span>
-            <span class="n">s1_classification_bound</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">x_s1</span><span class="p">,</span> <span class="n">y_s1</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
-            <span class="n">s2_classification_bound</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">x_s1</span> <span class="o">+</span> <span class="mi">20</span><span class="p">,</span>
-                                                           <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">y_s1</span><span class="p">,</span> <span class="n">min_s2_aft</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                                           <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
-
-            <span class="c1"># Sort the peaks by left boundary, so we can keep track of the largest peak seen so far</span>
-            <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
-
-            <span class="n">largest_peak_area_seen</span> <span class="o">=</span> <span class="mi">0</span>
-
-            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-                <span class="c1"># Don&#39;t work on noise and lone_hit</span>
-                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">):</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Peaks with a low coincidence level are labeled &#39;unknown&#39; immediately</span>
-                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="c1"># Too few contributing channels, not really S2</span>
                     <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
-                    <span class="k">continue</span>
-
-                <span class="n">area</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span>
-                <span class="n">width</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
-                <span class="n">aft</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_fraction_top</span>
-
-                <span class="k">if</span> <span class="n">area</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">:</span>
-                    <span class="c1"># Decide on S1/S2 based on area fraction top and width.</span>
-                    <span class="c1"># For widths &lt; 40 ns, always S1; &gt; 120 ns, always S2. In between it depends also on aft.</span>
-                    <span class="k">if</span> <span class="n">aft</span> <span class="o">&lt;</span> <span class="n">s1_classification_bound</span><span class="p">(</span><span class="n">width</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">largest_peak_area_seen</span> <span class="o">&gt;</span> <span class="mi">5000</span><span class="p">:</span>
-                            <span class="c1"># We&#39;re already in the tail of a large peak. If we see an S1-like peak here, it is most</span>
-                            <span class="c1"># likely a (fragment of) a small single electron</span>
-                            <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
-                    <span class="k">elif</span> <span class="n">aft</span> <span class="o">&gt;</span> <span class="n">s2_classification_bound</span><span class="p">(</span><span class="n">width</span><span class="p">):</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
-
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">70</span> <span class="ow">or</span> <span class="p">(</span><span class="n">width</span> <span class="o">&lt;</span> <span class="mf">3.5e2</span> <span class="o">/</span> <span class="n">area</span><span class="o">**</span><span class="mf">0.1</span> <span class="ow">and</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">area</span><span class="p">):</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s1&#39;</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">aft</span> <span class="o">&lt;</span> <span class="n">min_s2_aft</span><span class="p">:</span>
-                            <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;unknown&#39;</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;s2&#39;</span>
-
-                <span class="n">largest_peak_area_seen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">largest_peak_area_seen</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">event</span></div></div>
 

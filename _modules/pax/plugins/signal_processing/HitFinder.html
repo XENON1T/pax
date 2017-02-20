@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.HitFinder &#8212; Processor for Analyzing XENON1T 6.3.3 documentation</title>
+    <title>pax.plugins.signal_processing.HitFinder &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.3.3',
+        VERSION:     '6.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.3.3 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -47,7 +47,6 @@
 <span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
-<span class="kn">from</span> <span class="nn">pax.dsputils</span> <span class="k">import</span> <span class="n">find_intervals_above_threshold</span>
 
 
 <div class="viewcode-block" id="FindHits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits">[docs]</a><span class="k">class</span> <span class="nc">FindHits</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
@@ -151,18 +150,25 @@
                 <span class="c1"># The config specifies a single range to integrate. Useful for gain calibration</span>
                 <span class="n">hit_bounds_buffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">always_find_single_hit</span>
                 <span class="n">n_hits_found</span> <span class="o">=</span> <span class="mi">1</span>
+
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Call the numba hit finder -- see its docstring for description</span>
-                <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
-                                                              <span class="n">threshold</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">hitfinder_threshold</span><span class="p">),</span>
-                                                              <span class="n">left_extension</span><span class="o">=</span><span class="n">left_extension</span><span class="p">,</span>
-                                                              <span class="n">right_extension</span><span class="o">=</span><span class="n">right_extension</span><span class="p">,</span>
-                                                              <span class="n">result_buffer</span><span class="o">=</span><span class="n">hit_bounds_buffer</span><span class="p">)</span>
+                <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
+                                                                       <span class="n">threshold</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">pulse</span><span class="o">.</span><span class="n">hitfinder_threshold</span><span class="p">),</span>
+                                                                       <span class="n">result_buffer</span><span class="o">=</span><span class="n">hit_bounds_buffer</span><span class="p">)</span>
 
             <span class="c1"># Only view the part of hit_bounds_buffer that contains hits found in this event</span>
             <span class="c1"># The rest of hit_bounds_buffer contains -1&#39;s or stuff from previous pulses</span>
             <span class="n">pulse</span><span class="o">.</span><span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">n_hits_found</span>
             <span class="n">hit_bounds_found</span> <span class="o">=</span> <span class="n">hit_bounds_buffer</span><span class="p">[:</span><span class="n">n_hits_found</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">always_find_single_hit</span><span class="p">:</span>
+                <span class="n">central_bounds</span> <span class="o">=</span> <span class="n">hit_bounds_found</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Extend the boundaries of each hit, to be sure we integrate everything.</span>
+                <span class="c1"># The original bounds are preserved: they are used in clustering</span>
+                <span class="n">central_bounds</span> <span class="o">=</span> <span class="n">hit_bounds_found</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">dsputils</span><span class="o">.</span><span class="n">extend_intervals</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds_found</span><span class="p">,</span> <span class="n">left_extension</span><span class="p">,</span> <span class="n">right_extension</span><span class="p">)</span>
 
             <span class="c1"># If no hits were found, this is a noise pulse: update the noise pulse count</span>
             <span class="k">if</span> <span class="n">n_hits_found</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -187,7 +193,7 @@
             <span class="n">saturation_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span>
 
             <span class="n">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds_found</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span>
-                       <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">saturation_threshold</span><span class="p">)</span>
+                       <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">saturation_threshold</span><span class="p">,</span> <span class="n">central_bounds</span><span class="p">)</span>
             <span class="n">hits</span> <span class="o">=</span> <span class="n">hits_buffer</span><span class="p">[:</span><span class="n">n_hits_found</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">hits_per_pulse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
@@ -206,11 +212,13 @@
 
 <span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span>
                       <span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:],</span>
-                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                      <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <div class="viewcode-block" id="build_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.build_hits">[docs]</a><span class="k">def</span> <span class="nf">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds</span><span class="p">,</span>
                <span class="n">hits_buffer</span><span class="p">,</span>
-               <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">saturation_threshold</span><span class="p">):</span>
+               <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">saturation_threshold</span><span class="p">,</span>
+               <span class="n">central_bounds</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Populates hits_buffer with properties from hits indicated by hit_bounds.</span>
 <span class="sd">        hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w</span>
 <span class="sd">    Returns nothing.</span>
@@ -254,7 +262,10 @@
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">left</span> <span class="o">+</span> <span class="n">argmax</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">n_saturated</span> <span class="o">=</span> <span class="n">saturation_count</span>
         <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">area</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
-        <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">argmax</span> <span class="o">+</span> <span class="n">left</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span></div>
+        <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">argmax</span> <span class="o">+</span> <span class="n">left</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
+
+        <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">left_central</span> <span class="o">=</span> <span class="n">central_bounds</span><span class="p">[</span><span class="n">hit_i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span>
+        <span class="n">hits_buffer</span><span class="p">[</span><span class="n">hit_i</span><span class="p">]</span><span class="o">.</span><span class="n">right_central</span> <span class="o">=</span> <span class="n">central_bounds</span><span class="p">[</span><span class="n">hit_i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span></div>
 </pre></div>
 
           </div>
