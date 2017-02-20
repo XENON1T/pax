@@ -347,12 +347,12 @@ class WriteXED(WriteToFolder):
 
         if self.config['pmt_0_is_fake']:
             # Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks
-            n_mask_bytes = 4 * math.ceil((self.config['n_channels'] - 1) / 32)
+            n_mask_bytes = int(4 * math.ceil((self.config['n_channels'] - 1) / 32))
             is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
             for ch in range(1, self.config['n_channels'] - 1):
                 is_channel_included[ch - 1] = ch in channels_included
         else:
-            n_mask_bytes = 4 * math.ceil(self.config['n_channels'] / 32)
+            n_mask_bytes = int(4 * math.ceil(self.config['n_channels'] / 32))
             is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
             for ch in range(self.config['n_channels']):
                 is_channel_included[ch] = ch in channels_included
