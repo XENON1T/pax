@@ -1,4 +1,5 @@
 from pax import plugin, datastructure, dsputils
+import numba
 import numpy as np
 import logging
 from pax.plugins.signal_processing.HitFinder import build_hits
@@ -115,8 +116,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
             yield self.build_peak(hits=hs, detector=peak.detector, left=l, right=r)
 
 
-#  @numba.jit(numba.float64[:])
-# TODO: TESTS!
+@numba.jit(nopython=True)
 def find_split_points(w, min_height, min_ratio):
     """"Finds local minima in w,
     whose peaks to the left and right both satisfy:
@@ -124,7 +124,7 @@ def find_split_points(w, min_height, min_ratio):
       - larger than minimum * min_ratio
     """
     last_max = 0
-    min_since_max = float('inf')
+    min_since_max = 99999999999999.9
     min_since_max_i = 0
 
     for i, x in enumerate(w):
@@ -138,12 +138,12 @@ def find_split_points(w, min_height, min_ratio):
             # Significant local minimum: tell caller, reset both max and min finder
             yield min_since_max_i
             last_max = x
-            min_since_max = float('inf')
+            min_since_max = 99999999999999.9
             min_since_max_i = i
 
         if x > last_max:
             # New max, reset minimum finder state
             # Notice this is AFTER the split check, to accomodate very fast rising second peaks
             last_max = x
-            min_since_max = float('inf')
+            min_since_max = 99999999999999.9
             min_since_max_i = i
