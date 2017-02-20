@@ -4,6 +4,11 @@ History
 -------
 ---------
 
+------------------
+6.4.2 (2017-02-19)
+------------------
+* Update author list
+* Fix drift velocity fetched in run database
 
 ------------------
 6.4.1 (2017-02-18)
