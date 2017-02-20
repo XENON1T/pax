@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PyROOT installation &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>PyROOT installation &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,7 +26,6 @@
     <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -50,7 +49,7 @@ This installation document shows the steps needed to do this correctly in an vir
 <p>We assume installation on Ubuntu 14 desktop with python3.4 pre-installed.</p>
 <ul>
 <li><p class="first">To install virualenv with py3.4 run:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>sudo apt-get install python-pip
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo apt-get install python-pip
 sudo pip install virtualenv
 virtualenv -p /usr/bin/python3.4 $HOME/env/py34
 source ~/env/py34/bin/activate
@@ -64,27 +63,27 @@ source ~/env/py34/bin/activate
 <li><p class="first">Download the latest root: <a class="reference external" href="http://root.cern.ch/drupal/content/downloading-root">http://root.cern.ch/drupal/content/downloading-root</a></p>
 </li>
 <li><p class="first">Unpack and install dependencies with the command from: <a class="reference external" href="http://root.cern.ch/drupal/content/build-prerequisites">http://root.cern.ch/drupal/content/build-prerequisites</a>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="n">src</span>
-<span class="n">cd</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="n">src</span>
-<span class="n">gzip</span> <span class="o">-</span><span class="n">dc</span> <span class="n">root_</span><span class="o">&lt;</span><span class="n">version</span><span class="o">&gt;.</span><span class="n">source</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="o">|</span> <span class="n">tar</span> <span class="o">-</span><span class="n">xf</span> <span class="o">-</span>
-<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">git</span> <span class="n">dpkg</span><span class="o">-</span><span class="n">dev</span> <span class="n">make</span> <span class="n">g</span><span class="o">++</span> <span class="n">gcc</span> <span class="n">binutils</span> <span class="n">libx11</span><span class="o">-</span><span class="n">dev</span> <span class="n">libxpm</span><span class="o">-</span><span class="n">dev</span> <span class="n">libxft</span><span class="o">-</span><span class="n">dev</span> <span class="n">libxext</span><span class="o">-</span><span class="n">dev</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>mkdir ~/env/py34/src
+cd ~/env/py34/src
+gzip -dc root_&lt;version&gt;.source.tar.gz | tar -xf -
+sudo apt-get install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev
 </pre></div>
 </div>
 </li>
 <li><p class="first">Search for the files Python.h and libpython3.4.so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">updatedb</span>
-<span class="n">locate</span> <span class="n">Python</span><span class="o">.</span><span class="n">h</span>
-<span class="n">locate</span> <span class="n">libpython3</span><span class="o">.</span><span class="mf">4.</span><span class="n">so</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo updatedb
+locate Python.h
+locate libpython3.4.so
 </pre></div>
 </div>
 </li>
 <li><p class="first">If they are not found run:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">python3</span><span class="o">.</span><span class="mi">4</span><span class="o">-</span><span class="n">dev</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo apt-get install python3.4-dev
 </pre></div>
 </div>
 </li>
 <li><p class="first">Now go to the root directory and set configure to the locations of the found files of the correct python version.:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">python</span> <span class="o">--</span><span class="k">with</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">incdir</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">4</span><span class="n">m</span> <span class="o">--</span><span class="k">with</span><span class="o">-</span><span class="n">python</span><span class="o">-</span><span class="n">libdir</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">4</span><span class="o">/</span><span class="n">config</span><span class="o">-</span><span class="mf">3.4</span><span class="n">m</span><span class="o">-</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">gnu</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>./configure --enable-python --with-python-incdir=/usr/include/python3.4m --with-python-libdir=/usr/lib/python3.4/config-3.4m-x86_64-linux-gnu
 </pre></div>
 </div>
 </li>
@@ -95,13 +94,13 @@ enabled features is printed: make sure that &#8216;python&#8217; is listed among
 variable $PYTHONDIR or alternatively will look in the standard locations.</p>
 <ul>
 <li><p class="first">The output should now include:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Checking</span> <span class="k">for</span> <span class="n">Python</span><span class="o">.</span><span class="n">h</span> <span class="o">...</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">python3</span><span class="o">.</span><span class="mi">4</span><span class="n">m</span>
-<span class="n">Checking</span> <span class="k">for</span> <span class="n">python3</span><span class="o">.</span><span class="mi">4</span><span class="p">,</span> <span class="n">libpython3</span><span class="o">.</span><span class="mi">4</span><span class="p">,</span> <span class="n">libpython</span><span class="p">,</span> <span class="n">python</span><span class="p">,</span> <span class="ow">or</span> <span class="n">Python</span> <span class="o">...</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>Checking for Python.h ... /usr/include/python3.4m
+Checking for python3.4, libpython3.4, libpython, python, or Python ... /usr/lib/
 </pre></div>
 </div>
 </li>
 <li><p class="first">Compile ROOT:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">make</span>
 </pre></div>
 </div>
 </li>
@@ -110,14 +109,14 @@ variable $PYTHONDIR or alternatively will look in the standard locations.</p>
 The ROOT build should be successful</p>
 <ul>
 <li><p class="first">Check that the PyROOT module was build correctly by looking for ROOT.py and libPyROOT.so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">updatedb</span>
-<span class="n">locate</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">py</span>
-<span class="n">locate</span> <span class="n">libPyROOT</span><span class="o">.</span><span class="n">so</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo updatedb
+locate ROOT.py
+locate libPyROOT.so
 </pre></div>
 </div>
 </li>
 <li><p class="first">Set this root as source for the env:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="n">source</span> <span class="nb">bin</span><span class="o">/</span><span class="n">thisroot</span><span class="o">.</span><span class="n">sh</span> <span class="o">&gt;&gt;</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>echo source bin/thisroot.sh &gt;&gt; ~/env/py34/bin/activate
 </pre></div>
 </div>
 </li>
@@ -126,11 +125,11 @@ The ROOT build should be successful</p>
 <p>To use the provided ROOT.py from PAX.</p>
 <ul>
 <li><p class="first">Copy the file to the proper directory:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#Using ROOT v5</span>
-<span class="n">cp</span> <span class="n">pax</span><span class="o">/</span><span class="n">travis</span><span class="o">/</span><span class="n">modified_ROOT_v5</span><span class="o">.</span><span class="mf">34.25</span><span class="o">.</span><span class="n">py</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">ROOT</span><span class="o">.</span><span class="n">py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>#Using ROOT v5
+cp pax/travis/modified_ROOT_v5.34.25.py ~/env/py34/src/root/lib/ROOT.py
 
-<span class="c1">#Using ROOT v6</span>
-<span class="n">cp</span> <span class="n">pax</span><span class="o">/</span><span class="n">travis</span><span class="o">/</span><span class="n">modified_ROOT_v6</span><span class="o">.</span><span class="mf">02.05</span><span class="o">.</span><span class="n">py</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">ROOT</span><span class="o">.</span><span class="n">py</span>
+#Using ROOT v6
+cp pax/travis/modified_ROOT_v6.02.05.py ~/env/py34/src/root/lib/ROOT.py
 </pre></div>
 </div>
 </li>
@@ -138,21 +137,21 @@ The ROOT build should be successful</p>
 <p>To manually convert ROOT.py.</p>
 <ul>
 <li><p class="first">Convert the code in ROOT.py from python 2 to python 3 with 2to3:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">2</span><span class="n">to3</span> <span class="o">-</span><span class="n">w</span> <span class="o">~/</span><span class="n">env</span><span class="o">/</span><span class="n">py34</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">ROOT</span><span class="o">.</span><span class="n">py</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span>2to3 -w ~/env/py34/src/root/lib/ROOT.py
 </pre></div>
 </div>
 </li>
 <li><p class="first">Some tweaking of ROOT.py is required, comment out the following lines in ROOT.py (on lines 355, 542-544), (this rather ad hoc modification disables the backwards compatibility, but since we are using python 3 this is not needed):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">builtins</span><span class="o">.</span><span class="n">__import__</span> <span class="o">=</span> <span class="n">_importhook</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">builtins</span><span class="o">.</span><span class="n">__import__</span> <span class="o">=</span> <span class="n">_importhook</span>
 
 <span class="c1"># special case for cout (backwards compatibility)</span>
 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span> <span class="n">std</span><span class="p">,</span> <span class="s1">&#39;__1&#39;</span> <span class="p">):</span>
-  <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span> <span class="s1">&#39;cout&#39;</span> <span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span> <span class="n">std</span><span class="p">,</span> <span class="s1">&#39;__1&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">cout</span>
+  <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span> <span class="s1">&#39;cout&#39;</span> <span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span> <span class="n">std</span><span class="p">,</span> <span class="s1">&#39;__1&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">cout</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">ROOT.py also has a cleanup() function that is called when PAX shuts down, since we have changed the behaviour of ROOT.py this function causes errors. Bypass it by putting a return statement after its definition (yes, this is not good practise and we are looking for a better solution):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cleanup</span><span class="p">():</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">cleanup</span><span class="p">():</span>
     <span class="k">return</span>
 </pre></div>
 </div>
@@ -196,11 +195,14 @@ The ROOT build should be successful</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -211,8 +213,8 @@ The ROOT build should be successful</p>
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
       |
       <a href="_sources/pyroot.txt"

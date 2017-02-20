@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.plotting.HitfinderDiagnosticPlots &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugins.plotting.HitfinderDiagnosticPlots &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -28,7 +28,6 @@
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
   
-  
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
@@ -42,14 +41,14 @@
             
   <h1>Source code for pax.plugins.plotting.HitfinderDiagnosticPlots</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">textwrap</span> <span class="k">import</span> <span class="n">dedent</span>
+<span class="kn">from</span> <span class="nn">textwrap</span> <span class="kn">import</span> <span class="n">dedent</span>
 
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
-<span class="kn">from</span> <span class="nn">pax.recarray_tools</span> <span class="k">import</span> <span class="n">dict_group_by</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax.recarray_tools</span> <span class="kn">import</span> <span class="n">dict_group_by</span>
 
 
 <div class="viewcode-block" id="HitfinderDiagnosticPlots"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots">[docs]</a><span class="k">class</span> <span class="nc">HitfinderDiagnosticPlots</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
@@ -136,7 +135,7 @@
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s1">&#39;negative&#39;</span><span class="p">:</span>
                 <span class="c1"># Select only pulses which had hits whose area and or height were originally negative</span>
                 <span class="c1"># (the hitfinder helpfully capped them at 1e-9, so they&#39;re not actually negative...)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">6</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">6</span><span class="p">))):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">))):</span>
                     <span class="k">continue</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s1">&#39;always&#39;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid make_diagnostic_plots option: </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span><span class="p">)</span>
@@ -169,22 +168,22 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">largest_hit</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])]</span>
                 <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">,</span> <span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                            Pulse maximum: </span><span class="si">{pulse.maximum:.5g}</span><span class="s2"></span>
-<span class="s2">                            Pulse minimum: </span><span class="si">{pulse.minimum:.5g}</span><span class="s2"></span>
+<span class="s2">                            Pulse maximum: {pulse.maximum:.5g}</span>
+<span class="s2">                            Pulse minimum: {pulse.minimum:.5g}</span>
 <span class="s2">                              (both in ADCc above baseline)</span>
-<span class="s2">                            Pulse baseline: </span><span class="si">{pulse.baseline}</span><span class="s2"></span>
+<span class="s2">                            Pulse baseline: {pulse.baseline}</span>
 <span class="s2">                              (in ADCc above reference baseline)</span>
-<span class="s2">                            Baseline increase: </span><span class="si">{pulse.baseline_increase:.2f}</span><span class="s2"></span>
+<span class="s2">                            Baseline increase: {pulse.baseline_increase:.2f}</span>
 
-<span class="s2">                            Gain in this PMT: </span><span class="si">{gain:.3g}</span><span class="s2"></span>
+<span class="s2">                            Gain in this PMT: {gain:.3g}</span>
 
-<span class="s2">                            Noise level: </span><span class="si">{pulse.noise_sigma:.2f}</span><span class="s2"> ADCc</span>
-<span class="s2">                            Hitfinder threshold: </span><span class="si">{pulse.hitfinder_threshold}</span><span class="s2"> ADCc</span>
+<span class="s2">                            Noise level: {pulse.noise_sigma:.2f} ADCc</span>
+<span class="s2">                            Hitfinder threshold: {pulse.hitfinder_threshold} ADCc</span>
 
-<span class="s2">                            Largest hit info (</span><span class="si">{left}</span><span class="s2">-</span><span class="si">{right}</span><span class="s2">):</span>
-<span class="s2">                            Area: </span><span class="si">{hit_area:.5g}</span><span class="s2"> pe</span>
-<span class="s2">                            Height: </span><span class="si">{hit_height:.4g}</span><span class="s2"> pe</span>
-<span class="s2">                            Saturated samples: </span><span class="si">{hit_n_saturated}</span><span class="s2"></span>
+<span class="s2">                            Largest hit info ({left}-{right}):</span>
+<span class="s2">                            Area: {hit_area:.5g} pe</span>
+<span class="s2">                            Height: {hit_height:.4g} pe</span>
+<span class="s2">                            Saturated samples: {hit_n_saturated}</span>
 <span class="s2">                            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pulse</span><span class="o">=</span><span class="n">pulse</span><span class="p">,</span>
                                        <span class="n">gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">],</span>
                                        <span class="n">left</span><span class="o">=</span><span class="n">largest_hit</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
@@ -221,11 +220,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -236,8 +238,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

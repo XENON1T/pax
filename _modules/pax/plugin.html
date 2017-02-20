@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugin &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -27,7 +27,6 @@
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -52,35 +51,35 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">strftime</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pax</span>    <span class="c1"># for version</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">dsputils</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="k">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">ReconstructedPosition</span><span class="p">,</span> <span class="n">Peak</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">ReconstructedPosition</span><span class="p">,</span> <span class="n">Peak</span>
 
 
 <div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="c1"># Processor.run() will ensure this gets set after it has shut down the plugin</span>
     <span class="c1"># If you ever shut down a plugin yourself, you need to set it too!!</span>
-    <span class="n">has_shut_down</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">False</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">,</span> <span class="n">processor</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">,</span> <span class="n">processor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">processor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># Total time in msec spent in this plugin</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">()</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Startup of </span><span class="si">%s</span><span class="s1"> returned a </span><span class="si">%s</span><span class="s1"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
 <div class="viewcode-block" id="BasePlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> does not define a startup&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> does not define a startup&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="BasePlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -115,14 +114,14 @@
 <div class="viewcode-block" id="ProcessPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.ProcessPlugin">[docs]</a><span class="k">class</span> <span class="nc">ProcessPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Plugin that can process events&quot;&quot;&quot;</span>
     <span class="c1"># Set these to False if you don&#39;t want to check the input/output are actually pax events</span>
-    <span class="n">do_input_check</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">do_output_check</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Give the logger another name, we need self.log for the adapter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span>
 
-<div class="viewcode-block" id="ProcessPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.ProcessPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ProcessPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.ProcessPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_input_check</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> received a </span><span class="si">%s</span><span class="s2"> instead of an Event&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
@@ -163,7 +162,7 @@
             <span class="c1"># but is very convenient otherwise.</span>
             <span class="c1"># Appending e.g. &#39;_processed&#39; inevitably leads to &#39;_processed_processed_...&#39;</span>
             <span class="n">ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">input_plugin</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="s1">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;input_name&#39;</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Deep fallback: timestamp-based name.</span>
@@ -179,7 +178,7 @@
 
     <span class="k">def</span> <span class="nf">_process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> returned a </span><span class="si">%s</span><span class="s2"> instead of None&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">event</span></div>
 
@@ -238,7 +237,7 @@
 <span class="sd">     - don&#39;t get passed peaks without top pmts active (we add the nan-position automatically)</span>
 <span class="sd">     - have self.pmts and self.pmt_locations available in the same way</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">uses_only_top</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">uses_only_top</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
@@ -263,12 +262,12 @@
             <span class="c1"># If there are no contributing top PMTs, don&#39;t even try:</span>
             <span class="n">area_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">area_top</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">pos_dict</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstruct_position</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
 
             <span class="c1"># Parse the plugin&#39;s result</span>
-            <span class="k">if</span> <span class="n">pos_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pos_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="c1"># The plugin gave up</span>
                 <span class="n">pos_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
@@ -310,11 +309,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -325,8 +327,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

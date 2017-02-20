@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.plotting.Plotting &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugins.plotting.Plotting &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -27,7 +27,6 @@
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
-  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -53,19 +52,19 @@
 <span class="kn">import</span> <span class="nn">textwrap</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="k">import</span> <span class="n">Rectangle</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="nb">input</span>
-<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">attrgetter</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Rectangle</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">input</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">attrgetter</span>
 
 <span class="kn">import</span> <span class="nn">pickle</span>
 
 <span class="c1"># Init stuff for 3d plotting</span>
 <span class="c1"># Please do not remove, although it appears to be unused, 3d plotting won&#39;t work without it</span>
-<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="k">import</span> <span class="n">Axes3D</span>     <span class="c1"># noqa</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>     <span class="c1"># noqa</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
 
 
 <div class="viewcode-block" id="epoch_to_human_time"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.epoch_to_human_time">[docs]</a><span class="k">def</span> <span class="nf">epoch_to_human_time</span><span class="p">(</span><span class="n">timestamp</span><span class="p">):</span>
@@ -75,8 +74,8 @@
 
 
 <div class="viewcode-block" id="PlotBase"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase">[docs]</a><span class="k">class</span> <span class="nc">PlotBase</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
-    <span class="n">block_view</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">block_view</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="bp">False</span>
 
 <div class="viewcode-block" id="PlotBase.startup"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;SCREEN&#39;</span><span class="p">:</span>
@@ -84,7 +83,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">):</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">size_multiplier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;size_multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_size_multiplier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;horizontal_size_multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -107,7 +106,7 @@
                                         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">][</span><span class="n">ch</span><span class="p">][</span><span class="s1">&#39;position&#39;</span><span class="p">][</span><span class="s1">&#39;y&#39;</span><span class="p">]]</span>
                                        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">])])</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">hitpattern_limits</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="n">e4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hitpattern_limits</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-1</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">substartup</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="PlotBase.substartup"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.substartup">[docs]</a>    <span class="k">def</span> <span class="nf">substartup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -136,7 +135,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">:</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">%06d</span><span class="s1">_</span><span class="si">%06d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;run_number&#39;</span><span class="p">],</span> <span class="n">event_number</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;plot_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pdf&#39;</span><span class="p">:</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;plot_format&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pickle&#39;</span><span class="p">:</span>
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.pickle&#39;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
                     <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">(),</span> <span class="n">outfile</span><span class="p">)</span>
@@ -198,16 +197,16 @@
         <span class="k">if</span> <span class="s1">&#39;all_s1s&#39;</span> <span class="ow">in</span> <span class="n">annotation_filter_list</span><span class="p">:</span>
             <span class="n">all_s1s</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;s1&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">all_s1s</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
             <span class="n">annotation_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">all_s1s</span><span class="p">)</span>
         <span class="c1"># If you want to annotate EVERY s2</span>
         <span class="k">if</span> <span class="s1">&#39;all_s2s&#39;</span> <span class="ow">in</span> <span class="n">annotation_filter_list</span><span class="p">:</span>
             <span class="n">all_s2s</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;s2&#39;</span><span class="p">]</span>
             <span class="n">annotation_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">all_s2s</span><span class="p">)</span>
         <span class="c1"># Always annotate the main S1 and S2 if they are there</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">annotation_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">main_s1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">annotation_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">main_s2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">annotation_list</span><span class="p">:</span>
@@ -216,16 +215,16 @@
         <span class="k">return</span> <span class="n">annotation_list</span></div>
 
 <div class="viewcode-block" id="PlotBase.plot_waveform"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.plot_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">plot_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span>
-                      <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                      <span class="n">show_peaks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_y_axis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">show_peaks</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">log_y_axis</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                       <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                      <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                      <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plot part of an event&#39;s sum waveform. Defined in base class to ensure a uniform style</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">right</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">right</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">right</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="n">lefti</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">left</span> <span class="o">-</span> <span class="n">pad</span><span class="p">)</span>
         <span class="n">righti</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">right</span> <span class="o">+</span> <span class="n">pad</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
@@ -276,13 +275,13 @@
             <span class="c1"># Setting less_black to True in config file will make sure the annotated peaks don&#39;t become a black blob</span>
             <span class="n">annotation_filter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;annotation_filter&#39;</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="n">annotation_filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">annotation_filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">annotation_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_filter</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">annotation_filter</span><span class="p">)</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">annotation_filter</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hide_peak_info&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="k">if</span> <span class="n">annotation_filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">annotation_filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="c1"># Go to next peak if not in annotation list, otherwise annotate!</span>
                     <span class="k">if</span> <span class="n">peak</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">annotation_list</span><span class="p">:</span>
                         <span class="k">continue</span>
@@ -292,7 +291,7 @@
                 <span class="k">if</span> <span class="n">log_y_axis</span><span class="p">:</span>
                     <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">ytext</span> <span class="o">=</span> <span class="n">y</span>
-                    <span class="n">arrowprops</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">arrowprops</span> <span class="o">=</span> <span class="bp">None</span>
                     <span class="c1"># max ensures ytext comes out positive (well, if y is)</span>
                     <span class="c1"># and that the text is never below the peak</span>
                     <span class="c1"># if max_y != 0:</span>
@@ -320,8 +319,8 @@
             <span class="k">if</span> <span class="n">legend</span> <span class="ow">and</span> <span class="n">legend</span><span class="o">.</span><span class="n">get_frame</span><span class="p">():</span>
                 <span class="n">legend</span><span class="o">.</span><span class="n">get_frame</span><span class="p">()</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="PlotBase.color_peak_ranges"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.color_peak_ranges">[docs]</a>    <span class="k">def</span> <span class="nf">color_peak_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PlotBase.color_peak_ranges"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.color_peak_ranges">[docs]</a>    <span class="k">def</span> <span class="nf">color_peak_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">):</span>
             <span class="n">peaks</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">peaks</span>
@@ -340,11 +339,11 @@
                        <span class="n">color</span><span class="o">=</span><span class="n">shade_color</span><span class="p">,</span>
                        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="PlotBase.draw_trigger_signals"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.draw_trigger_signals">[docs]</a>    <span class="k">def</span> <span class="nf">draw_trigger_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="PlotBase.draw_trigger_signals"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.draw_trigger_signals">[docs]</a>    <span class="k">def</span> <span class="nf">draw_trigger_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Draw markers (stars) indicating the signals found by the trigger&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hide_trigger_info&#39;</span><span class="p">):</span>
             <span class="k">return</span>
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Drawing </span><span class="si">%d</span><span class="s2"> trigger signals&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">trigger_signals</span><span class="p">))</span>
@@ -366,10 +365,10 @@
                     <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                     <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span> <span class="o">*</span> <span class="n">size_factor</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="PlotBase.plot_hitpattern"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.plot_hitpattern">[docs]</a>    <span class="k">def</span> <span class="nf">plot_hitpattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PlotBase.plot_hitpattern"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotBase.plot_hitpattern">[docs]</a>    <span class="k">def</span> <span class="nf">plot_hitpattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;show_all_pmts&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;show_all_pmts&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">):</span>
             <span class="n">pmts_hit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">[</span><span class="n">array</span><span class="p">]</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">):</span>
                 <span class="n">pmts_hit</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pmts_hit</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
@@ -392,7 +391,7 @@
 
         <span class="c1"># Plot the detector radius</span>
         <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tpc_radius&#39;</span><span class="p">]</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">r</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">r</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="bp">None</span><span class="p">))</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="o">*</span><span class="n">r</span><span class="p">,</span> <span class="mf">1.2</span><span class="o">*</span><span class="n">r</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span><span class="o">*</span><span class="n">r</span><span class="p">,</span> <span class="mf">1.2</span><span class="o">*</span><span class="n">r</span><span class="p">)</span>
         <span class="c1"># Sets labels on the hitpattern plot</span>
@@ -405,9 +404,9 @@
 
 <div class="viewcode-block" id="PlotSumWaveformMainS2"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS2">[docs]</a><span class="k">class</span> <span class="nc">PlotSumWaveformMainS2</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
 
-<div class="viewcode-block" id="PlotSumWaveformMainS2.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS2.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="PlotSumWaveformMainS2.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS2.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="n">peak</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s2</span>
-        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Can&#39;t plot the largest S2: there aren&#39;t any S2s in this event.&quot;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;No S2 in event&#39;</span><span class="p">)</span>
             <span class="k">return</span>
@@ -419,9 +418,9 @@
 
 <div class="viewcode-block" id="PlotSumWaveformMainS1"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS1">[docs]</a><span class="k">class</span> <span class="nc">PlotSumWaveformMainS1</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
 
-<div class="viewcode-block" id="PlotSumWaveformMainS1.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS1.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="PlotSumWaveformMainS1.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformMainS1.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="n">peak</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">main_s1</span>
-        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Can&#39;t plot the largest S1: there aren&#39;t any S1s in this event.&quot;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;No S1 in event&#39;</span><span class="p">)</span>
             <span class="k">return</span>
@@ -433,15 +432,15 @@
 
 <div class="viewcode-block" id="PlotSumWaveformEntireEvent"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent">[docs]</a><span class="k">class</span> <span class="nc">PlotSumWaveformEntireEvent</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
 
-<div class="viewcode-block" id="PlotSumWaveformEntireEvent.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plot_waveform</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span>
+<div class="viewcode-block" id="PlotSumWaveformEntireEvent.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_waveform</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_peaks</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">,</span>
                            <span class="n">log_y_axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_scale_entire_event&#39;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="PlottingHitPattern"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlottingHitPattern">[docs]</a><span class="k">class</span> <span class="nc">PlottingHitPattern</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
 
-<div class="viewcode-block" id="PlottingHitPattern.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlottingHitPattern.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="s1">&#39;S2&#39;</span><span class="p">),</span> <span class="n">show_dominant_array_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subplots_to_use</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">subplots_to_use</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="PlottingHitPattern.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlottingHitPattern.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="s1">&#39;S2&#39;</span><span class="p">),</span> <span class="n">show_dominant_array_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">subplots_to_use</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">subplots_to_use</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">f</span><span class="p">,</span> <span class="p">((</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">),</span> <span class="p">(</span><span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span><span class="p">))</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="s1">&#39;col&#39;</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="s1">&#39;row&#39;</span><span class="p">)</span>
             <span class="n">subplots_to_use</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span><span class="p">]</span>
 
@@ -487,7 +486,7 @@
                 <span class="k">continue</span>
 
             <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">*=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">use_reference_gain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">*=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">adc_to_pe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">use_reference_gain</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_scale&#39;</span><span class="p">]:</span>
                 <span class="c1"># This will still give nan&#39;s if waveform drops below 1 pe_nominal / bin...</span>
                 <span class="c1"># TODO: So... will it crash? or just fall outside range?</span>
@@ -535,7 +534,7 @@
 <span class="sd">    Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="PlotChannelWaveforms2D.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotChannelWaveforms2D.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_channel_group_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="PlotChannelWaveforms2D.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotChannelWaveforms2D.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">show_channel_group_labels</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Source can be Event or Peak, if peak, must also pass event&quot;&quot;&quot;</span>
 
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
@@ -554,12 +553,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown source: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">source</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
 
         <span class="c1"># TODO: change from lines to squares</span>
         <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="n">pulses</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="c1"># Maybe gain was 0 or something</span>
                 <span class="c1"># TODO: plot these too, in a different color</span>
                 <span class="k">continue</span>
@@ -594,7 +593,7 @@
             <span class="n">rgba_colors</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>                                       <span class="c1"># G</span>
             <span class="n">rgba_colors</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">result</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>               <span class="c1"># B</span>
             <span class="n">rgba_colors</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>                                               <span class="c1"># A</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">rgba_colors</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">rgba_colors</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">edgecolor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Plot the bottom/top/veto boundaries</span>
         <span class="c1"># Assumes the detector names&#39; lexical order is the same as the channel order!</span>
@@ -633,7 +632,7 @@
 
 
 <div class="viewcode-block" id="PlotEventSummary"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotEventSummary">[docs]</a><span class="k">class</span> <span class="nc">PlotEventSummary</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
-    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="bp">True</span>
 
 <div class="viewcode-block" id="PlotEventSummary.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PlotEventSummary.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -661,16 +660,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plotting largest S1...&quot;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
             <span class="n">q</span> <span class="o">=</span> <span class="n">PlotSumWaveformMainS1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plotting largest S2...&quot;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
             <span class="n">q</span> <span class="o">=</span> <span class="n">PlotSumWaveformMainS2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plotting hitpatterns...&quot;</span><span class="p">)</span>
             <span class="n">q</span> <span class="o">=</span> <span class="n">PlottingHitPattern</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_dominant_array_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subplots_to_use</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_dominant_array_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">subplots_to_use</span><span class="o">=</span><span class="p">[</span>
                 <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
                 <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
             <span class="p">])</span>
@@ -678,7 +677,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plotting sum waveform...&quot;</span><span class="p">)</span>
         <span class="n">sumw_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="n">rows</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">colspan</span><span class="o">=</span><span class="n">cols</span><span class="p">)</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">PlotSumWaveformEntireEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plotting channel waveforms...&quot;</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">subplot2grid</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="p">(</span><span class="n">rows</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">colspan</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="n">sumw_ax</span><span class="p">)</span>
@@ -691,8 +690,8 @@
 
 
 <div class="viewcode-block" id="PeakViewer"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PeakViewer">[docs]</a><span class="k">class</span> <span class="nc">PeakViewer</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>
-    <span class="n">block_view</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">block_view</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">hates_tight_layout</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">max_characters</span> <span class="o">=</span> <span class="mi">70</span>
     <span class="n">_buttons</span> <span class="o">=</span> <span class="p">[]</span>       <span class="c1"># Keeps references to the buttons we create alive. Needed for matplotlib 1.5.</span>
 
@@ -738,8 +737,8 @@
         <span class="n">event_wv_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span> <span class="o">+</span> <span class="n">row_y</span><span class="p">,</span> <span class="n">full_x</span><span class="p">,</span> <span class="n">row_y</span><span class="p">],</span>
                                <span class="n">sharex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_wv_ax</span><span class="p">)</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">PlotSumWaveformEntireEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">event_wv_ax</span><span class="p">)</span>
-        <span class="n">event_wv_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">event_wv_ax</span><span class="p">)</span>
+        <span class="n">event_wv_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
 
         <span class="c1">##</span>
         <span class="c1"># Whereami plot</span>
@@ -773,14 +772,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bot_hitp_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="n">start_x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">column_x</span><span class="p">,</span> <span class="n">row_y</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">top_hitp_ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">([</span><span class="n">start_x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">row_y</span><span class="p">,</span> <span class="n">column_x</span><span class="p">,</span> <span class="n">row_y</span><span class="p">],</span>
                                     <span class="n">sharex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bot_hitp_ax</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">top_hitp_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_hitp_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
 
         <span class="c1">##</span>
         <span class="c1"># Get the TPC peaks</span>
         <span class="c1">##</span>
         <span class="c1"># Did the user specify a peak number? If so, get it</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starting_peak_per_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="s1">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starting_peak_per_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="s1">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No peaks in this event, will be a boring peakviewer plot...&quot;</span><span class="p">)</span>
@@ -798,9 +797,9 @@
                                       <span class="n">sharex</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_chwvs_ax</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">tick_right</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">PlotChannelWaveforms2D</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">)</span>
-        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_chwvs_ax</span><span class="p">,</span> <span class="n">show_channel_group_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">q</span><span class="o">.</span><span class="n">plot_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_chwvs_ax</span><span class="p">,</span> <span class="n">show_channel_group_labels</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
         <span class="c1">##</span>
         <span class="c1"># Buttons</span>
@@ -843,7 +842,7 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">starting_peak</span> <span class="o">==</span> <span class="s1">&#39;main_s2&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">draw_main_s2</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c1"># Either self.starting_peak is &#39;largest&#39; or one of the other peak selections failed</span>
             <span class="c1"># (e.g. couldn&#39;t draw the main s1 because there is no S1)</span>
             <span class="c1"># Just pick the largest peak (regardless of its type)</span>
@@ -857,7 +856,7 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sc_for_hitp</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">top_hitp_ax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bot_hitp_ax</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="PeakViewer.draw_peak"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PeakViewer.draw_peak">[docs]</a>    <span class="k">def</span> <span class="nf">draw_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;self.peak_i is None: peak viewer bug!&quot;</span><span class="p">)</span>
 
         <span class="c1"># Select the requested peak</span>
@@ -879,8 +878,8 @@
 
         <span class="c1"># Update peak waveforms</span>
         <span class="n">peak_padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;peak_padding_samples&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plot_waveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="n">peak_padding</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                           <span class="n">log_y_axis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_waveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="n">peak_padding</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                           <span class="n">log_y_axis</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_chwvs_ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">peak_padding</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">chwvs_2s_time_scale</span><span class="p">,</span>
                                     <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">peak_padding</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">chwvs_2s_time_scale</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_sumwv_ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">ticker</span><span class="o">.</span><span class="n">MaxNLocator</span><span class="p">(</span><span class="n">nbins</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
@@ -911,7 +910,7 @@
         <span class="n">peak_text</span> <span class="o">+=</span> <span class="s1">&#39;Top spread: </span><span class="si">%0.1f</span><span class="s1">cm, Bottom spread: </span><span class="si">%0.1f</span><span class="s1">cm</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">top_hitpattern_spread</span><span class="p">,</span>
                                                                         <span class="n">peak</span><span class="o">.</span><span class="n">bottom_hitpattern_spread</span><span class="p">)</span>
         <span class="n">pos3d</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">get_reconstructed_position_from_algorithm</span><span class="p">(</span><span class="s1">&#39;PosRecThreeDPatternFit&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">pos3d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">pos3d</span><span class="o">.</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">pos3d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">pos3d</span><span class="o">.</span><span class="n">x</span><span class="p">):</span>
             <span class="n">peak_text</span> <span class="o">+=</span> <span class="s1">&#39;3d position: x=</span><span class="si">%0.1f</span><span class="s1">, y=</span><span class="si">%0.1f</span><span class="s1">, z=</span><span class="si">%0.1f</span><span class="s1"> (all cm)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos3d</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">pos3d</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">pos3d</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_text</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wrap_multiline</span><span class="p">(</span><span class="n">peak_text</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_characters</span><span class="p">))</span>
@@ -932,7 +931,7 @@
 
 <div class="viewcode-block" id="PeakViewer.draw_main_s1"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PeakViewer.draw_main_s1">[docs]</a>    <span class="k">def</span> <span class="nf">draw_main_s1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">main_s1</span>
-        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This event has no S1s.&quot;</span><span class="p">)</span>
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
@@ -940,7 +939,7 @@
 
 <div class="viewcode-block" id="PeakViewer.draw_main_s2"><a class="viewcode-back" href="../../../../pax.plugins.plotting.html#pax.plugins.plotting.Plotting.PeakViewer.draw_main_s2">[docs]</a>    <span class="k">def</span> <span class="nf">draw_main_s2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">main_s2</span>
-        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This event has no S2s.&quot;</span><span class="p">)</span>
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
@@ -969,11 +968,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -984,8 +986,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 

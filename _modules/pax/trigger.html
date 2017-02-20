@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.trigger &#8212; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.trigger &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -28,7 +28,6 @@
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
-  
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
@@ -42,9 +41,9 @@
             
   <h1>Source code for pax.trigger</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">errno</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">glob</span> <span class="k">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -53,12 +52,12 @@
 <span class="kn">import</span> <span class="nn">zlib</span>
 
 <span class="kn">import</span> <span class="nn">bson</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">pax</span>          <span class="c1"># For version number</span>
-<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="k">import</span> <span class="n">PAX_DIR</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="k">import</span> <span class="n">TriggerSignal</span>
-<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="k">import</span> <span class="n">InvalidConfigurationError</span>
+<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">PAX_DIR</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
+<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="kn">import</span> <span class="n">InvalidConfigurationError</span>
 
 
 <span class="n">pulse_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
@@ -70,9 +69,9 @@
 <div class="viewcode-block" id="TriggerData"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerData">[docs]</a><span class="k">class</span> <span class="nc">TriggerData</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Carries all data from one &quot;batch&quot; between trigger modules&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pulses</span> <span class="o">=</span> <span class="kc">None</span>                                          <span class="c1"># Pulses array, see pulse_dtype above</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_data</span> <span class="o">=</span> <span class="kc">False</span>                                      <span class="c1"># Is this the last batch of data?</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulses</span> <span class="o">=</span> <span class="bp">None</span>                                          <span class="c1"># Pulses array, see pulse_dtype above</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_data</span> <span class="o">=</span> <span class="bp">False</span>                                      <span class="c1"># Is this the last batch of data?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_time_searched</span> <span class="o">=</span> <span class="mi">0</span>                                 <span class="c1"># Last time searched while querying this batch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event_ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>        <span class="c1"># Event (left, right) time ranges (in ns)</span>
@@ -89,10 +88,10 @@
 <div class="viewcode-block" id="TriggerPlugin"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerPlugin">[docs]</a><span class="k">class</span> <span class="nc">TriggerPlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for trigger plugins&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">trigger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Logging started for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span> <span class="o">=</span> <span class="p">{}</span>
@@ -114,7 +113,7 @@
 <span class="sd">        * managing the trigger monitor stream (insert docs to MongoDB, dump to file, ...)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pax_config</span><span class="p">,</span> <span class="n">trigger_monitor_collection</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pax_config</span><span class="p">,</span> <span class="n">trigger_monitor_collection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            trigger_monitor_collection: None or a mongodb collection to write trigger monitor info to</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -131,15 +130,15 @@
         <span class="c1"># Initialize trigger monitor stuff</span>
         <span class="c1">##</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_collection</span> <span class="o">=</span> <span class="n">trigger_monitor_collection</span>
-        <span class="k">if</span> <span class="n">trigger_monitor_collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">trigger_monitor_collection</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No trigger monitor collection provided: won&#39;t write trigger monitor data to MongoDB&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span> <span class="o">=</span> <span class="p">[]</span>         <span class="c1"># Cache of (data_type, doc), with doc document to insert into db / write to zip.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_type_counter</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>    <span class="c1"># Counts how often a document of each data type has been inserted</span>
 
         <span class="c1"># Create a zipfile to store the trigger monitor data, if config says so</span>
         <span class="c1"># (the data is additionaly stored in a MongoDB, if trigger_monitor_collection was passed)</span>
-        <span class="n">trigger_monitor_file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;trigger_monitor_file_path&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">trigger_monitor_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">trigger_monitor_file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;trigger_monitor_file_path&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">trigger_monitor_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">trigger_monitor_file_path</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span>
@@ -151,7 +150,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">trigger_monitor_file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Not trigger monitor file path provided: won&#39;t write trigger monitor data to Zipfile&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pulses_read</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -209,7 +208,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">previous_last_time_searched</span> <span class="o">=</span> <span class="mi">0</span>
 
-<div class="viewcode-block" id="Trigger.run"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_time_searched</span><span class="p">,</span> <span class="n">start_times</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">modules</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">areas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Trigger.run"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_time_searched</span><span class="p">,</span> <span class="n">start_times</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">channels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">modules</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">areas</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">last_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run on the specified data, yields ((start time, stop time), signals in event, event type identifier)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">TriggerData</span><span class="p">(</span><span class="n">last_time_searched</span><span class="o">=</span><span class="n">last_time_searched</span><span class="p">,</span> <span class="n">last_data</span><span class="o">=</span><span class="n">last_data</span><span class="p">)</span>
@@ -250,7 +249,7 @@
         <span class="c1"># We don&#39;t want to do break the trigger logic every time some plugin calls save_monitor_data, so this happens</span>
         <span class="c1"># only at the end of each batch</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">=</span><span class="si">%012d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_type_counter</span><span class="p">[</span><span class="n">data_type</span><span class="p">]),</span>
@@ -260,7 +259,7 @@
                         <span class="k">raise</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">data_type_counter</span><span class="p">[</span><span class="n">data_type</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_collection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_collection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Inserting </span><span class="si">%d</span><span class="s2"> trigger monitor documents into MongoDB&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span><span class="p">))</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_collection</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([</span><span class="n">d</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Inserted docs ids: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="o">.</span><span class="n">inserted_ids</span><span class="p">)</span>
@@ -281,7 +280,7 @@
 
         <span class="c1"># Close the trigger data file.</span>
         <span class="c1"># Note this must be done after shutting down the plugins, they may add something on shutdown as well.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trigger_monitor_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
         <span class="c1"># Add end-of-run info for the runs database</span>
@@ -291,7 +290,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span></div>
 
-<div class="viewcode-block" id="Trigger.save_monitor_data"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.save_monitor_data">[docs]</a>    <span class="k">def</span> <span class="nf">save_monitor_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Trigger.save_monitor_data"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.save_monitor_data">[docs]</a>    <span class="k">def</span> <span class="nf">save_monitor_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Store trigger monitor data document in cache. It will be written to disk/db at the end of the batch.</span>
 <span class="sd">          data_type: string indicating what kind of data this is (e.g. count_of_lone_pulses).</span>
 <span class="sd">          data: either</span>
@@ -302,7 +301,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">tolist</span><span class="p">()}</span>
         <span class="n">data</span><span class="p">[</span><span class="s1">&#39;data_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_type</span>
-        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">monitor_cache</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">data_type</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span></div></div>
 </pre></div>
@@ -323,11 +322,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -338,8 +340,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
       
     </div>
 
