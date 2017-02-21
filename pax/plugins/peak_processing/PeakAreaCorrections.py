@@ -27,8 +27,11 @@ class S2SpatialCorrection(plugin.TransformPlugin):
 
                     # S2 area correction: divide by relative light yield at the position
                     peak.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(xy)
-                    peak.s2_top_spatial_correction /= self.s2_light_yield_map.get_value_at(xy, map_name='map_top')
-                    peak.s2_bottom_spatial_correction /= self.s2_light_yield_map.get_value_at(xy, map_name='map_bottom')
+                    if 'map_top'in self.s2_light_yield_map.map_names:
+                        peak.s2_top_spatial_correction /= self.s2_light_yield_map.get_value_at(xy,
+                                                                                               map_name='map_top')
+                        peak.s2_bottom_spatial_correction /= self.s2_light_yield_map.get_value_at(xy,
+                                                                                                  map_name='map_bottom')
                 except ValueError:
                     self.log.debug("Could not find any position from the chosen algorithms")
         return event
