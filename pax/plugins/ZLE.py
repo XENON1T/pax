@@ -54,7 +54,6 @@ class SoftwareZLE(plugin.TransformPlugin):
             # Find intervals above ZLE threshold
             n_itvs_found = find_intervals_above_threshold(w.astype(np.float64),
                                                           threshold=threshold,
-                                                          left_extension=0, right_extension=0,
                                                           result_buffer=zle_intervals_buffer,
                                                           )
 

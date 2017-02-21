@@ -24,3 +24,5 @@ Contributors
 * Daniela Remenska <d.remenska@esciencecenter.nl>
 * Alec Stein <alecstein@g.ucla.edu>
 * Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
+* Adam Brown <abrown@physik.uzh.ch>
+* Fei Gao <feigao@astro.columbia.edu>

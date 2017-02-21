@@ -3,8 +3,7 @@ import unittest
 import numpy as np
 from numpy import testing as np_testing
 
-from pax.plugins.peak_processing.BasicProperties import integrate_until_fraction, \
-    put_w_in_center_of_field, compute_area_deciles
+from pax.plugins.peak_processing.BasicProperties import integrate_until_fraction, put_w_in_center_of_field
 
 
 class TestPeakProperties(unittest.TestCase):
@@ -58,12 +57,6 @@ class TestPeakProperties(unittest.TestCase):
         field = np.zeros(5)
         put_w_in_center_of_field(np.ones(20), field, 10)
         np_testing.assert_equal(field, np.array([1, 1, 1, 1, 1]))
-
-    def test_area_deciles(self):
-        w = np.ones(100, dtype=np.float32)
-        midpoint, deciles = compute_area_deciles(w)
-        self.assertAlmostEqual(midpoint, 50, places=4)
-        np_testing.assert_almost_equal(deciles, np.linspace(0, 100, 11), decimal=4)
 
 
 if __name__ == '__main__':
