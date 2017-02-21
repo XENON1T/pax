@@ -511,8 +511,26 @@ class Simulator(object):
         if n_photons == 0:
             return np.array([])
 
-        if recoil_type.lower() == 'er':
+        if recoil_type.lower() == 'alpha':
+            # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
+            # Hence, we don't care about primary & secondary excimers at all:
+            timings = self.singlet_triplet_delays(
+                np.zeros(n_photons),
+                t1=self.config['singlet_lifetime_liquid'],
+                t3=self.config['triplet_lifetime_liquid'],
+                singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
+            )
 
+        elif recoil_type.lower() == 'led':
+            # distribute photons uniformly within the LED pulse length
+            timings = np.random.uniform(0, self.config['led_pulse_length'],
+                                        size=n_photons)
+
+        elif self.config.get('s1_model_type') == 'simple':
+            # Simple S1 model enabled: use it for ER and NR.
+            timings = np.random.exponential(self.config['s1_decay_time'], size=n_photons)
+
+        elif recoil_type.lower() == 'er':
             # How many of these are primary excimers? Others arise through recombination.
             n_primaries = np.random.binomial(n=n_photons, p=self.config['s1_ER_primary_excimer_fraction'])
 
@@ -540,7 +558,6 @@ class Simulator(object):
             timings = np.concatenate((primary_timings, secondary_timings))
 
         elif recoil_type.lower() == 'nr':
-
             # Neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
             # Hence, we don't care about primary & secondary excimers at all:
             timings = self.singlet_triplet_delays(
@@ -549,23 +566,6 @@ class Simulator(object):
                 t3=self.config['triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_NR_singlet_fraction']
             )
-
-        elif recoil_type.lower() == 'alpha':
-
-            # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
-            # Hence, we don't care about primary & secondary excimers at all:
-            timings = self.singlet_triplet_delays(
-                np.zeros(n_photons),
-                t1=self.config['singlet_lifetime_liquid'],
-                t3=self.config['triplet_lifetime_liquid'],
-                singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
-            )
-
-        elif recoil_type.lower() == 'led':
-
-            # distribute photons uniformly within the LED pulse length
-            timings = np.random.uniform(0, self.config['led_pulse_length'],
-                                        size=n_photons)
 
         else:
             raise ValueError('Recoil type must be ER, NR, alpha or LED, not %s' % type)
