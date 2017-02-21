@@ -4,6 +4,17 @@ History
 -------
 ---------
 
+
+------------------
+6.5.0 (2017-02-21)
+------------------
+* Change S1/S2 pairing loop order (#522)
+* Minor speed improvements (#520)
+* Add S1 hit-based pattern fit variable (#525)
+* Simulator: extend afterpules to just after the initial signal (#521)
+* Simulator: effective S1 shape model (#524)
+* Travis builds fixed (#523)
+
 ------------------
 6.4.2 (2017-02-19)
 ------------------
@@ -15,7 +26,6 @@ History
 ------------------
 * Fix classification minus sign error
 * Fix waveform simulator internal bug
-
 
 ------------------
 6.4.0 (2017-02-17)
