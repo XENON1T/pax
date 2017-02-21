@@ -101,22 +101,8 @@ def _sad_fallback(x, areas, fallback):
     return sad
 
 
-@numba.jit(numba.float64(numba.int64[:], numba.int64[:],
-                         numba.float64[:], numba.float64[:], numba.float64[:],
-                         numba.float64[:]),
-           nopython=False)
-def compute_every_split_goodness(gaps, split_indices,
-                                 center, deviation, area,
-                                 results):
-    """Computes the "goodness of split" for several split points: see compute_split_goodness"""
-    for gap_i, gap in enumerate(gaps):
-        # Index of hit to split on = index first hit that will go to right cluster
-        split_i = split_indices[gap_i]
-        results[gap_i] = compute_split_goodness(split_i, center, deviation, area)
-
-
 @numba.jit(numba.float64(numba.int64, numba.float64[:], numba.float64[:], numba.float64[:]),
-           nopython=False)
+           nopython=True)
 def compute_split_goodness(split_index, center, deviation, area):
     """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
        left, right: left, right indices of hits
@@ -132,3 +118,17 @@ def compute_split_goodness(split_index, center, deviation, area):
     numerator += _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
     denominator = _sad_fallback(center, areas=area, fallback=deviation)
     return 1 - numerator / denominator
+
+
+@numba.jit(numba.void(numba.int64[:], numba.int64[:],
+                      numba.float64[:], numba.float64[:], numba.float64[:],
+                      numba.float64[:]),
+           nopython=True)
+def compute_every_split_goodness(gaps, split_indices,
+                                 center, deviation, area,
+                                 results):
+    """Computes the "goodness of split" for several split points: see compute_split_goodness"""
+    for gap_i, gap in enumerate(gaps):
+        # Index of hit to split on = index first hit that will go to right cluster
+        split_i = split_indices[gap_i]
+        results[gap_i] = compute_split_goodness(split_i, center, deviation, area)
