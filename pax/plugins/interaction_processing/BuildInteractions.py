@@ -28,8 +28,8 @@ class BuildInteractions(plugin.TransformPlugin):
         s2s = [p for p in s2s if p.area >= s2_area_limit]
         s2s = s2s[:min(len(s2s), self.config.get('pair_n_s2s'))]
 
-        for s1 in s1s:
-            for s2 in s2s:
+        for s2 in s2s:
+            for s1 in s1s:
 
                 # Compute drift time, add only interactions with s1 before s2
                 dt = (s2.index_of_maximum - s1.index_of_maximum) * self.config['sample_duration']

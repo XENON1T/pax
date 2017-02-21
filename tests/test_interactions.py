@@ -13,9 +13,9 @@ class TestBuildInteractions(unittest.TestCase):
                                           'plugin_group_names': ['test'],
                                           'test':               'BuildInteractions.BuildInteractions'},
                                       'BuildInteractions.BuildInteractions': {
-                                          'pair_n_s2s': 3,
-                                          'pair_n_s1s': 3,
-                                          's2_pairing_threshold': 101 * 7 + 1,
+                                          'pair_n_s2s': 100,
+                                          'pair_n_s1s': 100,
+                                          's2_pairing_threshold': 101 * (7 + 1) + 1,
                                           'xy_posrec_preference': ['a', 'b']}})
         self.plugin = self.pax.get_plugin_by_name('BuildInteractions')
 
@@ -29,15 +29,15 @@ class TestBuildInteractions(unittest.TestCase):
                     datastructure.ReconstructedPosition(x=1, y=1, algorithm='b'),
                     datastructure.ReconstructedPosition(x=2, y=2, algorithm='a')]
 
-        # 10 S1s, with 10 S2s just behind them
+        # 10 S1s, with 10 S2s just behind each of them.
         e.peaks = [datastructure.Peak(type='s1',
                                       detector='tpc',
-                                      area=100 * i,
+                                      area=100 * (i + 1),
                                       index_of_maximum=1000 * i,
                                       hit_time_mean=100 * i) for i in range(10)]
         e.peaks += [datastructure.Peak(type='s2',
                                        detector='tpc',
-                                       area=101 * i,
+                                       area=101 * (i + 1),
                                        index_of_maximum=1010 * i,
                                        hit_time_mean=101 * i,
                                        reconstructed_positions=recposes) for i in range(10)]
@@ -47,27 +47,20 @@ class TestBuildInteractions(unittest.TestCase):
         self.assertGreater(len(e.interactions), 0)   # So the test fails if the list is empty, rather than error
         self.assertIsInstance(e.interactions[0], datastructure.Interaction)
 
-        # First interaction: (largest S2, largest s1)
-        self.assertEqual(e.peaks[e.interactions[0].s1].area, 100 * 9)
-        self.assertEqual(e.peaks[e.interactions[0].s2].area, 101 * 9)
+        # Interaction 0-9 are with largest S2
+        for i in range(9 + 1):
+            print(i, e.peaks[e.interactions[i].s1].area, e.peaks[e.interactions[i].s2].area)
+            self.assertEqual(e.peaks[e.interactions[i].s1].area, 100 * (1 + 9 - i))
+            self.assertEqual(e.peaks[e.interactions[i].s2].area, 101 * (1 + 9))
 
-        # Largest S1 can't be paired with any further S2s -- no more after it.
-        # Second and third interactions are with second largest S1
-        self.assertEqual(e.peaks[e.interactions[1].s1].area, 100 * 8)
-        self.assertEqual(e.peaks[e.interactions[1].s2].area, 101 * 9)
+        # Interaction 10-18 are with second largest S2. Not paired to main S1, since it's after it.
+        for i in range(10, 18 + 1):
+            print(i, e.peaks[e.interactions[i].s1].area, e.peaks[e.interactions[i].s2].area)
+            self.assertEqual(e.peaks[e.interactions[i].s1].area, 100 * (1 + 8 - (i - 10)))
+            self.assertEqual(e.peaks[e.interactions[i].s2].area, 101 * (1 + 8))
 
-        self.assertEqual(e.peaks[e.interactions[2].s1].area, 100 * 8)
-        self.assertEqual(e.peaks[e.interactions[2].s2].area, 101 * 8)
-
-        # Similarly, fourth and fifth interaction are with third largest S1
-        # No sixth interaction: further S2s below pairing threshold, and 3 largest S1s have now been used
-        self.assertEqual(e.peaks[e.interactions[3].s1].area, 100 * 7)
-        self.assertEqual(e.peaks[e.interactions[3].s2].area, 101 * 9)
-
-        self.assertEqual(e.peaks[e.interactions[4].s1].area, 100 * 7)
-        self.assertEqual(e.peaks[e.interactions[4].s2].area, 101 * 8)
-
-        self.assertEqual(len(e.interactions), 5)
+        # There is no 20th interaction (index 19), the next S2 is below the pairing threshold
+        self.assertEqual(len(e.interactions), 19)
 
 
 if __name__ == '__main__':
