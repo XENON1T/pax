@@ -581,6 +581,10 @@ class Interaction(StrictModel):
     #: Goodness of fit of S1 pattern to interaction's (x, y, drift_time)
     s1_pattern_fit = float('nan')
 
+    #: Goodness of fit of S1 pattern to interaction's (x, y, drift_time),
+    #: computed using number of hits/channel instead of area/channel
+    s1_pattern_fit_hits = float('nan')
+
 
 class Event(StrictModel):
     """Object holding high-level information about a triggered event,

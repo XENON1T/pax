@@ -106,6 +106,12 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                         pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
                         statistic=self.config['s1_pattern_statistic'])
 
+                    ia.s1_pattern_fit_hits = self.s1_patterns.compute_gof(
+                        (ia.x, ia.y, ia.z),
+                        s1.hits_per_channel[self.tpc_channels],
+                        pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
+                        statistic=self.config['s1_pattern_statistic'])
+
                 except exceptions.CoordinateOutOfRangeException:
                     # This happens for interactions reconstructed outside of the TPC
                     # Do not add any saturation correction, leave pattern fit statistic float('nan')
