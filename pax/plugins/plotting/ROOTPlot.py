@@ -31,6 +31,17 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             if 'write_hits_for_max_number_of_s1' in self.config:
                 self.write_hits_for_max_number_of_s1 = self.config['write_hits_for_max_number_of_s1']
 
+        self.draw_hit_pattern = False
+        if 'draw_hit_pattern' in self.config:
+            self.draw_hit_pattern = self.config['draw_hit_pattern']
+
+            self.write_hitpattern_for_max_number_of_s2 = 3
+            self.write_hitpattern_for_max_number_of_s1 = 3
+            if 'write_hitpattern_for_max_number_of_s2' in self.config:
+                self.write_hitpattern_for_max_number_of_s2 = self.config['write_hitpattern_for_max_number_of_s2']
+            if 'write_hitpattern_for_max_number_of_s1' in self.config:
+                self.write_hitpattern_for_max_number_of_s1 = self.config['write_hitpattern_for_max_number_of_s1']
+
         if self.output_dir is None:
             raise RuntimeError("You must supply an output directory for ROOT display")
         if not os.path.exists(self.output_dir):
@@ -73,6 +84,10 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         ROOT.gStyle.SetTitleFont(132, "xyz")
 
         self.colorwheel = [ROOT.kGray + 3, ROOT.kGray, ROOT.kMagenta + 2, ROOT.kRed + 2, ROOT.kGreen + 2]
+        # set high quality predefined palettes, e.g., 'kInvertedDarkBodyRadiator=56'
+        #ROOT.gStyle.SetPalette(ROOT.kInvertedDarkBodyRadiator)
+        #ROOT.gStyle.SetPalette(ROOT.kDarkBodyRadiator)
+        ROOT.gStyle.SetPalette(ROOT.kBird)
 
     def write_event(self, event):
 
@@ -83,11 +98,11 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         outfile_dotC = os.path.join(self.output_dir, "event_" + namestring + ".C")
 
         # Borrow liberally from xerawdp
-        titlestring = 'Event %s from %s Recorded at %s UTC, %09d ns' % (
+        self.titlestring = 'Event %s from %s Recorded at %s UTC, %09d ns' % (
             event.event_number, event.dataset_name,
             epoch_to_human_time(event.start_time / units.ns),
             (event.start_time / units.ns) % (units.s))
-        win = ROOT.TCanvas("canvas", titlestring, 1600, 600)
+        win = ROOT.TCanvas("canvas", self.titlestring, 1600, 600)
 
         # ROOT.TH1D: bin[0]=underflow, bin[-1]=overflow
         sum_waveform_x = np.arange(0, event.length() + 1,
@@ -114,7 +129,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             hlist[jj].SetLineWidth(1)
 
             if jj == 0:
-                hlist[jj].SetTitle(titlestring)
+                hlist[jj].SetTitle(self.titlestring)
                 hlist[jj].GetXaxis().SetTitle("Time [#mus]")
                 hlist[jj].GetYaxis().SetTitleOffset(0.5)
                 hlist[jj].GetYaxis().SetTitleSize(0.05)
@@ -286,34 +301,45 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         win.Update()
 
 
-
         #self.full_plot = True
         if not self.full_plot:
 
             # Dump canvas to ROOT macro (.C file)
             win.SaveAs(outfile_dotC)
             # Compress ROOT macro (.C.gz) and remove original file:
-            if 'compress_output' in self.config:
-                if self.config['compress_output']:
-                    with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
-                       shutil.copyfileobj(f_in, f_out)
-                    os.remove(outfile_dotC)
+            if 'compress_output' in self.config and self.config['compress_output']:
+                with open(outfile_dotC, 'rb') as f_in, gzip.open("{}.gz".format(outfile_dotC), 'wb') as f_out:
+                   shutil.copyfileobj(f_in, f_out)
+                os.remove(outfile_dotC)
 
-            # Uncomment if .ROOT file is desired:
+            if 'draw_hit_pattern' in self.config and self.config['draw_hit_pattern']:
+                outfile_hp_base = os.path.join(self.output_dir, "event_{}_hp".format(namestring))
+                for i, peak in enumerate(event.S2s()):
+                    if i >= self.write_hitpattern_for_max_number_of_s2:
+                        break
+                    chitp = self.Draw2DDisplay(event=event, peaktype=peak.type, tb='top', index=i, directory_name=None)
+                    chitp.SaveAs("{}_{}_{}_{}.png".format(outfile_hp_base,peak.type,i,'top'))
+                for i, peak in enumerate(event.S1s()):
+                    if i >= self.write_hitpattern_for_max_number_of_s1:
+                        break
+                    chitp = self.Draw2DDisplay(event=event, peaktype=peak.type, tb='bottom', index=i, directory_name=None)
+                    chitp.SaveAs("{}_{}_{}_{}.png".format(outfile_hp_base,peak.type,i,'bottom'))
 
 
 
         elif self.full_plot:
-            outfile = os.path.join(self.output_dir, "event_" + namestring + "_hits_included.root")
-            self.outfile = ROOT.TFile(outfile, 'RECREATE')
+            outfile_name = os.path.join(self.output_dir, "event_" + namestring + '.root')
+            self.outfile = ROOT.TFile(outfile_name, 'RECREATE')
             win.Update()
             win.Write()
 
             self.outfile.cd()
 
             # Now want all pulses written out
-            # peak_indices = {}
             hist_objs = []  # suppress warnings
+            pmt_pattern = []
+            
+            pattern_dir_name = "pmt_pattern"
             for i, peak in enumerate(event.S2s()):
                 if i >= self.write_hits_for_max_number_of_s2:
                     break
@@ -323,8 +349,18 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
                     break
                 hist_objs.append(self.WriteHits(peak, event, i))
 
+            if 'draw_hit_pattern' in self.config and self.config['draw_hit_pattern']:
+                for i, peak in enumerate(event.S2s()):
+                    if i >= self.write_hitpattern_for_max_number_of_s2:
+                        break
+                    pmt_pattern.append(self.Draw2DDisplay(event=event, peaktype=peak.type, tb='top', index=i, directory_name=pattern_dir_name))
+                for i, peak in enumerate(event.S1s()):
+                    if i >= self.write_hitpattern_for_max_number_of_s1:
+                        break
+                    pmt_pattern.append(self.Draw2DDisplay(event=event, peaktype=peak.type, tb='bottom', index=i, directory_name=pattern_dir_name))
+
             self.outfile.Close()
-            print ("Info: {} has been generated".format(outfile))
+            print ("Info: {} has been generated".format(outfile_name))
 
     def WriteHits(self, peak, event, index):
         ''' Write out 1D histos for this peak '''
@@ -372,10 +408,6 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             histname = "%s_%i_channel_%i" % (peak.type, index, channel)
             histtitle = "Channel %i in %s[%i]" % (channel, peak.type, index)
             c = ROOT.TCanvas(histname, "",1050,450)
-            #h = ROOT.TH1F(histname, histtitle, int(rightbound-leftbound),
-            #              float(leftbound), float(rightbound))
-            #hlist.append(ROOT.TH1D(hist_name, "", len(sum_waveform_x), 0,
-            #                       self.samples_to_us * (len(sum_waveform_x) - 1)))
             h = ROOT.TH1F(histname, histtitle, int(rightbound-leftbound),
                           self.samples_to_us * float(leftbound), self.samples_to_us *  float(rightbound))
 
@@ -404,7 +436,6 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             c.Update()
             umin = c.GetUymin()
             umax = c.GetUymax()
-            #hlpeak = ROOT.TLine(self.samples_to_us * peak.index_of_maximum, 0, self.samples_to_us * peak.index_of_maximum, peak.height)
             hlpeak = ROOT.TLine(self.samples_to_us * peak.index_of_maximum, umin, self.samples_to_us * peak.index_of_maximum, umax)
             hlpeak.SetLineStyle(3)
             hlpeak.SetLineWidth(2)
@@ -466,23 +497,32 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         return hists
 
 
-    def Draw2DDisplay(self, event, peaktype, tb, index, pad):
+    def Draw2DDisplay(self, event, peaktype, tb, index, directory_name):
 
-        pad.cd()
+        if directory_name:
+            if not directory_name in self.outfile.GetListOfKeys():
+                directory = self.outfile.mkdir(directory_name)
+            else:
+                directory = self.outfile.Get(directory_name)
+            directory.cd()
+
+        c = ROOT.TCanvas("pmt_pattern_{}_{}".format(peaktype,index),'canvas with {}[{}] pmt hitpattern'.format(peaktype,index),800,800)
+        c.SetLeftMargin(0.09) #0.05
+        c.SetRightMargin(0.15)
+        c.SetTopMargin(0.12)
+        c.SetBottomMargin(0.12)
         if peaktype == 's1':
             try:
-                thepeak = next(islice(event.s1s(), index, index + 1))
+                thepeak = next(islice(event.S1s(), index, index + 1))
             except:
                 return -1
         if peaktype == 's2':
             try:
-                thepeak = next(islice(event.s2s(), index, index + 1))
+                thepeak = next(islice(event.S2s(), index, index + 1))
             except:
                 return -1
 
         hitpattern = []
-        maxhit = 0.
-        minhit = 1e10
         for pmt in self.pmts[tb]:
             ch = {
                 "x": self.pmt_locations[pmt][0],
@@ -490,52 +530,57 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
                 "hit": thepeak.area_per_channel[pmt],
                 "id": pmt
             }
-            if thepeak.area_per_channel[pmt] > maxhit:
-                maxhit = thepeak.area_per_channel[pmt]
-            if thepeak.area_per_channel[pmt] < minhit:
-                minhit = thepeak.area_per_channel[pmt]
             hitpattern.append(ch)
-        if maxhit > self.hitpattern_limit_high:
-            maxhit = self.hitpattern_limit_high
-        if minhit < self.hitpattern_limit_low:
-            minhit = self.hitpattern_limit_low
 
-        # Shameless port from xedview
+        self.plines.append(ROOT.TH2Poly("hitpattern_{}_{}_{}".format(peaktype,index,tb),"hitpattern_{}_{}_{}".format(peaktype,index,tb),-52.,+52.,-52.,52.))
+        self.plines[-1].SetTitle("Event {} from {}; x [cm]; y [cm]".format(event.event_number, event.dataset_name))
+        w = 3.81 #i.e., radius of our 3inch PMTs in cm
+        # add PMT polygons to TH2Poly and set content of bin
         for pmt in hitpattern:
-            col = self.GetColor(pmt, maxhit, minhit)
-            w = 0.035
-            yoff = 0
 
             x1 = pmt['x']
             y1 = pmt['y']
-            x1 = ((x1 + 50) / 115) + .02
-            y1 = ((y1 + 50) / 115) + .02
 
-            self.plines.append(ROOT.TEllipse(x1, y1 + yoff, w, w))
-            self.plines[len(self.plines) - 1].SetFillColor(col)
-            self.plines[len(self.plines) - 1].SetLineColor(1)
-            self.plines[len(self.plines) - 1].SetLineWidth(1)
-            self.plines[len(self.plines) - 1].Draw("f")
-            self.plines[len(self.plines) - 1].Draw("")
+            xpol, ypol = self.drawPMT(x1,y1,r=w)
+            self.plines[-1].AddBin(len(xpol),xpol,ypol)
+            self.plines[-1].Fill(x1,y1,pmt['hit'])
 
+        self.plines[-1].GetYaxis().SetTitleOffset(1.20)
+        self.plines[-1].Draw("colz")
+        
+        # print PMT id on top of TH2Poly
+        for pmt in hitpattern:
             self.latexes.append(ROOT.TLatex())
-            self.latexes[len(self.latexes) - 1].SetTextAlign(12)
-            self.latexes[len(self.latexes) - 1].SetTextSize(0.035)
-            if col == 1:
-                self.latexes[len(self.latexes) - 1].SetTextColor(0)
-            self.latexes[len(self.latexes) - 1].DrawLatex(x1 - (2 * w / 3), y1 + yoff, str(pmt['id']))
-            pad.Update()
+            self.latexes[-1].SetTextFont(132)
+            self.latexes[-1].SetTextAlign(22)
+            self.latexes[-1].SetTextSize(0.030)
+
+            x1 = pmt['x']
+            y1 = pmt['y']
+            #self.latexes[-1].DrawLatex(x1 - (2 * w / 3), y1, str(pmt['id']))
+            self.latexes[-1].DrawLatex(x1, y1, str(pmt['id']))
+
+        self.latexes[-1].SetTextAlign(13)
+        self.latexes[-1].SetTextFont(132)
+        self.latexes[-1].SetTextSize(0.038)
+        self.latexes[-1].DrawLatex(-50, 50, "{}[{}] {}".format(peaktype.upper(),index,tb) )
+
+        c.Update()
+        # return canvas to save to static png file
+        if not directory_name:
+            return c
+
+        c.Write()
         # Save from garbage collection
         return 0
 
-    def GetColor(self, pmt, maxhit, minhit):
-        if pmt['hit'] > maxhit:
-            return 2
-        if pmt['hit'] < minhit:
-            return 0
-        color = (int)((pmt['hit'] - minhit) / (maxhit - minhit) * 50) + 51
-        if color > 100:
-            color = 2
-        if color == 0:
-            color = 51
-        return color
+    def polygon(self, x0, y0, r, N):
+        n = np.arange(N)
+        x = r * np.cos(2*np.pi*n/N) + x0
+        y = r * np.sin(2*np.pi*n/N) + y0
+        return (x,y)
+
+    def drawPMT(self, x, y, r=1):
+        return self.polygon(x0=x,y0=y,r=r,N=20)
+
+
