@@ -165,7 +165,7 @@ class ClusteringPlugin(TransformPlugin):
         stages.
         Any kwargs will be passed to the peak constructor.
         """
-        hits.sort(order='left')     # Hits must always be in sorted time order
+        hits.sort(order='left_central')     # Hits must always be in sorted time order
 
         peak = Peak(detector=detector, hits=hits, **kwargs)
 

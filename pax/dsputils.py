@@ -17,14 +17,14 @@ def gaps_between_hits(hits):
     if n_hits == 0:
         return gaps
     # Keep a running right boundary
-    boundary = hits[0].right
-    last_left = hits[0].left
+    boundary = hits[0].right_central
+    last_left = hits[0].left_central
     for i, hit in enumerate(hits[1:]):
-        gaps[i + 1] = max(0, hit.left - boundary - 1)
-        boundary = max(hit.right, boundary)
-        if hit.left < last_left:
-            raise ValueError("Hits should be sorted by left boundary!")
-        last_left = hit.left
+        gaps[i + 1] = max(0, hit.left_central - boundary - 1)
+        boundary = max(hit.right_central, boundary)
+        if hit.left_central < last_left:
+            raise ValueError("Hits should be sorted by left_central")
+        last_left = hit.left_central
     return gaps
 
 
@@ -96,30 +96,56 @@ def get_detector_by_channel(config):
     return detector_by_channel
 
 
-@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.int64, numba.int64, numba.int64[:, :]),
+@numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64, numba.int64),
            nopython=True)
-def find_intervals_above_threshold(w, threshold, left_extension, right_extension, result_buffer):
+def extend_intervals(w, intervals, left_extension, right_extension):
+    """Extends intervals on w by left_extension to left and right_extension to right, never exceeding w's bounds
+    :param w: Waveform intervals live on. Only used for edges (kind of pointless to pass...)
+    :param intervals: numpy N*2 array of ints of interval bounds
+    :param left_extension: Extend intervals left by this number of samples,
+                           or as far as possible until the end of another interval / the end of w.
+    :param right_extension: Same, extend to right.
+    :return: None, modifes intervals in place
+    When two intervals' extension claims compete, right extension has priority.
+    Boundary indices are inclusive, i.e. without any extension settings, the right boundary is the last index
+    which was still above low_threshold
+    """
+    n_intervals = len(intervals)
+    last_index_in_w = len(w) - 1
+
+    # Right extension
+    if right_extension != 0:
+        for i in range(n_intervals):
+            if i == n_intervals - 1:
+                max_possible_r = last_index_in_w
+            else:
+                max_possible_r = intervals[i + 1][0] - 1
+            intervals[i][1] = min(max_possible_r, intervals[i][1] + right_extension)
+
+    # Left extension
+    if left_extension != 0:
+        for i in range(n_intervals):
+            if i == 0:
+                min_possible_l = 0
+            else:
+                min_possible_l = intervals[i - 1][1] + 1
+            intervals[i][0] = max(min_possible_l, intervals[i][0] - left_extension)
+
+
+@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.int64[:, :]),
+           nopython=True)
+def find_intervals_above_threshold(w, threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > threshold.
     :param w: Waveform to do hitfinding in
     :param threshold: Threshold for including an interval
-    :param left_extension: When an interval above threshold is found, extend it left by this number of samples,
-                           or as far as possible until the end of another interval.
-    :param right_extension: Same, extend to right.
     :param result_buffer: numpy N*2 array of ints, will be filled by function.
                           if more than N intervals are found, none past the first N will be processed.
     :returns : number of intervals processed
-
-    When two intervals' extension claims compete, right extension has priority.
-
-    Boundary indices are inclusive, i.e. without any extension settings, the right boundary is the last index
-    which was still above low_threshold
+    Boundary indices are inclusive, i.e. the right boundary is the last index which was > threshold
     """
     result_buffer_size = len(result_buffer)
     last_index_in_w = len(w) - 1
 
-    ##
-    # Step 1: Find intervals above threshold
-    ##
     in_interval = False
     current_interval = 0
     current_interval_start = -1
@@ -148,27 +174,4 @@ def find_intervals_above_threshold(w, threshold, left_extension, right_extension
                 break
 
     n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
-
-    ##
-    # Step 2: Right extension
-    ##
-    if right_extension != 0:
-        for i in range(n_intervals):
-            if i == n_intervals - 1:
-                max_possible_r = last_index_in_w
-            else:
-                max_possible_r = result_buffer[i + 1][0] - 1
-            result_buffer[i][1] = min(max_possible_r, result_buffer[i][1] + right_extension)
-
-    ##
-    # Step 3: Left extension
-    ##
-    if left_extension != 0:
-        for i in range(n_intervals):
-            if i == 0:
-                min_possible_l = 0
-            else:
-                min_possible_l = result_buffer[i - 1][1] + 1
-            result_buffer[i][0] = max(min_possible_l, result_buffer[i][0] - left_extension)
-
     return n_intervals

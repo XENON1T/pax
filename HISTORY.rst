@@ -2,6 +2,31 @@
 
 History
 -------
+---------
+
+------------------
+6.4.2 (2017-02-19)
+------------------
+* Update author list
+* Fix drift velocity fetched in the runs database
+
+------------------
+6.4.1 (2017-02-18)
+------------------
+* Fix classification minus sign error
+* Fix waveform simulator internal bug
+
+
+------------------
+6.4.0 (2017-02-17)
+------------------
+* New classification based on new properties. Order S1s by coincidence. (#510)
+* Cluster based on central regions of hits (#504)
+* Simulator: aft truth info, update for S2, afterpulse gains, fix dead PMT double counting (#516)
+* Simulator: Update SE gain, double PE emission (#507)
+* Update (r,z) correction map (#512)
+* Update S2(x,y) correction map, top and bottom correction map (#515)
+* Fix saturated PMT accounting config typo (#513)
 
 ------------------
 6.3.3 (2017-02-14)

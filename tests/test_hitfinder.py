@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from pax import core, datastructure
+from pax import core, datastructure, dsputils
 from pax.plugins.signal_processing import HitFinder, PulseProperties
 
 
@@ -66,9 +66,9 @@ class TestHitFinder(unittest.TestCase):
             ([0, 0, 2, 3, 4, -1, 60, 700, 800], [[2, 4], [6, 8]]),
         ):
             result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
-            hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
-                                                                  threshold=0, left_extension=0, right_extension=0,
-                                                                  result_buffer=result_buffer)
+            hits_found = dsputils.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
+                                                                 threshold=0,
+                                                                 result_buffer=result_buffer)
             found = result_buffer[:hits_found]
             self.assertEqual(found.tolist(), a)
 
@@ -94,9 +94,11 @@ class TestHitFinder(unittest.TestCase):
             ([1, 0, 0, 0, 0, 1, 0, 0, 0], [[0, 2], [4, 7]]),
         ):
             result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
-            hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
-                                                                  threshold=0, left_extension=1, right_extension=2,
-                                                                  result_buffer=result_buffer)
+            w = np.array(test_waveform, dtype=np.float64)
+            hits_found = dsputils.find_intervals_above_threshold(w,
+                                                                 threshold=0,
+                                                                 result_buffer=result_buffer)
+            dsputils.extend_intervals(w, result_buffer[:hits_found], left_extension=1, right_extension=2)
             found = result_buffer[:hits_found]
             self.assertEqual(found.tolist(), a)
 
@@ -140,7 +142,7 @@ class TestHitFinder(unittest.TestCase):
         ):
             raw_hits = np.array(raw_hits, dtype=np.int64)
             # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i, saturation_threshold
-            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0, 0)
+            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0, 0, raw_hits)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]
                 self.assertAlmostEqual(hits['area'][i], np.sum(hitw))
