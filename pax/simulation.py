@@ -84,10 +84,6 @@ class Simulator(object):
             # (which is one row per channel)
             self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
 
-        # Load pdf for single photoelectron (taken from channel 4)
-        if c['spe_pdf_csv']:
-            self.spe_bins, self.spe_pdf = load_spe_pdf(utils.data_file_name(c['spe_pdf_csv']))
-
         # Load light yields
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
         self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
@@ -107,6 +103,30 @@ class Simulator(object):
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s2_patterns = None
+
+        ##
+        # Load pdf for single photoelectron, if available
+        ##
+        if c.get('photon_area_distribution'):
+            # Extract the spe pdf from a csv file in form of bin, prob.
+            charge = []
+            p = []
+            with open(utils.data_file_name(c['photon_area_distribution']), "r") as f:
+                for line in f.readlines():
+                    q = float(line.split(",")[0])
+                    prob = float(line.split(",")[1])
+                    # don't allow negative charge, which can occur from noise subtraction
+                    prob = prob if q >= 0 else 0
+                    charge.append(q)
+                    p.append(prob)
+
+            # Create a converter from uniform random numbers to SPE gains
+            spe_bins, spe_pdf = np.array(charge), np.array(p)
+            cdfs = np.cumsum(spe_pdf)/np.sum(spe_pdf)
+            self.uniform_to_pe = interp1d(cdfs, spe_bins)
+
+        else:
+            self.uniform_to_pe = None
 
         # Init s1 pattern maps
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
@@ -279,8 +299,18 @@ class Simulator(object):
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
 
-            # Use real spe data to generate gains for spe
-            gains = generate_gains(self.spe_bins, self.spe_pdf, N=len(photon_detection_times))
+            if self.uniform_to_pe is not None:
+                # Use real spe data to generate gains for spe
+                gains = self.uniform_to_pe(np.random.random(len(photon_detection_times)))
+                gains *= self.config['gains'][channel]
+
+            else:
+                # Sample from a truncated Gaussian
+                gains = truncated_gauss_rvs(my_mean=self.config['gains'][channel],
+                                            my_std=self.config['gain_sigmas'][channel],
+                                            left_boundary=0,
+                                            right_boundary=float('inf'),
+                                            n_rvs=len(photon_detection_times))
 
             # Add PMT afterpulses
             ap_times = []
@@ -785,7 +815,7 @@ def exp_pulse(t, q, tr, tf):
 
 
 ##
-# PMT gain sampling
+# PMT gain sampling (if no special distribution is provided)
 ##
 
 @Memoize
@@ -801,30 +831,3 @@ def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
     See http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html
     """
     return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
-
-
-def load_spe_pdf(file):
-    """Extract the spe pdf from a csv file in form of bin, prob. Returns two arrays."""
-    charge = []
-    p = []
-    with open(file, "r") as f:
-        for line in f.readlines():
-            q = float(line.split(",")[0])
-            prob = float(line.split(",")[1])
-            # don't allow negative charge, which can occur from noise subtraction
-            prob = prob if q >= 0 else 0
-            charge.append(q)
-            p.append(prob)
-
-    return np.array(charge), np.array(p)
-
-
-def generate_gains(bins, pdf, N):
-    """ Take the charge bins, pdf of spe distribution and generate sample of N gains"""
-    cdfs = np.cumsum(pdf)/np.sum(pdf)
-    Interpolator = interp1d(cdfs, bins)
-    random_cdfs = np.random.uniform(0, 1, N)
-    gains = []
-    for cdf in random_cdfs:
-        gains.append(Interpolator(cdf))
-    return gains
