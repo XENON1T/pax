@@ -802,6 +802,7 @@ def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
     """
     return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
 
+
 def load_spe_pdf(file):
     """Extract the spe pdf from a csv file in form of bin, prob. Returns two arrays."""
     charge = []
@@ -811,11 +812,12 @@ def load_spe_pdf(file):
             q = float(line.split(",")[0])
             prob = float(line.split(",")[1])
             # don't allow negative charge, which can occur from noise subtraction
-            prob = prob if c >= 0 else 0
+            prob = prob if q >= 0 else 0
             charge.append(q)
             p.append(prob)
 
     return np.array(charge), np.array(p)
+
 
 def generate_gains(bins, pdf, N):
     """ Take the charge bins, pdf of spe distribution and generate sample of N gains"""
@@ -824,6 +826,5 @@ def generate_gains(bins, pdf, N):
     random_cdfs = np.random.uniform(0, 1, N)
     gains = []
     for cdf in random_cdfs:
-        gains.append( Interpolator(cdf))
+        gains.append(Interpolator(cdf))
     return gains
-
