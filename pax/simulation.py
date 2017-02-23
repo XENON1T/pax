@@ -86,7 +86,7 @@ class Simulator(object):
 
         # Load pdf for single photoelectron (taken from channel 4)
         if c['spe_pdf_csv']:
-            self.spe_bins, self.spe_pdf = load_spe_pdf(c['spe_pdf_csv'])
+            self.spe_bins, self.spe_pdf = load_spe_pdf(utils.data_file_name(c['spe_pdf_csv']))
 
         # Load light yields
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
