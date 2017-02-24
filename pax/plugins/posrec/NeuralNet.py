@@ -104,7 +104,7 @@ class NeuralNet():
             return output_values + self.biases[br[0]:br[1]]
 
     def run_layer(self, input_values, weights):
-        weighted_inputs = np.tile(input_values, len(weights)/len(input_values)) * weights
+        weighted_inputs = np.tile(input_values, int(len(weights)/len(input_values))) * weights
         # Sum weighted inputs for each hidden layer neuron separately
         return np.sum(weighted_inputs.reshape(-1, len(input_values)), axis=1)
 
