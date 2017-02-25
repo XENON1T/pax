@@ -121,7 +121,12 @@ class Simulator(object):
                     p.append(prob)
 
             # Create a converter from uniform random numbers to SPE gains
+            # note not really pdf, does not necessarily sum to 1 due to forcing probability of negative charge to be 0
             spe_bins, spe_pdf = np.array(charge), np.array(p)
+            # change spe_bins to have mean equal to 1
+            mean_spe = (spe_bins * spe_pdf).sum() / spe_pdf.sum()
+            spe_bins = spe_bins/mean_spe
+            #convert pdf -> cdf
             cdfs = np.cumsum(spe_pdf)/np.sum(spe_pdf)
             self.uniform_to_pe = interp1d(cdfs, spe_bins)
 
