@@ -8,6 +8,8 @@ import numpy as np
 import gzip
 import shutil
 
+import logging
+
 from itertools import islice
 from six import iteritems
 from pax import plugin, units, dsputils
@@ -16,6 +18,10 @@ from pax.plugins.plotting.Plotting import epoch_to_human_time
 
 
 class ROOTSumWaveformDump(plugin.OutputPlugin):
+    
+    def shutdown(self):
+        self.log.debug("Calling shutdown in ROOTSumWaveformDump...")
+    
     def startup(self):
         self.output_dir = self.config['output_name']
         self.samples_to_us = self.config['sample_duration'] / units.us
@@ -359,8 +365,20 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
                         break
                     pmt_pattern.append(self.Draw2DDisplay(event=event, peaktype=peak.type, tb='bottom', index=i, directory_name=pattern_dir_name))
 
-            self.outfile.Close()
             print ("Info: {} has been generated".format(outfile_name))
+            self.outfile.Close()
+            self.pre_shutdown()
+
+    def pre_shutdown(self):
+        self.log.debug("clearing list of canvases...")
+        ROOT.gROOT.GetListOfCanvases().Delete()
+        self.log.debug("done.")
+        self.log.debug("deleting non_callable objects...")
+        at_self =  set([a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))])
+        for a in at_self:
+            a = getattr(self, a)
+            a = None
+        self.log.debug("done.")
 
     def WriteHits(self, peak, event, index):
         ''' Write out 1D histos for this peak '''
@@ -372,13 +390,14 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
         hitlist = {}
 
         for hit in peak.hits:
+            ##TODO: access parameters by name not by index
             hitdict = {
                 "found_in_pulse": hit[3],
                 "area": hit[0],
                 "channel": hit[2],
                 "center": hit[1]/10,
-                "left": hit[7]-1,
-                "right": hit[10],
+                "left": hit[7], #hit[7]-1,
+                "right": hit[11], #hit[10],
                 "max_index": hit[5],
                 "height": hit[4]/dsputils.adc_to_pe(self.config, hit[2],
                                                     use_reference_gain=True)
@@ -406,7 +425,7 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
 
             # Make and book the histo. Put into hists so doesn't get overwritten
             histname = "%s_%i_channel_%i" % (peak.type, index, channel)
-            histtitle = "Channel %i in %s[%i]" % (channel, peak.type, index)
+            histtitle = "Channel %i in %s[%i] (Event %d from %s)" % (channel, peak.type, index, event.event_number, event.dataset_name )
             c = ROOT.TCanvas(histname, "",1050,450)
             h = ROOT.TH1F(histname, histtitle, int(rightbound-leftbound),
                           self.samples_to_us * float(leftbound), self.samples_to_us *  float(rightbound))
@@ -414,8 +433,8 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             # Now put the bin values in the histogram
             for pulseid in pulselist:
                 pulse = event.pulses[pulseid]
-                w = (self.config['digitizer_reference_baseline'] + pulse.baseline -
-                     pulse.raw_data.astype(np.float64))
+                #w = (-pulse.raw_data.astype(np.float64) + self.config['digitizer_reference_baseline'] - pulse.baseline)
+                w = (-pulse.raw_data.astype(np.float64) + self.config['digitizer_reference_baseline'])
                 # ROOT.TH1D: bin[0]=underflow, bin[-1]=overflow
                 for i, sample in enumerate(w):
                     h.SetBinContent(int(i+1+pulse.left-leftbound), sample)
@@ -454,22 +473,23 @@ class ROOTSumWaveformDump(plugin.OutputPlugin):
             plist = {"x": [], "y": []}
             for i, hitdict in enumerate(hitlist[channel]):
 
+                plist['x'].append(self.samples_to_us * hitdict['center'])
+                plist['y'].append(hitdict['height'] + pulse.baseline)
+
                 baseline = ROOT.TLine(self.samples_to_us * hitdict['left'], pulse.baseline,
                                       self.samples_to_us * hitdict['right'], pulse.baseline)
-                leftline = ROOT.TLine(self.samples_to_us * hitdict['left'], 0, self.samples_to_us * hitdict['left'], hitdict['height'])
-                rightline = ROOT.TLine(self.samples_to_us * hitdict['right'], 0, self.samples_to_us * hitdict['right'], hitdict['height'])
+                rightline = ROOT.TLine(self.samples_to_us * hitdict['right'], pulse.baseline, self.samples_to_us * hitdict['right'], plist['y'][-1])
+                leftline = ROOT.TLine(self.samples_to_us * hitdict['left'], pulse.baseline, self.samples_to_us * hitdict['left'], plist['y'][-1])
 
-                plist['x'].append(self.samples_to_us * hitdict['center'])
-                plist['y'].append(hitdict['height'])
                 leftline.SetLineStyle(2)
                 rightline.SetLineStyle(2)
+                baseline.SetLineStyle(2)
                 leftline.SetLineColor(2)
                 rightline.SetLineColor(2)
-                baseline.SetLineStyle(2)
                 baseline.SetLineColor(4)
-                baseline.Draw("same")
                 leftline.Draw("same")
                 rightline.Draw("same")
+                baseline.Draw("same")
 
                 label = " hit[{}] ({:.2f} pe)".format(i, hitdict['area'])
                 text = ROOT.TText(self.samples_to_us * hitdict['center'], hitdict['height'], label)
