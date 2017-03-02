@@ -46,7 +46,7 @@ class SoftwareZLE(plugin.TransformPlugin):
             # Note a threshold of X digitizer bins actually means that the data acquisition
             # triggers when the waveform becomes greater than X, i.e. X+1 or more (see #273)
             # hence the + 1
-            if str(pulse.channel) in self.config.get('special_thresholds', {}):
+            if str(pulse.channel) in self.config.get('special_thresholds', {}) or:
                 threshold = self.config['special_thresholds'][str(pulse.channel)] + 1
             else:
                 threshold = self.config['zle_threshold'] + 1
