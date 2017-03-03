@@ -6,7 +6,7 @@ from pax import plugin, exceptions
 from pax.datastructure import Interaction
 
 from scipy.interpolate import RectBivariateSpline
-form scipy.stats import binom_test
+from scipy.stats import binom_test
 
 class S1AreaFractionTopPvalue(plugin.TransformPlugin):
     """Computes p-value for S1 area fraction top
