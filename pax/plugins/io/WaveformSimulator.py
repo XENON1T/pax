@@ -291,7 +291,10 @@ class WaveformSimulator(plugin.InputPlugin):
         # generate the after pulse
         # currently make it simple, assuming s2 after pulses
         # will not generate further s2 after pulses.
-        self.s2_after_pulses(g4_id=q['g4_id'])
+        # If there were no instructions, there is no g4_id, but there will also be no photons,
+        # so running this is pointless.
+        if len(instructions):
+            self.s2_after_pulses(g4_id=q['g4_id'])
 
         event = self.simulator.make_pax_event()
         if hasattr(self, 'dataset_name'):
