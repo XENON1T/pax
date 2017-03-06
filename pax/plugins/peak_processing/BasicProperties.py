@@ -126,8 +126,11 @@ class SumWaveformProperties(plugin.TransformPlugin):
             l = (peak.area_midpoint - area_times[5])/dt
             r = (peak.area_midpoint + area_times[-6])/dt
             hs = peak.hits[(x >= l) & (x <= r)]
-            if len(hs):      # Should be ok, but few edge cases due to hit spliting in LocalMinimumClustering
-                peak.area_per_channel_inner = dsputils.count_hits_per_channel(hs, self.config, weights=hs['area'])
+            # Explicit type casting required for if no hits are in hs (edge case, e.g. due to LocalMInimumClustering's
+            # hit splitting).
+            peak.area_per_channel_inner = dsputils.count_hits_per_channel(hs,
+                                                                          self.config,
+                                                                          weights=hs['area']).astype(np.float64)
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
