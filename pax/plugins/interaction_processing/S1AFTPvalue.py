@@ -1,7 +1,5 @@
 import numpy as np
 
-import json
-
 from pax import plugin, utils
 from pax.InterpolatingMap import InterpolatingMap
 
