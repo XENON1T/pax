@@ -19,11 +19,11 @@ class BasicProperties(plugin.TransformPlugin):
             if len(hits) == 0:
                 raise ValueError("Can't compute properties of an empty peak!")
 
-            peak.hits_per_channel = dsputils.count_hits_per_channel(peak, self.config).astype(np.int16)
+            peak.hits_per_channel = dsputils.count_hits_per_channel(peak.hits, self.config).astype(np.int16)
             n_saturated_tot = hits['n_saturated'].sum()
             if n_saturated_tot:
                 peak.n_saturated_per_channel = dsputils.count_hits_per_channel(
-                    peak, self.config, weights=hits['n_saturated']).astype(np.int16)
+                    peak.hits, self.config, weights=hits['n_saturated']).astype(np.int16)
             else:
                 peak.n_saturated_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
 
@@ -107,7 +107,7 @@ class SumWaveformProperties(plugin.TransformPlugin):
             area_times = np.ones(21) * float('nan')
             integrate_until_fraction(w, fractions_desired=np.linspace(0, 1, 21), results=area_times)
             area_times *= dt
-            peak.area_midpoint = area_midpoint = area_times[10]
+            area_midpoint = area_times[10]
 
             # Store widths and rise times
             peak.range_area_decile = area_times[10:] - area_times[10::-1]
@@ -118,6 +118,16 @@ class SumWaveformProperties(plugin.TransformPlugin):
             l = peak.index_of_maximum - self.tight_coincidence_samples
             r = peak.index_of_maximum + self.tight_coincidence_samples
             peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
+
+            # Add the left index so area midpoint is now absolute
+            peak.area_midpoint = area_midpoint + peak.left * dt
+
+            # Compute the area per channel on the inner 50% of area
+            l = (peak.area_midpoint - area_times[5])/dt
+            r = (peak.area_midpoint + area_times[-6])/dt
+            hs = peak.hits[(x >= l) & (x <= r)]
+            if len(hs):      # Should be ok, but few edge cases due to hit spliting in LocalMinimumClustering
+                peak.area_per_channel_inner = dsputils.count_hits_per_channel(hs, self.config, weights=hs['area'])
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)

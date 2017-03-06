@@ -28,8 +28,8 @@ def gaps_between_hits(hits):
     return gaps
 
 
-def count_hits_per_channel(peak, config, weights=None):
-    return np.bincount(peak.hits['channel'].astype(np.int16), minlength=config['n_channels'], weights=weights)
+def count_hits_per_channel(hits, config, weights=None):
+    return np.bincount(hits['channel'].astype(np.int16), minlength=config['n_channels'], weights=weights)
 
 
 def saturation_correction(peak, channels_in_pattern, expected_pattern, confused_channels, log):

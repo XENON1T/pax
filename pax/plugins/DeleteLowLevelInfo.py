@@ -21,6 +21,7 @@ class DeleteLowLevelInfo(plugin.TransformPlugin):
                 p.sum_waveform *= 0
                 p.sum_waveform_top *= 0
                 p.area_per_channel *= 0
+                p.area_per_channel_inner *= 0
                 p.hits_per_channel *= 0
                 p.n_saturated_per_channel *= 0
 

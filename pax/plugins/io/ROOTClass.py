@@ -190,6 +190,7 @@ class EncodeROOTClass(plugin.TransformPlugin):
                             n_waveform_samples = int(aargh['peak_waveform_length'] / self.config['sample_duration']) + 1
                             for _fn, length in ((
                                 ('area_per_channel', n_channels),
+                                ('area_per_channel_inner', n_channels),
                                 ('hits_per_channel', n_channels),
                                 ('n_saturated_per_channel', n_channels),
                                 ('sum_waveform', n_waveform_samples),

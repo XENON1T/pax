@@ -43,7 +43,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         ndf = np.count_nonzero(is_pmt_in)
 
         # Pe observed per pmt. Don't QE correct: pattern map has been adjusted for QE already
-        areas_observed = peak.area_per_channel[self.pmts]
+        areas_observed = peak.area_per_channel_inner[self.pmts]
 
         ##
         # Part 1: compute goodness of fit for positions from other algorithms
@@ -79,8 +79,8 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
             # All algorithms agree the event came from outside the tpc :-)
             # i.e. this peak is almost certainly very near the edge <-> top hitp dominated by one or two outer ring pmts
             # We'll just give up, nobody cares about these peaks.
-            self.log.debug("All positions for peak with area %s, top hitpattern %s are nan!" % (peak.area,
-                                                                                                peak.area_per_channel))
+            self.log.debug("All positions for peak with area %s, top hitpattern %s are nan!" % (
+                peak.area, peak.area_per_channel_inner))
             return None
 
         self.log.debug('Using %s position (%0.1f, %01.f, gof %01.f) as minimizer seed' % (seed_pos.algorithm,

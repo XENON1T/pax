@@ -169,7 +169,7 @@ class ClusteringPlugin(TransformPlugin):
 
         peak = Peak(detector=detector, hits=hits, **kwargs)
 
-        peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=hits['area'])
+        peak.area_per_channel = dsputils.count_hits_per_channel(peak.hits, self.config, weights=hits['area'])
         peak.n_contributing_channels = np.sum(peak.does_channel_contribute)
 
         if peak.n_contributing_channels == 0:

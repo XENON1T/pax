@@ -199,6 +199,9 @@ class Peak(StrictModel):
     #: Total areas of all hits per PMT (pe).
     area_per_channel = np.array([], dtype='float64')
 
+    #: Total area of the peak, summing only hits which have their maximum in the inner 50% of area (pe).
+    area_per_channel_inner = np.array([], dtype='float64')
+
     #: Total area of all hits across all PMTs (pes).
     #: In XerawdpImitation mode, rightmost sample is not included in area integral.
     area = 0.0
