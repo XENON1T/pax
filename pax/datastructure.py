@@ -584,7 +584,7 @@ class Interaction(StrictModel):
     #: Goodness of fit of S1 pattern to interaction's (x, y, drift_time),
     #: computed using number of hits/channel instead of area/channel
     s1_pattern_fit_hits = float('nan')
-    
+
     #: p-value for s1 area fraction top
     s1_area_fraction_top_pvalue = 0
 
