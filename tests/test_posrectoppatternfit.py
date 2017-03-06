@@ -32,6 +32,7 @@ class TestPosRecTopPatternFit(unittest.TestCase):
                              'type':  'S2',
                              'detector':  'tpc',
                              'area': 123,
+                             'area_per_channel_inner': channels,
                              'area_per_channel': channels}))
         return e
 
