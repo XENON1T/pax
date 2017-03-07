@@ -126,7 +126,7 @@ class Simulator(object):
             # change spe_bins to have mean equal to 1
             mean_spe = (spe_bins * spe_pdf).sum() / spe_pdf.sum()
             spe_bins = spe_bins/mean_spe
-            #convert pdf -> cdf
+            # convert pdf -> cdf
             cdfs = np.cumsum(spe_pdf)/np.sum(spe_pdf)
             self.uniform_to_pe = interp1d(cdfs, spe_bins)
 
