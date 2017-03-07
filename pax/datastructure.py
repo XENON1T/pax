@@ -586,7 +586,7 @@ class Interaction(StrictModel):
     s1_pattern_fit_hits = float('nan')
 
     #: p-value for s1 area fraction top
-    s1_area_fraction_top_pvalue = 0
+    s1_area_fraction_top_probability = 0
 
 
 class Event(StrictModel):

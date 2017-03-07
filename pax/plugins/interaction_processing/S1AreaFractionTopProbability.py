@@ -6,7 +6,7 @@ from pax.InterpolatingMap import InterpolatingMap
 from scipy.stats import binom_test
 
 
-class S1AreaFractionTopPvalue(plugin.TransformPlugin):
+class S1AreaFractionTopProbability(plugin.TransformPlugin):
     """Computes p-value for S1 area fraction top
     """
 
@@ -31,6 +31,6 @@ class S1AreaFractionTopPvalue(plugin.TransformPlugin):
                 size_tot = np.round(s1.area)
 
             aft = self.aft_map.get_value(ia.x, ia.y, ia.z)
-            ia.s1_area_fraction_top_pvalue = binom_test(size_top, size_tot, aft)
+            ia.s1_area_fraction_top_probability = binom_test(size_top, size_tot, aft)
 
         return event
