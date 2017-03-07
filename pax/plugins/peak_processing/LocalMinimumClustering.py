@@ -103,7 +103,7 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
 
             if not len(hs):
                 # Hits have probably been removed by area > 0 condition
-                self.log.info("Localminimumclustering requested creation of peak %d-%d without hits. "
+                self.log.info("Localminimumclustering requested creation of peak %s-%s without hits. "
                               "This is a possible outcome if there are large oscillations in one channel, "
                               "but it should be very rare." % (l, r))
                 continue
