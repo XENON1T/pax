@@ -585,6 +585,9 @@ class Interaction(StrictModel):
     #: computed using number of hits/channel instead of area/channel
     s1_pattern_fit_hits = float('nan')
 
+    #: p-value for s1 area fraction top
+    s1_area_fraction_top_probability = float('nan')
+
 
 class Event(StrictModel):
     """Object holding high-level information about a triggered event,
