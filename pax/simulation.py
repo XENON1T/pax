@@ -104,6 +104,35 @@ class Simulator(object):
         else:
             self.s2_patterns = None
 
+        ##
+        # Load pdf for single photoelectron, if available
+        ##
+        if c.get('photon_area_distribution'):
+            # Extract the spe pdf from a csv file in form of bin, prob.
+            charge = []
+            p = []
+            with open(utils.data_file_name(c['photon_area_distribution']), "r") as f:
+                for line in f.readlines():
+                    q = float(line.split(",")[0])
+                    prob = float(line.split(",")[1])
+                    # don't allow negative charge, which can occur from noise subtraction
+                    prob = prob if q >= 0 else 0
+                    charge.append(q)
+                    p.append(prob)
+
+            # Create a converter from uniform random numbers to SPE gains
+            # note not really pdf, does not necessarily sum to 1 due to forcing probability of negative charge to be 0
+            spe_bins, spe_pdf = np.array(charge), np.array(p)
+            # change spe_bins to have mean equal to 1
+            mean_spe = (spe_bins * spe_pdf).sum() / spe_pdf.sum()
+            spe_bins = spe_bins/mean_spe
+            # convert pdf -> cdf
+            cdfs = np.cumsum(spe_pdf)/np.sum(spe_pdf)
+            self.uniform_to_pe = interp1d(cdfs, spe_bins)
+
+        else:
+            self.uniform_to_pe = None
+
         # Init s1 pattern maps
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
         log.debug("Initializing s1 patterns...")
@@ -275,12 +304,18 @@ class Simulator(object):
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
 
-            # Use a Gaussian truncated to positive values for the SPE gain distribution
-            gains = truncated_gauss_rvs(my_mean=self.config['gains'][channel],
-                                        my_std=self.config['gain_sigmas'][channel],
-                                        left_boundary=0,
-                                        right_boundary=float('inf'),
-                                        n_rvs=len(photon_detection_times))
+            if self.uniform_to_pe is not None:
+                # Use real spe data to generate gains for spe
+                gains = self.uniform_to_pe(np.random.random(len(photon_detection_times)))
+                gains *= self.config['gains'][channel]
+
+            else:
+                # Sample from a truncated Gaussian
+                gains = truncated_gauss_rvs(my_mean=self.config['gains'][channel],
+                                            my_std=self.config['gain_sigmas'][channel],
+                                            left_boundary=0,
+                                            right_boundary=float('inf'),
+                                            n_rvs=len(photon_detection_times))
 
             # Add PMT afterpulses
             ap_times = []
@@ -785,7 +820,7 @@ def exp_pulse(t, q, tr, tf):
 
 
 ##
-# PMT gain sampling
+# PMT gain sampling (if no special distribution is provided)
 ##
 
 @Memoize
