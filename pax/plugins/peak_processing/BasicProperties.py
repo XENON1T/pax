@@ -107,7 +107,10 @@ class SumWaveformProperties(plugin.TransformPlugin):
             area_times = np.ones(21) * float('nan')
             integrate_until_fraction(w, fractions_desired=np.linspace(0, 1, 21), results=area_times)
             area_times *= dt
-            peak.area_midpoint = area_midpoint = area_times[10]
+            area_midpoint = area_times[10]
+
+            # Before storing area midpoint, convert to time in event
+            peak.area_midpoint = area_midpoint + peak.left * dt
 
             # Store widths and rise times
             peak.range_area_decile = area_times[10:] - area_times[10::-1]
