@@ -2,8 +2,23 @@
 
 History
 -------
----------
 
+------------------
+6.6.0 (2017-03-08)
+------------------
+* Updates to data files:
+    * S1(x,y,z) relative light yield map (#548)
+    * S2(x,y) relative light yield map (#535)
+    * Neural net (#531)
+* S1 area fraction top probability computed (#533)
+* Fix bug in peak.area_midpoint computation
+* Simulator: Use realistic SPE spectrum in fax (#528)
+* Simulator: Fix bug in self-trigger emulation, AmBe noise file (#537)
+
+------------------
+6.5.1 (2017-02-28)
+------------------
+* Minor bugfixes (#526, #527, #529)
 
 ------------------
 6.5.0 (2017-02-21)
