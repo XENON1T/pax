@@ -22,7 +22,7 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
 
             if s1.area < self.low_pe_threshold:
                 s1_frac = s1.area/self.low_pe_threshold
-                hits_top = s1.n_hits*s1.hit_fraction_top
+                hits_top = s1.n_hits*s1.hits_fraction_top
                 s1_top = s1.area*s1.area_fraction_top
                 size_top = np.round(hits_top*(1-s1_frac) + s1_top*s1_frac)
                 size_tot = np.round(s1.n_hits*(1-s1_frac) + s1.area*s1_frac)
