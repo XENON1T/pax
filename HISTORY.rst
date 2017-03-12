@@ -4,10 +4,15 @@ History
 -------
 
 ------------------
+6.6.1 (2017-03-11)
+------------------
+* Updated field correction and S1 LCE map (#551)
+* Fix typo in S1 Area fraction top computation (#550)
+
+------------------
 6.6.0 (2017-03-08)
 ------------------
 * Updates to data files:
-    * S1(x,y,z) relative light yield map (#548)
     * S2(x,y) relative light yield map (#535)
     * Neural net (#531)
 * S1 area fraction top probability computed (#533)
