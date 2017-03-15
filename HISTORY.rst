@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.6.2 (2017-03-15)
+------------------
+* Fix peak.hits_fraction_top calculation (#555)
+    * Bug found in S1AreaFractionTopProbability calculation (#553)
+
+------------------
 6.6.1 (2017-03-11)
 ------------------
 * Updated field correction and S1 LCE map (#551)
