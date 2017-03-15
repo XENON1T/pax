@@ -35,7 +35,7 @@ class BasicProperties(plugin.TransformPlugin):
 
             # Compute top fraction
             peak.area_fraction_top = np.sum(peak.area_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
-            peak.hits_fraction_top = np.sum(peak.hits_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
+            peak.hits_fraction_top = np.sum(peak.hits_per_channel[first_top_ch:last_top_ch + 1]) / peak.n_hits
 
             # Compute timing quantities
             peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hits['center'], hits['area'])
