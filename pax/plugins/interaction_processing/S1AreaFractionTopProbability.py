@@ -23,7 +23,8 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
 
             if s1.area > self.max_s1_area:
                 continue
-            elif s1.area < self.low_pe_threshold:
+
+            if s1.area < self.low_pe_threshold:
                 s1_frac = s1.area/self.low_pe_threshold
                 hits_top = s1.n_hits*s1.hits_fraction_top
                 s1_top = s1.area*s1.area_fraction_top
