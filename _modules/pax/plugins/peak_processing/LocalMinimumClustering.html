@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.LocalMinimumClustering &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugins.peak_processing.LocalMinimumClustering &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.4.1',
+        VERSION:     '6.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -41,6 +41,7 @@
             
   <h1>Source code for pax.plugins.peak_processing.LocalMinimumClustering</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">dsputils</span>
+<span class="kn">import</span> <span class="nn">numba</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">pax.plugins.signal_processing.HitFinder</span> <span class="kn">import</span> <span class="n">build_hits</span>
@@ -144,7 +145,7 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hs</span><span class="p">):</span>
                 <span class="c1"># Hits have probably been removed by area &gt; 0 condition</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Localminimumclustering requested creation of peak </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2"> without hits. &quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Localminimumclustering requested creation of peak </span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2"> without hits. &quot;</span>
                               <span class="s2">&quot;This is a possible outcome if there are large oscillations in one channel, &quot;</span>
                               <span class="s2">&quot;but it should be very rare.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span>
                 <span class="k">continue</span>
@@ -157,8 +158,7 @@
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hs</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">l</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">r</span><span class="p">)</span></div></div>
 
 
-<span class="c1">#  @numba.jit(numba.float64[:])</span>
-<span class="c1"># TODO: TESTS!</span>
+<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="find_split_points"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.LocalMinimumClustering.find_split_points">[docs]</a><span class="k">def</span> <span class="nf">find_split_points</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">min_height</span><span class="p">,</span> <span class="n">min_ratio</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;&quot;Finds local minima in w,</span>
 <span class="sd">    whose peaks to the left and right both satisfy:</span>
@@ -166,7 +166,7 @@
 <span class="sd">      - larger than minimum * min_ratio</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">last_max</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="n">min_since_max</span> <span class="o">=</span> <span class="mf">99999999999999.9</span>
     <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
@@ -180,14 +180,14 @@
             <span class="c1"># Significant local minimum: tell caller, reset both max and min finder</span>
             <span class="k">yield</span> <span class="n">min_since_max_i</span>
             <span class="n">last_max</span> <span class="o">=</span> <span class="n">x</span>
-            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="n">min_since_max</span> <span class="o">=</span> <span class="mf">99999999999999.9</span>
             <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">last_max</span><span class="p">:</span>
             <span class="c1"># New max, reset minimum finder state</span>
             <span class="c1"># Notice this is AFTER the split check, to accomodate very fast rising second peaks</span>
             <span class="n">last_max</span> <span class="o">=</span> <span class="n">x</span>
-            <span class="n">min_since_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="n">min_since_max</span> <span class="o">=</span> <span class="mf">99999999999999.9</span>
             <span class="n">min_since_max_i</span> <span class="o">=</span> <span class="n">i</span></div>
 </pre></div>
 

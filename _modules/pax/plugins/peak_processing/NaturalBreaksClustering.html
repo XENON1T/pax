@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.4.1',
+        VERSION:     '6.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -143,22 +143,8 @@
     <span class="k">return</span> <span class="n">sad</span>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span>
-                         <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span>
-                         <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-<div class="viewcode-block" id="compute_every_split_goodness"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.compute_every_split_goodness">[docs]</a><span class="k">def</span> <span class="nf">compute_every_split_goodness</span><span class="p">(</span><span class="n">gaps</span><span class="p">,</span> <span class="n">split_indices</span><span class="p">,</span>
-                                 <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span>
-                                 <span class="n">results</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Computes the &quot;goodness of split&quot; for several split points: see compute_split_goodness&quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">gap_i</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
-        <span class="c1"># Index of hit to split on = index first hit that will go to right cluster</span>
-        <span class="n">split_i</span> <span class="o">=</span> <span class="n">split_indices</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span>
-        <span class="n">results</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_split_goodness</span><span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span></div>
-
-
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="compute_split_goodness"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.compute_split_goodness">[docs]</a><span class="k">def</span> <span class="nf">compute_split_goodness</span><span class="p">(</span><span class="n">split_index</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return &quot;goodness of split&quot; for splitting hits &gt;= split_index into right cluster, &lt; into left.</span>
 <span class="sd">       left, right: left, right indices of hits</span>
@@ -174,6 +160,20 @@
     <span class="n">numerator</span> <span class="o">+=</span> <span class="n">_sad_fallback</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="n">split_index</span><span class="p">:],</span> <span class="n">areas</span><span class="o">=</span><span class="n">area</span><span class="p">[</span><span class="n">split_index</span><span class="p">:],</span> <span class="n">fallback</span><span class="o">=</span><span class="n">deviation</span><span class="p">[</span><span class="n">split_index</span><span class="p">:])</span>
     <span class="n">denominator</span> <span class="o">=</span> <span class="n">_sad_fallback</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">areas</span><span class="o">=</span><span class="n">area</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="n">deviation</span><span class="p">)</span>
     <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span></div>
+
+
+<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span>
+                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span>
+                      <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="compute_every_split_goodness"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.compute_every_split_goodness">[docs]</a><span class="k">def</span> <span class="nf">compute_every_split_goodness</span><span class="p">(</span><span class="n">gaps</span><span class="p">,</span> <span class="n">split_indices</span><span class="p">,</span>
+                                 <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">,</span>
+                                 <span class="n">results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes the &quot;goodness of split&quot; for several split points: see compute_split_goodness&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">gap_i</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
+        <span class="c1"># Index of hit to split on = index first hit that will go to right cluster</span>
+        <span class="n">split_i</span> <span class="o">=</span> <span class="n">split_indices</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span>
+        <span class="n">results</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_split_goodness</span><span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span></div>
 </pre></div>
 
           </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.4.1',
+        VERSION:     '6.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="index.html" />
     <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
@@ -105,7 +105,7 @@ conda install -q conda=4.1.1
 some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries
 for your platform using the <cite>conda</cite> tool as follows. Make sure to replace &lt;environment_name&gt; with the desired name of your environment (usually it is &#8216;pax&#8217; for central installations) in the following command:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>conda install -q conda=4.1.1
-conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas
+conda create -n &lt;environment_name&gt; python=3.4 root=6 numpy scipy=0.16 pyqt=4.11 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas
 </pre></div>
 </div>
 <p>If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.</p>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 6.4.1 documentation</title>
+    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '6.4.1',
+        VERSION:     '6.6.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.4.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
@@ -333,7 +333,10 @@
         <span class="c1"># generate the after pulse</span>
         <span class="c1"># currently make it simple, assuming s2 after pulses</span>
         <span class="c1"># will not generate further s2 after pulses.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">s2_after_pulses</span><span class="p">(</span><span class="n">g4_id</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">])</span>
+        <span class="c1"># If there were no instructions, there is no g4_id, but there will also be no photons,</span>
+        <span class="c1"># so running this is pointless.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instructions</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s2_after_pulses</span><span class="p">(</span><span class="n">g4_id</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;g4_id&#39;</span><span class="p">])</span>
 
         <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">make_pax_event</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;dataset_name&#39;</span><span class="p">):</span>
