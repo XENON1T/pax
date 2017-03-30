@@ -44,7 +44,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
     name='pax',
-    version='6.6.2',
+    version='6.6.3',
     description='PAX is the raw data processor for LXe TPCs.',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell and Jelle Aalbers for the XENON1T collaboration',
