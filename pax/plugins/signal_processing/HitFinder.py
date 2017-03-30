@@ -157,8 +157,10 @@ class FindHits(plugin.TransformPlugin):
         if len(hits_per_pulse):
             event.all_hits = np.concatenate(hits_per_pulse)
 
-            # Remove hits with 0 or negative area (very rare, but possible due to rigid integration bound)
-            event.all_hits = event.all_hits[event.all_hits['area'] > 0]
+            if not self.always_find_single_hit:
+                # Remove hits with 0 or negative area (very rare, but possible due to rigid integration bound)
+                # In always-find-single-hit mode (for PMT calibrations) this is undesirable
+                event.all_hits = event.all_hits[event.all_hits['area'] > 0]
 
             self.log.debug("Found %d hits in %d pulses" % (len(event.all_hits), len(event.pulses)))
         else:
