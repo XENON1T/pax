@@ -14,11 +14,15 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
         aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_06Mar2017.json')
         self.aft_map = InterpolatingMap(aftmap_filename)
         self.low_pe_threshold = 10  # below this in PE, transition to hits
+        self.max_s1_area = 1e4  # above this, don't bother
 
     def transform_event(self, event):
 
         for ia in event.interactions:
             s1 = event.peaks[ia.s1]
+
+            if s1.area > self.max_s1_area:
+                continue
 
             if s1.area < self.low_pe_threshold:
                 s1_frac = s1.area/self.low_pe_threshold
