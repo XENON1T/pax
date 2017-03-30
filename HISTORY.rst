@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+6.6.3 (2017-03-30)
+------------------
+* Do not compute S1 AFT for large S1 (#558)
+* Don't delete area<0 hits in fixed range hitfinder mode (#557)
+  
+------------------
 6.6.2 (2017-03-15)
 ------------------
 * Fix peak.hits_fraction_top calculation (#555)
