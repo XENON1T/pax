@@ -69,7 +69,7 @@ Which should return ``bash: root: command not found``.  Also check that Python c
 
   python -c "import ROOT"
 
-should say ``ImportError: No module named 'ROOT'``.  
+should say ``ImportError: No module named 'ROOT'``.
 
 If there are multiple versions of ROOT around, strange segfaults and other weird issues can result. This is an issue with ROOT and not pax.
 
