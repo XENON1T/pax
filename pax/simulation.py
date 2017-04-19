@@ -283,6 +283,23 @@ class Simulator(object):
         dt = self.config['sample_duration']
         dv = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])
 
+        start_index = 0
+        end_index = event.length() - 1
+        pulse_length = end_index - start_index + 1
+
+        # Setup things for real noise simulation
+        if self.config['real_noise_sample_size']:
+            sample_size = self.config['real_noise_sample_size']
+            available_noise_samples = self.noise_data.shape[1] // sample_size
+            needed_noise_samples = int(math.ceil(pulse_length / sample_size))
+
+            noise_sample_mode = self.config.get('real_noise_sample_mode', 'incoherent')
+            if noise_sample_mode == 'coherent':
+                # Choose a single set of noise sample numbers for the event
+                chosen_noise_sample_numbers = np.random.randint(0,
+                                                                available_noise_samples - 1,
+                                                                needed_noise_samples)
+
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
             # If the channel is dead, fake, or not in the TPC, we don't do anything.
@@ -398,10 +415,6 @@ class Simulator(object):
 
             # Simulate an event-long waveform in this channel
             # Remember start padding has already been added to times, so just one padding in end_index
-            start_index = 0
-            end_index = event.length() - 1
-            pulse_length = end_index - start_index + 1
-
             current_wave = np.zeros(pulse_length)
 
             for i, _ in enumerate(pmt_pulse_centers):
@@ -455,12 +468,12 @@ class Simulator(object):
 
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
-                sample_size = self.config['real_noise_sample_size']
-                available_noise_samples = self.noise_data.shape[1] // sample_size
-                needed_noise_samples = int(math.ceil(pulse_length / sample_size))
-                chosen_noise_sample_numbers = np.random.randint(0,
-                                                                available_noise_samples - 1,
-                                                                needed_noise_samples)
+                if noise_sample_mode != 'coherent':
+                    # For each channel, choose different noise sample numbers
+                    chosen_noise_sample_numbers = np.random.randint(0,
+                                                                    available_noise_samples - 1,
+                                                                    needed_noise_samples)
+
                 # Extract the chosen noise samples and concatenate them
                 # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                 #  -- yeah making an index list with np.arange would work, but honestly??
