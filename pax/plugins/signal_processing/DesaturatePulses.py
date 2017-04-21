@@ -67,7 +67,7 @@ class DesaturatePulses(plugin.TransformPlugin):
                 # to reliably reconstruct it
                 continue
 
-            if len(w[reference_slice][w[reference_slice]>1]) < self.config['reference_region_samples_treshold']:
+            if len(w[reference_slice][w[reference_slice] > 1]) < self.config['reference_region_samples_treshold']:
                 # the pulse is saturated, but there are not enough reference samples to get a good ratio
                 # This actually distinguished between S1 and S2 and will only correct S2 signals
                 continue
