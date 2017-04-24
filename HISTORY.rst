@@ -4,6 +4,16 @@ History
 -------
 
 ------------------
+6.6.4 (2017-04-24)
+------------------
+* New Neural network training results with PMT 2 off in SR1 (#560)
+* Update XENON1T_MV.ini file for gain calibration (#561)
+* Field Distortion Correction and LCE maps for SR1 (#563)
+* New S2 correction map for SR1 (#565)
+* Add threshold on saturation correction reference region to avoid biased correction for S1 (#566)
+* Fix event builder error related to UTC timestamp (#567)
+
+------------------
 6.6.3 (2017-03-30)
 ------------------
 * Do not compute S1 AFT for large S1 (#558)
