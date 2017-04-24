@@ -312,9 +312,9 @@ class Simulator(object):
 
         # Setup things for real noise simulation
         if self.config['real_noise_sample_size']:
-            noise_sample_size = self.config['real_noise_sample_size']
-            available_noise_samples = self.noise_data.shape[1] // noise_sample_size
-            needed_noise_samples = int(math.ceil(pulse_length / noise_sample_size))
+            noise_sample_len = self.config['real_noise_sample_size']
+            available_noise_samples = self.noise_data.shape[1] // noise_sample_len
+            needed_noise_samples = int(math.ceil(pulse_length / noise_sample_len))
 
             noise_sample_mode = self.config.get('real_noise_sample_mode', 'incoherent')
             if noise_sample_mode == 'coherent':
@@ -323,7 +323,7 @@ class Simulator(object):
                                                                 available_noise_samples - 1,
                                                                 needed_noise_samples)
 
-                roll_number = np.random.randint(noise_sample_size)
+                roll_number = np.random.randint(noise_sample_len)
 
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
@@ -463,8 +463,6 @@ class Simulator(object):
             # PMT signals are negative excursions, so flip them.
             adc_wave = - adc_wave
 
-
-
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
                 if noise_sample_mode != 'coherent':
@@ -473,13 +471,13 @@ class Simulator(object):
                                                                     available_noise_samples - 1,
                                                                     needed_noise_samples)
 
-                    roll_number = np.random.randint(noise_sample_size)
+                    roll_number = np.random.randint(noise_sample_len)
 
                 # Extract the chosen noise samples and concatenate them
                 # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                 #  -- yeah making an index list with np.arange would work, but honestly??
                 real_noise = np.concatenate([
-                    self.noise_data[channel - self.channel_offset][nsn * noise_sample_size:(nsn + 1) * noise_sample_size]
+                    self.noise_data[channel - self.channel_offset][nsn * noise_sample_len:(nsn + 1) * noise_sample_len]
                     for nsn in chosen_noise_sample_numbers
                 ])
 
