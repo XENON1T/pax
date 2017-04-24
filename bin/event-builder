@@ -301,7 +301,7 @@ def communicate_alert(e, run_number=None, priority=3):
     require_live_runs_db()
     alerts = run_db['log']
     alert_doc = {"priority": priority,   # Low priority is less severe
-                 "time": datetime.datetime.now(),
+                 "time": datetime.datetime.utcnow(),
                  "run": run_number,
                  "message": str(e),
                  "sender": "trigger"}
