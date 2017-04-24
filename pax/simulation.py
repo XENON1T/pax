@@ -255,6 +255,29 @@ class Simulator(object):
                 all_arriving_times_bottom = np.concatenate((all_arriving_times_bottom, photon_times))
         return (all_arriving_times_top, all_arriving_times_bottom)
 
+    def get_gains(self, channel, n):
+        """Draw n SPE areas for channel"""
+        gain_mean = self.config['gains'][channel]
+        if gain_mean == 0:
+            return np.zeros(n)
+
+        if self.uniform_to_pe is not None:
+            # Use real spe data to generate gains for spe
+            gains = self.uniform_to_pe(np.random.random(n))
+            gains *= self.config['gains'][channel]
+
+        else:
+            gain_sigma = self.config['gain_sigmas'][channel]
+
+            # Sample from a truncated Gaussian
+            gains = truncated_gauss_rvs(my_mean=gain_mean,
+                                        my_std=gain_sigma,
+                                        left_boundary=0,
+                                        right_boundary=float('inf'),
+                                        n_rvs=n)
+
+        return gains
+
     def make_pax_event(self):
         """Simulate PMT response to the queued photon signals
         Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix
@@ -289,9 +312,9 @@ class Simulator(object):
 
         # Setup things for real noise simulation
         if self.config['real_noise_sample_size']:
-            sample_size = self.config['real_noise_sample_size']
-            available_noise_samples = self.noise_data.shape[1] // sample_size
-            needed_noise_samples = int(math.ceil(pulse_length / sample_size))
+            noise_sample_size = self.config['real_noise_sample_size']
+            available_noise_samples = self.noise_data.shape[1] // noise_sample_size
+            needed_noise_samples = int(math.ceil(pulse_length / noise_sample_size))
 
             noise_sample_mode = self.config.get('real_noise_sample_mode', 'incoherent')
             if noise_sample_mode == 'coherent':
@@ -299,6 +322,8 @@ class Simulator(object):
                 chosen_noise_sample_numbers = np.random.randint(0,
                                                                 available_noise_samples - 1,
                                                                 needed_noise_samples)
+
+                roll_number = np.random.randint(noise_sample_size)
 
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
@@ -321,82 +346,54 @@ class Simulator(object):
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
 
-            if self.uniform_to_pe is not None:
-                # Use real spe data to generate gains for spe
-                gains = self.uniform_to_pe(np.random.random(len(photon_detection_times)))
-                gains *= self.config['gains'][channel]
-
-            else:
-                # Sample from a truncated Gaussian
-                gains = truncated_gauss_rvs(my_mean=self.config['gains'][channel],
-                                            my_std=self.config['gain_sigmas'][channel],
-                                            left_boundary=0,
-                                            right_boundary=float('inf'),
-                                            n_rvs=len(photon_detection_times))
+            gains = self.get_gains(channel, len(photon_detection_times))
 
             # Add PMT afterpulses
             ap_times = []
             ap_amplifications = []
             ap_gains = []
-            # if we have specify the pmt afterpulses in each PMT channel
-            if self.config['each_pmt_afterpulse_types']:
-                if not self.config['each_pmt_afterpulse_types'][channel]:
+
+            if 'each_pmt_afterpulse_types' in self.config:
+                # if we have specify the pmt afterpulses in each PMT channel
+                all_ap_data = self.config['each_pmt_afterpulse_types'].get(channel, [])
+            else:
+                # if not, but we have an average configuration
+                # of pmt afterpulses over all PMTs
+                all_ap_data = self.config.get('pmt_afterpulse_types', [])
+
+            for ap_data in all_ap_data.values():
+                if not ap_data:
                     continue
-                for ap_data in self.config['each_pmt_afterpulse_types'][channel].values():
-                    if not ap_data:
-                        continue
-                    # print(ap_data)
-                    # How many photons will make this kind of afterpulse?
-                    n_afterpulses = np.random.binomial(
-                            n=len(photon_detection_times),
-                            p=ap_data['p']
-                            )
-                    if not n_afterpulses:
-                        continue
-                    # Find the time and gain of the afterpulses
-                    dist_kwargs = ap_data['time_parameters']
-                    dist_kwargs['size'] = n_afterpulses
-                    ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
-                                    getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
-                    if 'amp_mean' in ap_data:
-                        ap_amplifications.extend(truncated_gauss_rvs(
-                                    my_mean=ap_data['amp_mean'],
-                                    my_std=ap_data['amp_rms'],
-                                    left_boundary=0,
-                                    right_boundary=float('inf'),
-                                    n_rvs=n_afterpulses))
-                    else:
-                        ap_amplifications.extend([1.]*n_afterpulses)
-                    ap_gains.extend(truncated_gauss_rvs(my_mean=self.config['gains'][channel],
-                                                        my_std=self.config['gain_sigmas'][channel],
-                                                        left_boundary=0,
-                                                        right_boundary=float('inf'),
-                                                        n_rvs=n_afterpulses))
-            # if not, but we have an average configuration
-            # of pmt afterpulses over all PMTs
-            elif self.config['pmt_afterpulse_types']:
-                for ap_data in self.config['pmt_afterpulse_types'].values():
-                    ap_data.setdefault('gain_mean', self.config['gains'][channel])
-                    ap_data.setdefault('gain_rms', self.config['gain_sigmas'][channel])
+                # print(ap_data)
 
-                    # How many photons will make this kind of afterpulse?
-                    n_afterpulses = np.random.binomial(n=len(photon_detection_times),
-                                                       p=ap_data['p'])
-                    if not n_afterpulses:
-                        continue
+                # How many photons will make this kind of afterpulse?
+                n_afterpulses = np.random.binomial(
+                        n=len(photon_detection_times),
+                        p=ap_data['p']
+                        )
+                if not n_afterpulses:
+                    continue
 
-                    # Find the time and gain of the afterpulses
-                    dist_kwargs = ap_data['time_parameters']
-                    dist_kwargs['size'] = n_afterpulses
-                    ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
-                                    getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
-                    ap_gains.extend(truncated_gauss_rvs(my_mean=ap_data['gain_mean'],
-                                                        my_std=ap_data['gain_rms'],
-                                                        left_boundary=0,
-                                                        right_boundary=float('inf'),
-                                                        n_rvs=n_afterpulses))
+                # Find the time and gain of the afterpulses
+                dist_kwargs = ap_data['time_parameters']
+                dist_kwargs['size'] = n_afterpulses
+                ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
+                                getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
 
-            # If none of the setting specified, do not make afterpulses
+                # Afterpulse gains can be different from regular gains: sample an amplification factor
+                if 'amp_mean' in ap_data:
+                    ap_amplifications.extend(truncated_gauss_rvs(
+                                my_mean=ap_data['amp_mean'],
+                                my_std=ap_data['amp_rms'],
+                                left_boundary=0,
+                                right_boundary=float('inf'),
+                                n_rvs=n_afterpulses))
+                else:
+                    ap_amplifications.extend([1.]*n_afterpulses)
+
+                ap_gains.extend(self.get_gains(channel, n_afterpulses))
+
+            # Combine the afterpulses with the normal PMT pulses
             ap_gains = [x*y for x, y in zip(ap_gains, ap_amplifications)]
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
@@ -466,6 +463,8 @@ class Simulator(object):
             # PMT signals are negative excursions, so flip them.
             adc_wave = - adc_wave
 
+
+
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
                 if noise_sample_mode != 'coherent':
@@ -474,13 +473,20 @@ class Simulator(object):
                                                                     available_noise_samples - 1,
                                                                     needed_noise_samples)
 
+                    roll_number = np.random.randint(noise_sample_size)
+
                 # Extract the chosen noise samples and concatenate them
                 # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                 #  -- yeah making an index list with np.arange would work, but honestly??
                 real_noise = np.concatenate([
-                    self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
+                    self.noise_data[channel - self.channel_offset][nsn * noise_sample_size:(nsn + 1) * noise_sample_size]
                     for nsn in chosen_noise_sample_numbers
                 ])
+
+                # Roll the noise samples by a fraction of the sample size,
+                # to avoid same artifacts falling at the same point every time
+                np.roll(real_noise, roll_number, axis=0)
+
                 # Adjust the noise amplitude if needed, then add it to the ADC wave
                 noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
                 if noise_amplitude != 1:
