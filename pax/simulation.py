@@ -353,13 +353,13 @@ class Simulator(object):
             ap_amplifications = []
             ap_gains = []
 
-            if 'each_pmt_afterpulse_types' in self.config:
-                # if we have specify the pmt afterpulses in each PMT channel
-                all_ap_data = self.config['each_pmt_afterpulse_types'].get(channel, [])
-            else:
-                # if not, but we have an average configuration
-                # of pmt afterpulses over all PMTs
-                all_ap_data = self.config.get('pmt_afterpulse_types', [])
+            # Get the afterpulse settings for this channel:
+            #  1. If we have a specific afterpulse config for this channel, we use it
+            #  2. Else we fall back to a default configuration
+            #  3. If this does not exist, we don't make any afterpulses
+            all_ap_data = self.config.get('pmt_afterpulse_types', [])
+            if 'each_pmt_afterpulse_types' in self.config and channel in 'each_pmt_afterpulse_types':
+                all_ap_data = self.config['each_pmt_afterpulse_types'][channel]
 
             for ap_data in all_ap_data.values():
                 if not ap_data:
