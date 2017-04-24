@@ -67,6 +67,11 @@ class DesaturatePulses(plugin.TransformPlugin):
                 # to reliably reconstruct it
                 continue
 
+            if len(w[reference_slice][w[reference_slice] > 1]) < self.config['reference_region_samples_treshold']:
+                # the pulse is saturated, but there are not enough reference samples to get a good ratio
+                # This actually distinguished between S1 and S2 and will only correct S2 signals
+                continue
+
             # Reconstruct the waveform in the saturated region according to this ratio.
             # The waveform should never be reduced due to this (then we are sure the correction is making things worse)
             w[saturated] = np.clip(sumw[saturated] * ratio, w[saturated], float('inf'))
