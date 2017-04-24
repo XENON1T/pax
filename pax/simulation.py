@@ -358,7 +358,7 @@ class Simulator(object):
             #  2. Else we fall back to a default configuration
             #  3. If this does not exist, we don't make any afterpulses
             all_ap_data = self.config.get('pmt_afterpulse_types', [])
-            if 'each_pmt_afterpulse_types' in self.config and channel in 'each_pmt_afterpulse_types':
+            if 'each_pmt_afterpulse_types' in self.config and channel in self.config['each_pmt_afterpulse_types']:
                 all_ap_data = self.config['each_pmt_afterpulse_types'][channel]
 
             for ap_data in all_ap_data.values():
