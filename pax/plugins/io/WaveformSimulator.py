@@ -192,6 +192,7 @@ class WaveformSimulator(plugin.InputPlugin):
             photon_detection_times.extend(
                 np.array(single_channel_photon_detection_times)
                 )
+
         # generate the s2 after pulses for each type
         s2_ap_electron_times = []
         for s2_ap_data in self.config['s2_afterpulse_types'].values():
@@ -202,17 +203,24 @@ class WaveformSimulator(plugin.InputPlugin):
                 )
             if num_s2_afterpulses == 0:
                 continue
+
             # Find the time delay of the after pulses
             dist_kwargs = s2_ap_data['time_parameters']
             dist_kwargs['size'] = num_s2_afterpulses
-            s2_ap_electron_times.extend(
-                np.random.choice(
-                    photon_detection_times, size=num_s2_afterpulses,
-                    replace=False) +
-                getattr(
-                    np.random,
-                    s2_ap_data['time_distribution'])(**dist_kwargs)
-                )
+            delay = getattr(np.random, s2_ap_data['time_distribution'])(**dist_kwargs)
+
+            # Delete afterpulses coming after the maximum delay time (if this option has been enabled)
+            delay = delay[delay < self.config.get('max_s2_afterpulse_delay', float('inf'))]
+            num_s2_afterpulses = len(delay)
+
+            # Choose the original photons that generated the S2 afterpulse.
+            # In fact is it is not a detected photon, but an undetected one, that generated the afterpulse...
+            # but we only know the detected photon times anymore at this stage.
+            original_photon_times = np.random.choice(photon_detection_times,
+                                                     size=num_s2_afterpulses,
+                                                     replace=False)
+            s2_ap_electron_times.extend(original_photon_times + delay)
+
         # generate the s2 photons of each s2 pulses one by one
         # the X-Y of after pulse is randomized, Z is set to 0
         # randomize an array of X-Y
