@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+6.6.5 (2017-05-04)
+------------------
+* S2 map update for SR1 with new gains  (#570)
+* S1 LCE map update for SR1 with new gains  (#571)
+* Re-enable reduction of processed data (#569)
+* Coherent noise and maximum S2 afterpulse delay (#562)
+
+------------------
 6.6.4 (2017-04-24)
 ------------------
 * New Neural network training results with PMT 2 off in SR1 (#560)
