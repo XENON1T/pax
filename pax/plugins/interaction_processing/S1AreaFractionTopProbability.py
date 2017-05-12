@@ -6,16 +6,7 @@ from pax.InterpolatingMap import InterpolatingMap
 from scipy.special import betainc, gammaln
 
 
-class S1AreaFractionTopProbability(plugin.TransformPlugin):
-    """Computes p-value for S1 area fraction top
-    """
-
-    def startup(self):
-        aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_06Mar2017.json')
-        self.aft_map = InterpolatingMap(aftmap_filename)
-        self.low_pe_threshold = 10  # below this in PE, transition to hits
-
-    def bdtrc(self, k, n, p):
+def bdtrc(k, n, p):
         if (k < 0):
             return (1.0)
 
@@ -32,7 +23,8 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
             dk = betainc(dk, dn, p)
         return dk
 
-    def bdtr(self, k, n, p):
+
+def bdtr(k, n, p):
         if (k < 0):
             return np.nan
 
@@ -47,65 +39,79 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
             dk = betainc(dn, dk, 1.0 - p)
         return dk
 
-    def binom_pmf(self, k, n, p):
-        scale_log = gammaln(n+1) - gammaln(n-k+1) - gammaln(k+1)
-        ret_log = scale_log + k*np.log(p) + (n-k)*np.log(1-p)
-        return np.exp(ret_log)
 
-    def binom_cdf(self, k, n, p):
-        return self.bdtr(k, n, p)
+def binom_pmf(k, n, p):
+    scale_log = gammaln(n+1) - gammaln(n-k+1) - gammaln(k+1)
+    ret_log = scale_log + k*np.log(p) + (n-k)*np.log(1-p)
+    return np.exp(ret_log)
 
-    def binom_sf(self, k, n, p):
-        return self.bdtrc(k, n, p)
 
-    def binom_test(self, k, n, p):
-        '''
-        The main purpose of this algorithm is to find the value j on the
-        other side of the mean that has the same probability as k, and
-        integrate the tails outward from k and j. In the case where either
-        k or j are zero, only the non-zero tail is integrated.
-        '''
-        if n < k:
-            raise ValueError("n must be >= k")
-        if (p > 1.0) or (p < 0.0):
-            raise ValueError("p must be in range [0, 1]")
-        if k < 0:
-            raise ValueError("k must be >= 0")
+def binom_cdf(k, n, p):
+        return bdtr(k, n, p)
 
-        d = self.binom_pmf(k, n, p)
-        rerr = 1 + 1e-7
-        d = d*rerr
-        n_iter = int(max(np.round(np.log10(n))+1, 2))
-        if k < n*p:
-            j_min, j_max = n*p, n
+
+def binom_sf(k, n, p):
+    return bdtrc(k, n, p)
+
+
+def binom_test(k, n, p):
+    '''
+    The main purpose of this algorithm is to find the value j on the
+    other side of the mean that has the same probability as k, and
+    integrate the tails outward from k and j. In the case where either
+    k or j are zero, only the non-zero tail is integrated.
+    '''
+    if n < k:
+        raise ValueError("n must be >= k")
+    if (p > 1.0) or (p < 0.0):
+        raise ValueError("p must be in range [0, 1]")
+    if k < 0:
+        raise ValueError("k must be >= 0")
+
+    d = binom_pmf(k, n, p)
+    rerr = 1 + 1e-7
+    d = d*rerr
+    n_iter = int(max(np.round(np.log10(n))+1, 2))
+    if k < n*p:
+        j_min, j_max = n*p, n
+
+        def check(d, y0, y1):
+            return ((y0 >= d) and (d > y1))
+
+    else:
+        if binom_pmf(0, n, p) > d:
+            j_min = j_max = 0
+            n_iter = 0
+        else:
+            j_min, j_max = 0, n*p
 
             def check(d, y0, y1):
-                return ((y0 >= d) and (d > y1))
+                return ((y0 <= d) and (d < y1))
 
-        else:
-            if self.binom_pmf(0, n, p) > d:
-                j_min = j_max = 0
-                n_iter = 0
-            else:
-                j_min, j_max = 0, n*p
+    for _ in range(n_iter):  # successive approximation loop
+        j_range = np.linspace(j_min, j_max, 10, endpoint=True)
+        y = binom_pmf(j_range, n, p)
+        for i in range(len(j_range)-1):
+            if check(d, y[i], y[i+1]):
+                j_min, j_max = j_range[i], j_range[i+1]
+                break
+    j = max(min((j_min + j_max)/2, n), 0)
 
-                def check(d, y0, y1):
-                    return ((y0 <= d) and (d < y1))
+    if k*j == 0:  # one is zero, means we do a one-sided test
+        pval = binom_sf(max(k, j), n, p)
+    else:
+        pval = binom_cdf(min(k, j), n, p) + binom_sf(max(k, j), n, p)
+    return min(1.0, pval)
 
-        for it in range(n_iter):  # successive approximation loop
-            j_range = np.linspace(j_min, j_max, 10, endpoint=True)
-            y = self.binom_pmf(j_range, n, p)
-            for i in range(len(j_range)-1):
-                if check(d, y[i], y[i+1]):
-                    j_min, j_max = j_range[i], j_range[i+1]
-                    break
-        j = max(min((j_min + j_max)/2, n), 0)
 
-        if k*j == 0:  # one is zero, means we do a one-sided test
-            pval = self.binom_sf(max(k, j), n, p)
-        else:
-            pval = self.binom_cdf(min(k, j), n, p) + self.binom_sf(max(k, j), n, p)
-        return min(1.0, pval)
+class S1AreaFractionTopProbability(plugin.TransformPlugin):
+    """Computes p-value for S1 area fraction top
+    """
+
+    def startup(self):
+        aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_06Mar2017.json')
+        self.aft_map = InterpolatingMap(aftmap_filename)
+        self.low_pe_threshold = 10  # below this in PE, transition to hits
 
     def transform_event(self, event):
         '''
@@ -125,6 +131,6 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
                 size_tot = s1.area
 
             aft = self.aft_map.get_value(ia.x, ia.y, ia.z)
-            ia.s1_area_fraction_top_probability = self.binom_test(size_top, size_tot, aft)
+            ia.s1_area_fraction_top_probability = binom_test(size_top, size_tot, aft)
 
         return event
