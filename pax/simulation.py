@@ -104,6 +104,13 @@ class Simulator(object):
         else:
             self.s2_patterns = None
 
+        # Load the each pmt after pulse config file
+        self.each_pmt_afterpulse_config = None
+        if c.get('each_pmt_afterpulse_types_file', None) is not None:
+            self.each_pmt_afterpulse_config = pickle.load(
+                open(utils.data_file_name(c['each_pmt_afterpulse_types_file']), 'rb')
+            )
+
         ##
         # Load pdf for single photoelectron, if available
         ##
@@ -310,6 +317,8 @@ class Simulator(object):
         end_index = event.length() - 1
         pulse_length = end_index - start_index + 1
 
+
+
         # Setup things for real noise simulation
         if self.config['real_noise_sample_size']:
             noise_sample_len = self.config['real_noise_sample_size']
@@ -358,8 +367,8 @@ class Simulator(object):
             #  2. Else we fall back to a default configuration
             #  3. If this does not exist, we don't make any afterpulses
             all_ap_data = self.config.get('pmt_afterpulse_types', [])
-            if 'each_pmt_afterpulse_types' in self.config and channel in self.config['each_pmt_afterpulse_types']:
-                all_ap_data = self.config['each_pmt_afterpulse_types'][channel]
+            if self.each_pmt_afterpulse_config is not None and channel in self.each_pmt_afterpulse_config:
+                all_ap_data = self.each_pmt_afterpulse_config[channel]
 
             for ap_data in all_ap_data.values():
                 if not ap_data:
