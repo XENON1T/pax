@@ -317,8 +317,6 @@ class Simulator(object):
         end_index = event.length() - 1
         pulse_length = end_index - start_index + 1
 
-
-
         # Setup things for real noise simulation
         if self.config['real_noise_sample_size']:
             noise_sample_len = self.config['real_noise_sample_size']
