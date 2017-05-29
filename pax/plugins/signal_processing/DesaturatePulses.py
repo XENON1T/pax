@@ -34,13 +34,13 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Select a reference region just before the start of the saturated region
                 reference_slice = slice(max(0, first_saturated - self.config['reference_region_samples']),
-                                    first_saturated)
+                                        first_saturated)
 
                 # Find all pulses in TPC channels that overlap with the saturated & reference region
                 other_pulses = [p for i, p in enumerate(event.pulses)
-                            if p.left < last_saturated + pulse.left and p.right > pulse.left and
-                            not is_saturated[i] and
-                            p.channel in tpc_channels]
+                                if p.left < last_saturated + pulse.left and p.right > pulse.left and
+                                not is_saturated[i] and
+                                p.channel in tpc_channels]
 
                 if not len(other_pulses):
                     # Rare case where no other pulses available, one channel going crazy?
@@ -74,7 +74,7 @@ class DesaturatePulses(plugin.TransformPlugin):
                     continue
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
-                # The waveform should never be reduced due to this (then we are sure the correction is making things worse)
+                # The waveform should never be reduced due to this (then the correction is making things worse)
                 w[saturated] = np.clip(sumw[saturated] * ratio, w[saturated], float('inf'))
 
                 # Convert back to raw ADC counts and store the corrected waveform
@@ -86,10 +86,10 @@ class DesaturatePulses(plugin.TransformPlugin):
                 w = self.reference_baseline - w - pulse.baseline
 
                 pulse.raw_data = w
-                
+
             except (ValueError, RuntimeError, TypeError, NameError):
                 pass
-                
+
         return event
 
     def waveform_in_pe(self, p):
