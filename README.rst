@@ -81,8 +81,8 @@ Pax depends on several other python packages. While most python packages will in
 some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries 
 for your platform using the `conda` tool as follows. Make sure to replace <environment_name> with the desired name of your environment (usually it is 'pax' for central installations) in the following command::
 
-  conda install -q conda=4.1.1
-  conda create -n <environment_name> python=3.4 root=6 numpy scipy=0.16 pyqt=4.11 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas
+  conda install conda
+  conda create -n <environment_name> python=3.4 root=6 numpy scipy=0.18.1 pyqt=4.11 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy pymongo psutil jupyter dask root_pandas jpeg=8d isl=0.12.2 gmp=5.1.2 glibc=2.12.2 graphviz=2.38.0=4 gsl=1.16 linux-headers=2.6.32 mpc=1.0.1 mpfr=3.1.2 pcre=8.37 python-snappy=0.5 pyopenssl=0.15.1
 
 If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
 
