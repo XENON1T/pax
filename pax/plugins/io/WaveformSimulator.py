@@ -229,7 +229,7 @@ class WaveformSimulator(plugin.InputPlugin):
             np.power(self.config['tpc_radius'], 2.),
             len(s2_ap_electron_times)
             )
-        theta = np.random.uniform(0, 3.141592653, len(s2_ap_electron_times))
+        theta = np.random.uniform(0, 2.*np.pi, len(s2_ap_electron_times))
         X = np.sqrt(rsquare)*np.cos(theta)
         Y = np.sqrt(rsquare)*np.sin(theta)
         for electron_id, s2_ap_electron_time \
