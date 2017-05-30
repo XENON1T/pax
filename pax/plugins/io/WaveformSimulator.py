@@ -248,19 +248,20 @@ class WaveformSimulator(plugin.InputPlugin):
                 )
             peak_top_fraction = float(len(arriving_photon_times_top)) / float(
                 len(arriving_photon_times_bottom) + len(arriving_photon_times_top))
-            self.store_true_peak(
-                'photoionization_afterpulse',
-                g4_id,
-                t=s2_ap_electron_time,
-                x=X[electron_id],
-                y=Y[electron_id],
-                z=-self.config['gate_to_anode_distance'],
-                photon_times=np.concatenate((
-                    arriving_photon_times_top,
-                    arriving_photon_times_bottom
-                    )),
-                peak_top_fraction=peak_top_fraction,
-                )
+            if self.config.get("output_PI_truth_info", False):
+                self.store_true_peak(
+                    'photoionization_afterpulse',
+                    g4_id,
+                    t=s2_ap_electron_time,
+                    x=X[electron_id],
+                    y=Y[electron_id],
+                    z=-self.config['gate_to_anode_distance'],
+                    photon_times=np.concatenate((
+                        arriving_photon_times_top,
+                        arriving_photon_times_bottom
+                        )),
+                    peak_top_fraction=peak_top_fraction,
+                    )
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
