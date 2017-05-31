@@ -28,8 +28,11 @@ class DesaturatePulses(plugin.TransformPlugin):
             # Where is the current pulse saturated?
             saturated = pulse.raw_data <= 0            # Boolean array, True if sample is saturated
             _where_saturated = np.where(saturated)[0]
-            first_saturated = _where_saturated.min()
-            last_saturated = _where_saturated.max()
+            try:
+                first_saturated = _where_saturated.min()
+                last_saturated = _where_saturated.max()
+            except (ValueError, RuntimeError, TypeError, NameError):
+                continue
 
             # Select a reference region just before the start of the saturated region
             reference_slice = slice(max(0, first_saturated - self.config['reference_region_samples']),
@@ -73,7 +76,7 @@ class DesaturatePulses(plugin.TransformPlugin):
                 continue
 
             # Reconstruct the waveform in the saturated region according to this ratio.
-            # The waveform should never be reduced due to this (then we are sure the correction is making things worse)
+            # The waveform should never be reduced due to this (then the correction is making things worse)
             w[saturated] = np.clip(sumw[saturated] * ratio, w[saturated], float('inf'))
 
             # Convert back to raw ADC counts and store the corrected waveform
