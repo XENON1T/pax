@@ -852,4 +852,8 @@ def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
     """Get Gauss with specified mean and std, truncated to boundaries
     See http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html
     """
-    return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
+    if my_std != 0:
+        return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
+    else:
+        print("improper STD for truncated Gaussian")
+        return [my_mean] * n_rvs
