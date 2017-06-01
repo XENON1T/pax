@@ -856,4 +856,4 @@ def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
         return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
     else:
         print("improper STD for truncated Gaussian")
-        return my_mean
+        return [my_mean] * n_rvs
