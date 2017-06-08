@@ -20,8 +20,9 @@ class AdHocClassification1T(plugin.TransformPlugin):
 
             if -peak.area_decile_from_midpoint[1] < self.s1_rise_time_bound(peak.area):
                 # Peak rises fast, could be S1
-                if peak.tight_coincidence <= 2:
+                if peak.tight_coincidence <= 2 or peak.area_fraction_top < 0 or peak.area_fraction_top > 1:
                     # Too few PMTs contributing, hard to distinguish from junk
+                    # or peak area fraction on top is non-physical
                     peak.type = 'unknown'
                 elif peak.area > 100 or peak.area < 5:
                     # Apply single electron s2 cut only in 5 - 100 PE range, otherwise only rely on rise time
