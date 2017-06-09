@@ -17,7 +17,13 @@ class AdHocClassification1T(plugin.TransformPlugin):
             # Don't work on noise and lone hit
             if peak.type in ('noise', 'lone_hit'):
                 continue
+            # rounding peak aft
+            if peak.area_fraction_top < 0:
+                peak.area_fraction_top = 0
+            elif peak.area_fraction_top > 1:
+                peak.area_fraction_top = 1
 
+            # classification based on rise_time and aft
             if -peak.area_decile_from_midpoint[1] < self.s1_rise_time_bound(peak.area):
                 # Peak rises fast, could be S1
                 if peak.tight_coincidence <= 2:
