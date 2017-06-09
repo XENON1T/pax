@@ -20,7 +20,7 @@ class AdHocClassification1T(plugin.TransformPlugin):
             # rounding peak aft
             if peak.area_fraction_top < 0:
                 peak.area_fraction_top = 0
-            elif peak.area_fraction_top >1:
+            elif peak.area_fraction_top > 1:
                 peak.area_fraction_top = 1
 
             # classification based on rise_time and aft
@@ -28,7 +28,6 @@ class AdHocClassification1T(plugin.TransformPlugin):
                 # Peak rises fast, could be S1
                 if peak.tight_coincidence <= 2:
                     # Too few PMTs contributing, hard to distinguish from junk
-                    # or peak area fraction on top is non-physical
                     peak.type = 'unknown'
                 elif peak.area > 100 or peak.area < 5:
                     # Apply single electron s2 cut only in 5 - 100 PE range, otherwise only rely on rise time
