@@ -236,6 +236,7 @@ class Simulator(object):
         # Shuffle all timings in the array, so channel 1 doesn't always get the first photon
         np.random.shuffle(photon_timings)
 
+        print('hello')
         # Get the photon counts per channel
         hitp = self.distribute_photons(len(photon_timings), x, y, z)
 
