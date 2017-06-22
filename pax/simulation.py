@@ -9,7 +9,7 @@ import math
 import time
 import pickle
 from functools import partial
-
+from scipy.fftpack import irfft, rfft,rfftfreq
 import numpy as np
 import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
 from scipy import stats
@@ -80,6 +80,7 @@ class Simulator(object):
         # Load real noise data from file, if requested
         if c['real_noise_file']:
             self.noise_data = np.load(utils.data_file_name(c['real_noise_file']))['arr_0']
+            self.noise_data = self.noise_data.real
             # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
             # (which is one row per channel)
             self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
@@ -296,7 +297,7 @@ class Simulator(object):
 
         event = datastructure.Event(n_channels=self.config['n_channels'],
                                     start_time=start_time,
-                                    stop_time=start_time + int(max_time + 2 * self.config['event_padding']),
+                                    stop_time=int(start_time + 1000 * units.us),
                                     sample_duration=self.config['sample_duration'])
         # Ensure the event length is even (else it cannot be written to XED)
         if event.length() % 2 != 0:
@@ -315,6 +316,8 @@ class Simulator(object):
             noise_sample_len = self.config['real_noise_sample_size']
             available_noise_samples = self.noise_data.shape[1] // noise_sample_len
             needed_noise_samples = int(math.ceil(pulse_length / noise_sample_len))
+            choice=np.random.normal(self.noise_data,.05*sqrt(abs(self.noise_data)))
+            noise_to_add=irfft(choice)
 
             noise_sample_mode = self.config.get('real_noise_sample_mode', 'incoherent')
             if noise_sample_mode == 'coherent':
@@ -465,25 +468,23 @@ class Simulator(object):
 
             # Did you want to superpose onto real noise samples?
             if self.config['real_noise_file']:
-                if noise_sample_mode != 'coherent':
+                #if noise_sample_mode != 'coherent':
                     # For each channel, choose different noise sample numbers
-                    chosen_noise_sample_numbers = np.random.randint(0,
+                    #chosen_noise_sample_numbers = np.random.randint(0,
                                                                     available_noise_samples - 1,
                                                                     needed_noise_samples)
 
-                    roll_number = np.random.randint(noise_sample_len)
+                    #roll_number = np.random.randint(noise_sample_len)
 
                 # Extract the chosen noise samples and concatenate them
                 # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                 #  -- yeah making an index list with np.arange would work, but honestly??
-                real_noise = np.concatenate([
-                    self.noise_data[channel - self.channel_offset][nsn * noise_sample_len:(nsn + 1) * noise_sample_len]
-                    for nsn in chosen_noise_sample_numbers
-                ])
+
+                real_noise = noise_to_add[channel-self.channel_offset]
 
                 # Roll the noise samples by a fraction of the sample size,
                 # to avoid same artifacts falling at the same point every time
-                np.roll(real_noise, roll_number, axis=0)
+                #np.roll(real_noise, roll_number, axis=0)
 
                 # Adjust the noise amplitude if needed, then add it to the ADC wave
                 noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
@@ -491,7 +492,7 @@ class Simulator(object):
                     # Determine a rough baseline for the noise, then adjust towards it
                     baseline = np.mean(real_noise[:min(len(real_noise), 50)])
                     real_noise = baseline + noise_amplitude * (real_noise - baseline)
-                adc_wave += real_noise[:pulse_length]
+                adc_wave += real_noise[start_index:pulse_length+start_index]
 
             else:
                 # If you don't want to superpose onto real noise,
