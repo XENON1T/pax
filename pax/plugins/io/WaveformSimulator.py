@@ -217,7 +217,7 @@ class WaveformSimulator(plugin.InputPlugin):
             delay_after_drift = []
             for dt, rv in zip(delay, rvs_uniform):
                 surviving_prob = np.exp(-dt/self.config['electron_lifetime_liquid'])
-                if rv<surviving_prob:
+                if rv < surviving_prob:
                     delay_after_drift.append(dt)
 
             num_s2_afterpulses = len(delay_after_drift)
