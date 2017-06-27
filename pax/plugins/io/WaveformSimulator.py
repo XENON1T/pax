@@ -211,15 +211,23 @@ class WaveformSimulator(plugin.InputPlugin):
 
             # Delete afterpulses coming after the maximum delay time (if this option has been enabled)
             delay = delay[delay < self.config.get('max_s2_afterpulse_delay', float('inf'))]
-            num_s2_afterpulses = len(delay)
 
+            # Simulate the electron loss
+            rvs_uniform = np.random.uniform(low=0, high=1., size=len(delay))
+            delay_after_drift = []
+            for dt, rv in zip(delay, rvs_uniform):
+                surviving_prob = np.exp(-dt/self.config['electron_lifetime_liquid'])
+                if rv < surviving_prob:
+                    delay_after_drift.append(dt)
+
+            num_s2_afterpulses = len(delay_after_drift)
             # Choose the original photons that generated the S2 afterpulse.
             # In fact is it is not a detected photon, but an undetected one, that generated the afterpulse...
             # but we only know the detected photon times anymore at this stage.
             original_photon_times = np.random.choice(photon_detection_times,
                                                      size=num_s2_afterpulses,
                                                      replace=False)
-            s2_ap_electron_times.extend(original_photon_times + delay)
+            s2_ap_electron_times.extend(original_photon_times + delay_after_drift)
 
         # generate the s2 photons of each s2 pulses one by one
         # the X-Y of after pulse is randomized, Z is set to 0
