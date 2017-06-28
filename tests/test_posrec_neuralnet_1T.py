@@ -51,8 +51,8 @@ class TestPosRecNeuralNet(unittest.TestCase):
         self.assertEqual(len(e.peaks[0].reconstructed_positions), 1)
         rp = e.peaks[0].reconstructed_positions[0]
         self.assertEqual(rp.algorithm, self.plugin.name)
-        self.assertAlmostEqual(rp.x, 11.4262173, places=7)
-        self.assertAlmostEqual(rp.y, 18.1086185, places=7)
+        self.assertAlmostEqual(rp.x, 11.0882, delta=1.0)
+        self.assertAlmostEqual(rp.y, 18.7855, delta=1.0)
 
 
 if __name__ == '__main__':
