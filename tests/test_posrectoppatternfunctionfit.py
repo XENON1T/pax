@@ -23,7 +23,8 @@ class TestPosRecTopPatternFunctionFit(unittest.TestCase):
         delattr(self, 'plugin')
         delattr(self, 'guess_plugin')
 
-    def example_event(self):
+    @staticmethod
+    def example_event():
         top_hits = [7, 8, 8, 5, 8, 10, 6, 9, 3, 7, 6, 4, 5, 2, 1, 0, 7, 1, 3, 1, 4, 2, 5, 1, 4, 3,
                     1, 3, 2, 4, 3, 0, 4, 4, 1, 6, 2, 4, 9, 12, 8, 10, 9, 6, 9, 1, 2, 1, 2, 1, 4, 10,
                     0, 0, 1, 2, 1, 0, 2, 3, 6, 1, 3, 2, 3, 5, 2, 6, 30, 18, 24, 10, 8, 3, 4, 2, 4, 2,
