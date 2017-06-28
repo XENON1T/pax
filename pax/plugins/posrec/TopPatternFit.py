@@ -1,5 +1,6 @@
 import numpy as np
-from pax import plugin, exceptions
+from pax import plugin, exceptions, utils
+from pax.PatternFitter import PatternFitter
 
 
 class PosRecTopPatternFit(plugin.PosRecPlugin):
@@ -111,3 +112,24 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                 'goodness_of_fit': gof,
                 'ndf': ndf,
                 'confidence_tuples': err}
+
+
+class PosRecTopPatternFunctionFit(PosRecTopPatternFit):
+    """Same implementation as TopPatternFit but needs
+       PatternFitter with different per-PMT S2 LCE maps
+       so startup is overwritten.
+    """
+
+    def startup(self):
+        # Call original startup function
+        PosRecTopPatternFit.startup(self)
+
+        # Get the Fax config
+        c = self.processor.simulator.config
+        qes = np.array(c['quantum_efficiencies'])
+
+        # Change the pattern fitter instance so it uses TPFF
+        self.pf = PatternFitter(filename=utils.data_file_name(c['s2_fitted_patterns_file']),
+                                zoom_factor=c.get('s2_fitted_patterns_zoom_factor', 1),
+                                adjust_to_qe=qes[c['channels_top']],
+                                default_errors=c['relative_qe_error'] + c['relative_gain_error'])
