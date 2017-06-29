@@ -4,6 +4,18 @@ History
 -------
 
 ------------------
+6.6.6 (2017-06-28)
+------------------
+* add S2 correction in task list (#573)
+* S1 area fraction top plugin (#572)
+* Update package versions in environment creation (#578)
+* New per-PMT LCE maps for full LXe+GXe volume (#577, #588)
+* Fax update for better photo-ionisation model and memory leak fix (#574, #581, #589)
+* Classification update (#576, #584)
+* Disabling pulse-based desaturation for S1 (#580)
+* New Position reconstruction (#591, #592)
+
+------------------
 6.6.5 (2017-05-04)
 ------------------
 * S2 map update for SR1 with new gains  (#570)
