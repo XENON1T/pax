@@ -59,7 +59,7 @@ docs:
 	echo open docs/_build/html/index.html
 
 major: clean docs
-	emacs HISTORY.rst
+	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion major
 	git push
@@ -71,7 +71,7 @@ major: clean docs
 	git checkout master
 
 minor: clean docs
-	emacs HISTORY.rst
+	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion minor
 	git push
@@ -83,7 +83,7 @@ minor: clean docs
 	git checkout master
 
 patch: clean docs
-	emacs HISTORY.rst
+	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion patch
 	git push

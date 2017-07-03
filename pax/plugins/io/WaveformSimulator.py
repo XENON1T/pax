@@ -192,6 +192,7 @@ class WaveformSimulator(plugin.InputPlugin):
             photon_detection_times.extend(
                 np.array(single_channel_photon_detection_times)
                 )
+
         # generate the s2 after pulses for each type
         s2_ap_electron_times = []
         for s2_ap_data in self.config['s2_afterpulse_types'].values():
@@ -202,17 +203,32 @@ class WaveformSimulator(plugin.InputPlugin):
                 )
             if num_s2_afterpulses == 0:
                 continue
+
             # Find the time delay of the after pulses
             dist_kwargs = s2_ap_data['time_parameters']
             dist_kwargs['size'] = num_s2_afterpulses
-            s2_ap_electron_times.extend(
-                np.random.choice(
-                    photon_detection_times, size=num_s2_afterpulses,
-                    replace=False) +
-                getattr(
-                    np.random,
-                    s2_ap_data['time_distribution'])(**dist_kwargs)
-                )
+            delay = getattr(np.random, s2_ap_data['time_distribution'])(**dist_kwargs)
+
+            # Delete afterpulses coming after the maximum delay time (if this option has been enabled)
+            delay = delay[delay < self.config.get('max_s2_afterpulse_delay', float('inf'))]
+
+            # Simulate the electron loss
+            rvs_uniform = np.random.uniform(low=0, high=1., size=len(delay))
+            delay_after_drift = []
+            for dt, rv in zip(delay, rvs_uniform):
+                surviving_prob = np.exp(-dt/self.config['electron_lifetime_liquid'])
+                if rv < surviving_prob:
+                    delay_after_drift.append(dt)
+
+            num_s2_afterpulses = len(delay_after_drift)
+            # Choose the original photons that generated the S2 afterpulse.
+            # In fact is it is not a detected photon, but an undetected one, that generated the afterpulse...
+            # but we only know the detected photon times anymore at this stage.
+            original_photon_times = np.random.choice(photon_detection_times,
+                                                     size=num_s2_afterpulses,
+                                                     replace=False)
+            s2_ap_electron_times.extend(original_photon_times + delay_after_drift)
+
         # generate the s2 photons of each s2 pulses one by one
         # the X-Y of after pulse is randomized, Z is set to 0
         # randomize an array of X-Y
@@ -221,7 +237,7 @@ class WaveformSimulator(plugin.InputPlugin):
             np.power(self.config['tpc_radius'], 2.),
             len(s2_ap_electron_times)
             )
-        theta = np.random.uniform(0, 3.141592653, len(s2_ap_electron_times))
+        theta = np.random.uniform(0, 2.*np.pi, len(s2_ap_electron_times))
         X = np.sqrt(rsquare)*np.cos(theta)
         Y = np.sqrt(rsquare)*np.sin(theta)
         for electron_id, s2_ap_electron_time \
@@ -240,19 +256,20 @@ class WaveformSimulator(plugin.InputPlugin):
                 )
             peak_top_fraction = float(len(arriving_photon_times_top)) / float(
                 len(arriving_photon_times_bottom) + len(arriving_photon_times_top))
-            self.store_true_peak(
-                'photoionization_afterpulse',
-                g4_id,
-                t=s2_ap_electron_time,
-                x=X[electron_id],
-                y=Y[electron_id],
-                z=-self.config['gate_to_anode_distance'],
-                photon_times=np.concatenate((
-                    arriving_photon_times_top,
-                    arriving_photon_times_bottom
-                    )),
-                peak_top_fraction=peak_top_fraction,
-                )
+            if self.config.get("output_PI_truth_info", False):
+                self.store_true_peak(
+                    'photoionization_afterpulse',
+                    g4_id,
+                    t=s2_ap_electron_time,
+                    x=X[electron_id],
+                    y=Y[electron_id],
+                    z=-self.config['gate_to_anode_distance'],
+                    photon_times=np.concatenate((
+                        arriving_photon_times_top,
+                        arriving_photon_times_bottom
+                        )),
+                    peak_top_fraction=peak_top_fraction,
+                    )
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()

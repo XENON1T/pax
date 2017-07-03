@@ -2,8 +2,70 @@
 
 History
 -------
----------
 
+------------------
+6.6.6 (2017-06-28)
+------------------
+* add S2 correction in task list (#573)
+* S1 area fraction top plugin (#572)
+* Update package versions in environment creation (#578)
+* New per-PMT LCE maps for full LXe+GXe volume (#577, #588)
+* Fax update for better photo-ionisation model and memory leak fix (#574, #581, #589)
+* Classification update (#576, #584)
+* Disabling pulse-based desaturation for S1 (#580)
+* New Position reconstruction (#591, #592)
+
+------------------
+6.6.5 (2017-05-04)
+------------------
+* S2 map update for SR1 with new gains  (#570)
+* S1 LCE map update for SR1 with new gains  (#571)
+* Re-enable reduction of processed data (#569)
+* Coherent noise and maximum S2 afterpulse delay (#562)
+
+------------------
+6.6.4 (2017-04-24)
+------------------
+* New Neural network training results with PMT 2 off in SR1 (#560)
+* Update XENON1T_MV.ini file for gain calibration (#561)
+* Field Distortion Correction and LCE maps for SR1 (#563)
+* New S2 correction map for SR1 (#565)
+* Add threshold on saturation correction reference region to avoid biased correction for S1 (#566)
+* Fix event builder error related to UTC timestamp (#567)
+
+------------------
+6.6.3 (2017-03-30)
+------------------
+* Do not compute S1 AFT for large S1 (#558)
+* Don't delete area<0 hits in fixed range hitfinder mode (#557)
+  
+------------------
+6.6.2 (2017-03-15)
+------------------
+* Fix peak.hits_fraction_top calculation (#555)
+    * Bug found in S1AreaFractionTopProbability calculation (#553)
+
+------------------
+6.6.1 (2017-03-11)
+------------------
+* Updated field correction and S1 LCE map (#551)
+* Fix typo in S1 Area fraction top computation (#550)
+
+------------------
+6.6.0 (2017-03-08)
+------------------
+* Updates to data files:
+    * S2(x,y) relative light yield map (#535)
+    * Neural net (#531)
+* S1 area fraction top probability computed (#533)
+* Fix bug in peak.area_midpoint computation
+* Simulator: Use realistic SPE spectrum in fax (#528)
+* Simulator: Fix bug in self-trigger emulation, AmBe noise file (#537)
+
+------------------
+6.5.1 (2017-02-28)
+------------------
+* Minor bugfixes (#526, #527, #529)
 
 ------------------
 6.5.0 (2017-02-21)
