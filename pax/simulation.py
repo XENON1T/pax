@@ -114,7 +114,6 @@ class Simulator(object):
 
             # Create a converter array from uniform random numbers to SPE gains (one interpolator per channel)
             # we scale the distributions so that they have an SPE mean of 1 and then calculate the cdf
-            # the column headers are strings, so change 
             uniform_to_pe_arr = []
             for ch in data.columns[1:]: # skip the first element which is the 'charge' header
                 mean_spe = (spe_shapes['charge'] * spe_shapes[ch]).sum() / spe_shapes[ch].sum()
