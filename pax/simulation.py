@@ -116,8 +116,8 @@ class Simulator(object):
             # Scale the distributions so that they have an SPE mean of 1 and then calculate the cdf
             # We have set the distribution of the off channels to be explicitly 0 as a precaution
             # as of now these channels are
-                # 1, 2, 12, 26, 34, 62, 65, 79, 86, 88, 102, 118, 130, 134, 135, 139,
-                # 148, 150, 152, 162, 178, 183, 190, 198, 206, 213, 214, 234, 239, 244
+            # 1, 2, 12, 26, 34, 62, 65, 79, 86, 88, 102, 118, 130, 134, 135, 139,
+            # 148, 150, 152, 162, 178, 183, 190, 198, 206, 213, 214, 234, 239, 244
 
             uniform_to_pe_arr = []
             for ch in spe_shapes.columns[1:]:  # skip the first element which is the 'charge' header
@@ -271,7 +271,7 @@ class Simulator(object):
             # Use real spe data to generate gains for spe
             gains = self.uniform_to_pe_arr[channel](np.random.random(n))
             gains *= self.config['gains'][channel]
-            
+
         else:
             gain_sigma = self.config['gain_sigmas'][channel]
 
