@@ -269,7 +269,7 @@ class Simulator(object):
 
         if self.uniform_to_pe_arr is not None:
             # Use real spe data to generate gains for spe
-            gains = self.uniform_to_pe_arr[ch](np.random.random(n))
+            gains = self.uniform_to_pe_arr[channel](np.random.random(n))
             gains *= self.config['gains'][channel]
             
         else:
