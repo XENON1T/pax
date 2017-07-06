@@ -58,7 +58,7 @@ class InterpolatingMap(object):
     """
     data_field_names = ['timestamp', 'description', 'coordinate_system', 'name', 'irregular']
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename):
         self.log = logging.getLogger('InterpolatingMap')
         self.log.debug('Loading JSON map %s' % filename)
 
@@ -94,13 +94,21 @@ class InterpolatingMap(object):
          position - pax.datastructure.ReconstructedPosition instance
         """
         position_names = ['x', 'y', 'z']
-        return self.get_value(*[getattr(position, q) for q in position_names[:self.dimensions]], map_name=map_name)
+        return self.get_value(*[getattr(position, q) for q in position_names[:self.dimensions]],
+                              map_name=map_name)
 
+    # get_value accepts only the map_name keyword argument, but we have to let it accept
+    # **kwargs, otherwise python 2 will freak out...
     def get_value(self, *coordinates, **kwargs):
         """Returns the value of the map at the position given by coordinates
         Keyword arguments:
           - map_name: Name of the map to use. By default: 'map'.
         """
+        # Ensure nobody passed something other than map_name
+        for k in kwargs.keys():
+            if k != 'map_name':
+                raise ValueError("InterpolatingMap.get_value only takes map_name keyword argument")
+
         map_name = kwargs.get('map_name', 'map')
         result = self.interpolators[map_name](*coordinates)
         try:
