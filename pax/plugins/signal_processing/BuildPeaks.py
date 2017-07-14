@@ -13,7 +13,7 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
 
         # Maximum gap inside an S1-like cluster
-        self.s1_gap_threshold = self.config.get('max_gap_size_in_s1like_cluster', 100) / self.dt
+        self.s1_gap_threshold = self.config['max_gap_size_in_s1like_cluster'] / self.dt
 
         # Maximum gap inside other clusters
         self.gap_threshold = self.config['max_gap_size_in_cluster'] / self.dt
