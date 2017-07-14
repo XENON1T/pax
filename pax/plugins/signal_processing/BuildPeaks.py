@@ -13,7 +13,7 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
 
         # Maximum gap inside an S1-like cluster
-        self.s1_gap_threshold = self.config.get('max_gap_size_in_s1like_cluster', 200) / self.dt
+        self.s1_gap_threshold = self.config.get('max_gap_size_in_s1like_cluster', 100) / self.dt
 
         # Maximum gap inside other clusters
         self.gap_threshold = self.config['max_gap_size_in_cluster'] / self.dt
@@ -43,8 +43,9 @@ class GapSizeClustering(plugin.ClusteringPlugin):
             s1_mask = np.zeros(len(hits), dtype=np.bool)    # True if hit is part of S1 candidate
             lone_mask = np.zeros(len(hits), dtype=np.bool)  # Reject Lone hit
             for l_i, r_i, h in self.iterate_gap_clusters(hits, self.s1_gap_threshold):
-                l = h['left'].min()
-                center = np.sum(h['index_of_maximum'] * h['area']) / h['area'].sum()
+                # l = h['left'].min()
+                l = h['left_central'].min()
+                center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
                 rise_time = (center - l) * self.dt
 
                 if len(h) >= 3 and rise_time < self.rise_time_threshold:
