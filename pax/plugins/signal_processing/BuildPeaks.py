@@ -45,8 +45,9 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                 l = h['left_central'].min()
                 center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
                 rise_time = (center - l) * self.dt
+                area_sum = np.sum(h['area'])
 
-                if (len(h) >= 3 and rise_time < self.rise_time_threshold) or len(h) <= 2:
+                if (len(h) >= 3 and rise_time < self.rise_time_threshold) or (len(h) <= 2 and area_sum < 50):
                     # Yes, this is an S1 candidate Or, this is a lone hit. Mark it as a peak,
                     # hits will be ignored in next stage.
                     s1_mask[l_i:r_i] = True
