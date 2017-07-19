@@ -420,7 +420,7 @@ class WaveformSimulatorFromMC(WaveformSimulator):
         filename = self.config['input_name']
 
         self.f = ROOT.TFile(utils.data_file_name(filename))
-        self.t = self.f.Get("events/events")  # new MC structure, 160622
+        self.t = self.f.Get("events;1")  # new MC structure, 160622
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
