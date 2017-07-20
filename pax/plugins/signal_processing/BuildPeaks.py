@@ -13,7 +13,7 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
 
         # Maximum gap inside an S1-like cluster
-        self.s1_gap_threshold = self.config.get('max_gap_size_in_s1like_cluster', 200) / self.dt
+        self.s1_gap_threshold = self.config['max_gap_size_in_s1like_cluster'] / self.dt
 
         # Maximum gap inside other clusters
         self.gap_threshold = self.config['max_gap_size_in_cluster'] / self.dt
@@ -41,26 +41,20 @@ class GapSizeClustering(plugin.ClusteringPlugin):
 
             # First cluster into small clusters. Try to find S1 candidates among them, and set these apart
             s1_mask = np.zeros(len(hits), dtype=np.bool)    # True if hit is part of S1 candidate
-            lone_mask = np.zeros(len(hits), dtype=np.bool)  # Reject Lone hit
             for l_i, r_i, h in self.iterate_gap_clusters(hits, self.s1_gap_threshold):
-                l = h['left'].min()
-                center = np.sum(h['index_of_maximum'] * h['area']) / h['area'].sum()
+                l = h['left_central'].min()
+                center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
                 rise_time = (center - l) * self.dt
+                area_sum = np.sum(h['area'])
 
-                if len(h) >= 3 and rise_time < self.rise_time_threshold:
-                    # Yes, this is an S1 candidate. Mark it as a peak, hits will be ignored in next stage.
-                    # print("S1 candidate %d-%d" % (l_i, r_i))
+                if (len(h) >= 3 and rise_time < self.rise_time_threshold) or (len(h) <= 2 and area_sum < 50):
+                    # Yes, this is an S1 candidate Or, this is a lone hit. Mark it as a peak,
+                    # hits will be ignored in next stage.
                     s1_mask[l_i:r_i] = True
                     event.peaks.append(self.build_peak(hits=h, detector=detector))
 
-                elif len(h) <= 2:
-                    # We don't want to merge lone hits to an S2 signal as well, this is helpful to split S2s
-                    # This won't affect single electrons as they can hardly be < 3 fold coincidence
-                    lone_mask[l_i:r_i] = True
-                    event.peaks.append(self.build_peak(hits=h, detector=detector))
-
-            # Remove hits that already left us as S1 candidates
-            hits = hits[True ^ (s1_mask + lone_mask)]
+            # Remove hits that already left us as S1 candidates or lone hits
+            hits = hits[True ^ s1_mask]
             if len(hits) == 0:
                 continue
 
