@@ -1,6 +1,7 @@
 import numpy as np
 
 from pax import plugin, dsputils
+from pax.plugins.peak_processing.BasicProperties import integrate_until_fraction
 
 
 class GapSizeClustering(plugin.ClusteringPlugin):
@@ -21,6 +22,9 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         # Rise time threshold to mark S1 candidates
         self.rise_time_threshold = self.config.get('rise_time_threshold', 80)
 
+        # tight coincidence
+        self.tight_coincidence_window = self.config.get('tight_coincidence_window', 50) // self.dt
+
     @staticmethod
     def iterate_gap_clusters(hits, gap_threshold):
         gaps = dsputils.gaps_between_hits(hits)
@@ -38,16 +42,33 @@ class GapSizeClustering(plugin.ClusteringPlugin):
             if len(hits) == 0:
                 continue
             hits.sort(order='left_central')
+            dt = self.dt
 
             # First cluster into small clusters. Try to find S1 candidates among them, and set these apart
             s1_mask = np.zeros(len(hits), dtype=np.bool)    # True if hit is part of S1 candidate
             for l_i, r_i, h in self.iterate_gap_clusters(hits, self.s1_gap_threshold):
                 l = h['left_central'].min()
-                center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
-                rise_time = (center - l) * self.dt
+                # center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
+                # rise_time = (center - l)
                 area_sum = np.sum(h['area'])
-
-                if (len(h) >= 3 and rise_time < self.rise_time_threshold) or (len(h) <= 2 and area_sum < 50):
+                peak = self.build_peak(hits=h, detector=detector)
+                # use summed WF to calculate peak properties
+                w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
+                max_idx = np.argmax(w)
+                peak.index_of_maximum = peak.left + max_idx
+                # calculate rise time for peak classification
+                area_times = np.ones(21) * float('nan')
+                integrate_until_fraction(w, fractions_desired=np.linspace(0, 1, 21), results=area_times)
+                area_times *= dt
+                area_midpoint = area_times[10]
+                area_decile_from_midpoint = area_times[::2] - area_midpoint
+                rise_time = -area_decile_from_midpoint[1]
+                # tight coincidence for peak classification
+                x = h['index_of_maximum']
+                l = peak.index_of_maximum - self.tight_coincidence_window
+                r = peak.index_of_maximum + self.tight_coincidence_window
+                tight_coincidence = len(np.unique(h['channel'][(x >= l) & (x <= r)]))
+                if (tight_coincidence >= 3 and rise_time < self.rise_time_threshold) or (len(h) <= 2 and area_sum < 50):
                     # Yes, this is an S1 candidate Or, this is a lone hit. Mark it as a peak,
                     # hits will be ignored in next stage.
                     s1_mask[l_i:r_i] = True
