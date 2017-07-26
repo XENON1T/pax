@@ -143,7 +143,7 @@ class CountCoincidentNoisePulses(plugin.TransformPlugin):
 
 
 # @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),
-#            nopython=True, cache=True)
+# nopython=True, cache=True)
 # For some reason numba doesn't clean up its memory properly for this function... leave it in python for now
 def integrate_until_fraction(w, fractions_desired, results):
     """For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
