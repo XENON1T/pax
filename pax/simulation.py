@@ -11,6 +11,7 @@ import pickle
 from functools import partial
 
 import numpy as np
+import pandas as pd
 import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
 from scipy import stats
 from scipy.interpolate import interp1d
@@ -108,30 +109,35 @@ class Simulator(object):
         # Load pdf for single photoelectron, if available
         ##
         if c.get('photon_area_distribution'):
-            # Extract the spe pdf from a csv file in form of bin, prob.
-            charge = []
-            p = []
-            with open(utils.data_file_name(c['photon_area_distribution']), "r") as f:
-                for line in f.readlines():
-                    q = float(line.split(",")[0])
-                    prob = float(line.split(",")[1])
-                    # don't allow negative charge, which can occur from noise subtraction
-                    prob = prob if q >= 0 else 0
-                    charge.append(q)
-                    p.append(prob)
+            # Extract the spe pdf from a csv file into a pandas dataframe
+            spe_shapes = pd.read_csv(utils.data_file_name(c['photon_area_distribution']))
 
-            # Create a converter from uniform random numbers to SPE gains
-            # note not really pdf, does not necessarily sum to 1 due to forcing probability of negative charge to be 0
-            spe_bins, spe_pdf = np.array(charge), np.array(p)
-            # change spe_bins to have mean equal to 1
-            mean_spe = (spe_bins * spe_pdf).sum() / spe_pdf.sum()
-            spe_bins = spe_bins/mean_spe
-            # convert pdf -> cdf
-            cdfs = np.cumsum(spe_pdf)/np.sum(spe_pdf)
-            self.uniform_to_pe = interp1d(cdfs, spe_bins)
+            # Create a converter array from uniform random numbers to SPE gains (one interpolator per channel)
+            # Scale the distributions so that they have an SPE mean of 1 and then calculate the cdf
+            # We have set the distribution of the off channels to be explicitly 0 as a precaution
+            # as of now these channels are
+            # 1, 2, 12, 26, 34, 62, 65, 79, 86, 88, 102, 118, 130, 134, 135, 139,
+            # 148, 150, 152, 162, 178, 183, 190, 198, 206, 213, 214, 234, 239, 244
+
+            uniform_to_pe_arr = []
+            for ch in spe_shapes.columns[1:]:  # skip the first element which is the 'charge' header
+                if spe_shapes[ch].sum() > 0:
+                    mean_spe = (spe_shapes['charge'] * spe_shapes[ch]).sum() / spe_shapes[ch].sum()
+                    scaled_bins = spe_shapes['charge'] / mean_spe
+                    cdf = np.cumsum(spe_shapes[ch])/np.sum(spe_shapes[ch])
+                else:
+                    # if sum is 0, just make some dummy axes to pass to interpolator
+                    cdf = np.linspace(0, 1, 10)
+                    scaled_bins = np.zeros_like(cdf)
+
+                uniform_to_pe_arr.append(interp1d(cdf, scaled_bins))
+            if uniform_to_pe_arr != []:
+                self.uniform_to_pe_arr = np.array(uniform_to_pe_arr)
+            else:
+                self.uniform_to_pe_arr = None
 
         else:
-            self.uniform_to_pe = None
+            self.uniform_to_pe_arr = None
 
         # Init s1 pattern maps
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
@@ -261,9 +267,9 @@ class Simulator(object):
         if gain_mean == 0:
             return np.zeros(n)
 
-        if self.uniform_to_pe is not None:
+        if self.uniform_to_pe_arr is not None:
             # Use real spe data to generate gains for spe
-            gains = self.uniform_to_pe(np.random.random(n))
+            gains = self.uniform_to_pe_arr[channel](np.random.random(n))
             gains *= self.config['gains'][channel]
 
         else:
