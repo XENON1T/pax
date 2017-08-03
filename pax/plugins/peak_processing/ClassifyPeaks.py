@@ -6,10 +6,10 @@ class AdHocClassification1T(plugin.TransformPlugin):
 
     def startup(self):
         self.s1_rise_time_bound = interpolate.interp1d([0, 5, 10, 100],
-                                                       [100, 100, 70, 70],
+                                                       [80, 75, 70, 70],
                                                        fill_value='extrapolate', kind='linear')
-        self.s1_rise_time_aft = interpolate.interp1d([0, 0.3, 0.4, 0.5, 0.70, 0.70, 1.0],
-                                                     [70, 70, 65, 60, 35, 0, 0], kind='linear')
+        self.s1_rise_time_aft = interpolate.interp1d([0, 0.4, 0.5, 0.6, 0.70, 0.70, 1.0],
+                                                     [70, 70, 68, 65, 60, 0, 0], kind='linear')
 
     def transform_event(self, event):
 
