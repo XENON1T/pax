@@ -2,6 +2,12 @@
 
 History
 -------
+------------------
+6.7.0 (2017-08-07)
+------------------
+* Two step gap clustering (#596) 
+* Add data-driven SPE distributions for each channel (fax) (#595)
+* InterpolatingMap bug fix (#582)
 
 ------------------
 6.6.6 (2017-06-28)
