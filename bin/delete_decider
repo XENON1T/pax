@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Decides which runs can/cannot be deleted
 
 Currently this just deletes any run 2 hours after acquisition.
