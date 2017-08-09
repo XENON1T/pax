@@ -128,7 +128,7 @@ def connect_to_eb_dbs(clientmaker, run_doc, detector='tpc', split_collections=Tr
      - dbs: list of pymongo db handles
      - input_collections: None if split_collections, else list of pymongo collection handles
 
-    This was split off from the base class to allow re-use in external code (specifically the data deleter).
+    This was split off from the base class to allow re-use in external code (specifically the deleter in event-builder).
     """
     for doc in run_doc['data']:
         if doc['type'] == 'untriggered':
@@ -310,8 +310,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                     'last_pulse_so_far_in_run': self.last_pulse_time,
                                                     'latest_subcollection': self.latest_subcollection,
                                                     'last_time_searched': lts,
-                                                    'working_on_run': True,
-                                                    })
+                                                    'working_on_run': True})
 
     def get_events(self):
         self.log.info("Eventbuilder get_events starting up")
@@ -588,13 +587,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
 
 class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     """Clears data whose events have been built from MongoDB,
-    rescuing acquisition monitor pulses to a separate file first
+    rescuing acquisition monitor pulses to a separate file first.
 
-    This must run as part of the output group, so it gets the events in order.
+    This must run as part of the output plugin group, so it gets the events in order.
+    It does not use the events' content, but needs to know which event times have been processed.
 
     If split_collections:
         Drop sub collections when events from subsequent collections start arriving.
-        Drop all remaining subcollections on shutdown
+        Drop all remaining subcollections on shutdown.
 
     Else (single collection mode):
         Keeps track of which time is safe to delete, then deletes data from the collection in batches.
@@ -609,12 +609,12 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
 
-        # Should we actually delete data, or just rescue the acquie
+        # Should we actually delete data, or just rescue the acquisition monitor pulses?
         self.actually_delete = self.config.get('delete_data', False)
         if self.actually_delete:
             self.log.info("Data will be DELETED from the Mongo database after it is acquired!")
         else:
-            self.log.info("Data will REMAIN in the Mongo database.")
+            self.log.info("Data will REMAIN in the Mongo database (until delete permission is acquired).")
 
         aqm_file_path = self.config.get('acquisition_monitor_file_path')
         if aqm_file_path is None:
