@@ -1,4 +1,5 @@
 import logging
+import time
 import re
 import os
 
@@ -84,6 +85,38 @@ class ClientMaker:
                 client = MongoProxy(client, disconnect_on_timeout=False, wait_time=180)
 
             return client
+
+
+class PersistentRunsDBConnection:
+    """Helper class for maitaining a persistent collection to the XENON1T runs database"""
+
+    def __init__(self, clientmaker_config):
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.clientmaker = ClientMaker(clientmaker_config)
+        self._connect()
+
+    def _connect(self):
+        self.client = self.clientmaker.get_client('run', autoreconnect=True)
+        self.db = self.client['run']
+        self.collection = self.db['runs_new']
+        self.pipeline_status_collection = self.db['pipeline_status']
+
+    def check(self):
+        """Checks that the runs db connection we currently have is alive. If not, we try to re-acquire it forever."""
+        while True:
+            try:
+                self.client.admin.command('ping')
+                return
+
+            except Exception as e:
+                self.log.fatal("Exception pinging runs db: %s: %s" % (type(e), str(e)))
+
+                try:
+                    self._connect()
+                except Exception as e:
+                    self.log.fatal("Could not re-acquire runs db connection: %s %s. Trying again in ten seconds." % (
+                        type(e), str(e)))
+                    time.sleep(10)
 
 
 def parse_passwordless_uri(uri):
