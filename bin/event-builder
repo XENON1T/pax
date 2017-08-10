@@ -60,7 +60,7 @@ def main():
     if args.deleter:
         status_in, status_pending, status_done = 'deleteme', 'deleting', 'deleted'
     else:
-        status_in, status_pending, status_done = 'waiting_to_be_processed', 'staging', 'trigger_done'
+        status_in, status_pending, status_done = 'waiting_to_be_processed', 'staging', 'processed'
 
     if args.run_name:
         run_query = {'name': args.run_name}
@@ -122,7 +122,7 @@ def main():
                 split_collections=run_doc['reader']['ini'].get('rotating_collections', False))
 
             # Give some warning
-            print("I'm going to delete the data for run %d (%s)."
+            print("I'm going to delete the data for run %d (%s). "
                   "If you don't want this you have 1 minute to hit CTRL-C..." % (run_doc['number'], run_doc['name']))
             for t in range(6):
                 print("%d seconds left...\n" % (60 - 10 * t))
@@ -210,7 +210,7 @@ def main():
         mongo_settings_override = {}
         for argname in ('detector', 'secret_mode',
                         'host', 'port', 'user', 'password',
-                        'batch_window', 'delete_data', 'edge_safety_margin',
+                        'batch_window', 'edge_safety_margin',
                         'max_query_workers', 'skip_ahead', 'stop_after_sec', 'start_after_sec'):
             argval = getattr(args, argname)
             if argval is None or argval == '':
@@ -296,7 +296,7 @@ def main():
             else:
                 log.fatal('No eventbuilder logfile to copy out?')
 
-        # No need to set status == 'processed' here, that's done in the trigger itself
+        # No need to set status == 'trigger_done' here, that's done in the trigger itself
         # (hm, maybe not very consistent...)
 
         # If we're trying to build a single run, don't try again to find it
@@ -373,7 +373,7 @@ def get_command_line_arguments():
     parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ.")
 
     # Deleter mode
-    parser.add_argument('--deleter', default=False,
+    parser.add_argument('--deleter', action='store_true',
                         help='Instead of building events, look for runs that can be deleted and clear them.')
 
     # Multiprocessing
@@ -442,15 +442,12 @@ def get_command_line_arguments():
     mongoreader_group = parser.add_argument_group(title='Trigger driving / Mongo reading settings')
     mongoreader_group.add_argument('--batch_window', type=float,
                                    help='Length of time range (in sec, float) to get pulse data in each query.')
-    mongoreader_group.add_argument('--delete_data', action='store_true',
-                                   help="Delete data from the untriggered collection while triggering on it. "
-                                        "Essential for running the trigger live for an extended time!")
     mongoreader_group.add_argument('--edge_safety_margin', type=int,
                                    help="When triggering live, stay at least this many seconds "
                                         "away from the insertion edge.")
     mongoreader_group.add_argument('--max_query_workers', type=int,
                                    help="Maximum number of parallel pulse time range queries "
-                                        "to fire off in the trigger. If delete_data, this is also the maximum "
+                                        "to fire off in the trigger. For the deleter, it is the "
                                         "number of parallel delete queries.")
     mongoreader_group.add_argument('--skip_ahead', type=int, default=0,
                                    help="After triggering a batch of data, skip ahead this number of batches "

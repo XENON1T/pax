@@ -99,13 +99,13 @@ class PersistentRunsDBConnection:
         self.client = self.clientmaker.get_client('run', autoreconnect=True)
         self.db = self.client['run']
         self.collection = self.db['runs_new']
-        self.pipeline_status_collection = self.run_db['pipeline_status']
+        self.pipeline_status_collection = self.db['pipeline_status']
 
     def check(self):
         """Checks that the runs db connection we currently have is alive. If not, we try to re-acquire it forever."""
         while True:
             try:
-                self.run_client.admin.command('ping')
+                self.client.admin.command('ping')
                 return
 
             except Exception as e:

@@ -13,6 +13,7 @@ A run that is marked for preservation by this script should be mongodumped to di
 manually removed. This is not done in this script.
 """
 import os
+import pytz
 import time
 import argparse
 import datetime
@@ -31,10 +32,18 @@ parser.add_argument('--wait', default=10, type=int,
 parser.add_argument('--check_only', action='store_true',
                     help="Just print which runs still have data present, then exit. Don't modify anything.")
 
+parser.add_argument('--grace', default=7200,
+                    help="Delete runs that have no external triggel this many seconds after acquisition is completed. "
+                         "Default: 7200.")
+
+parser.add_argument('--markfordeletion', default=0,
+                    help="Explicitly mark a run number for deletion.")
+
 marking_group = parser.add_argument_group(title='Marking current run for preservation')
 marking_group.add_argument('--preserve_now', action='store_true',
                            help='Mark the run that is currently being acquired for preservation, then exit.')
-marking_group.add_argument('--desc', default='Manually marked this run for preservation, no description given.',
+marking_group.add_argument('--desc', type=str, 
+                           default='Description for manual external trigger.',
                            help='Describe reason for preserving current run, will be included in runs db.')
 
 connection_group = parser.add_argument_group(title='MongoDB connection settings')
@@ -55,18 +64,26 @@ args = parser.parse_args()
 # Connect to runs db
 rundb = PersistentRunsDBConnection({k: getattr(args, k) for k in ('user', 'password', 'host', 'port')})
 
+if int(args.markfordeletion) > 0:
+    print("Marking run %d for deletion. Let's hope you know what you are doing." % int(args.markfordeletion))
+    rundb.collection.find_one_and_update({'number': int(args.markfordeletion),
+                                          'detector': 'tpc'},
+                                         {'$set': {'preserve': False}})
+    exit()
 
 while True:
     # Check if the runs db is still live, don't proceed otherwise.
     rundb.check()
+    new_external_trigger = False
 
     if args.preserve_now:
         new_external_trigger = True
         external_trigger_time = datetime.datetime.utcnow()
         external_trigger_description = args.desc
-
+        
     elif args.check_only:
-        new_external_trigger = False
+        # We're just asked to list the table of preserved runs.
+        pass
 
     else:
         # Check for any NEW external triggers here.
@@ -77,21 +94,35 @@ while True:
 
     if new_external_trigger:
         # Find the run that includes the trigger (if one exists), and mark it for preservation
-        print("External trigger at UTC timestamp %0.2f: %s." % (external_trigger_time,
-                                                                external_trigger_description))
+        print("External trigger at UTC timestamp %s: %s." % (external_trigger_time,
+                                                             external_trigger_description))
 
-        runs = list(rundb.collection.find({'detector': 'tpc',
-                                           'start': {'$gt', external_trigger_time},
-                                           'end':   {'$lt', external_trigger_time}},
-                                          projection=['_id', 'number']))
+        runs = list(rundb.collection.find(
+            {'detector': 'tpc',
+             'start': {'$lt': external_trigger_time},
+             '$or': [
+                 {'end':   {'$gt': external_trigger_time}},
+                 {'end':   {'$exists': False}},
+            ]}, 
+            projection=['_id', 'number']))
+
         if len(runs) == 0:
             raise ValueError("No run found that matches trigger time. :-( "
                              "Perhaps the DAQ was off, or taking calibration data? Please verify manually.")
 
         if len(runs) > 1:
-            raise ValueError("More than one run matches the trigger time?! Numbers: %s")
+            matching_run_numbers = [r['number'] for r in runs]
+            latest_run = max(matching_run_numbers)
+
+            print("More than one run matches the trigger time: %s. " 
+                  "There are probably old crashed runs without an end time. Please clean up the runs db. "
+                  "We'll assume the trigger is in the latest one (%d)." % (
+                        matching_run_numbers, latest_run))
+
+            runs = [r for r in runs if r['number'] == latest_run]
 
         run_doc = runs[0]
+
         print("Run %d contains the external trigger, marking it for preservation." % run_doc['number'])
 
         rundb.collection.find_one_and_update({'_id': run_doc['_id']},
@@ -104,14 +135,21 @@ while True:
     table = PrettyTable(['Run number', 'name', 'start', 'end', 'preserve', 'reason'])
     run_fields = 'number name start end preserve preserve_reason'.split()
 
-    for run_doc in rundb.collection.find({'trigger.status': 'trigger_done'},
+    # Note we require run number > 11973; before this the SN trigger wasn't active and every run still has
+    # trigger status 'processed' (but obviously no untriggered data left).
+    for run_doc in rundb.collection.find({'trigger.status': 'processed',
+                                          'detector': 'tpc',
+                                          'number': {'$gt': 11973}},
                                          projection=run_fields + ['_id']):
         table.add_row([run_doc.get(x, False) for x in run_fields])
+
+        cutoff_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        cutoff_time -= datetime.timedelta(seconds=int(args.grace))
 
         if (
                     not args.check_only and
                     not run_doc.get('preserve', False) and
-                    run_doc['end'] > datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+                    run_doc['end'].replace(tzinfo=pytz.utc) < cutoff_time
         ):
             print("Marking run %d for deletion." % run_doc['number'])
             rundb.collection.find_one_and_update({'_id': run_doc['_id']},
@@ -124,9 +162,9 @@ while True:
 
     # Update the pipeline status collection, to show we're running
     rundb.pipeline_status_collection.insert({
-        {'name': 'delete_decider',
-         'time': datetime.datetime.utcnow()}
+        'name': 'delete_decider',
+        'time': datetime.datetime.utcnow()
     })
 
-    print("Sleeping for %d seconds..." % args.wait)
+    print("%s: sleeping for %d seconds..." % (datetime.datetime.utcnow(), args.wait))
     time.sleep(args.wait)

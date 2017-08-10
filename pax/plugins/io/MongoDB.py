@@ -52,7 +52,7 @@ class MongoBase:
             detector=self.config['detector'],
             split_collections=self.split_collections)
 
-        self.split_hosts = len(self.hosts) == 1
+        self.split_hosts = len(self.hosts) != 1
 
         start_datetime = self.run_doc['start'].replace(tzinfo=pytz.utc).timestamp()
         self.time_of_run_start = int(start_datetime * units.s)
@@ -454,7 +454,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         # Compile the end of run info for the run doc and for display
         trigger_end_info = self.trigger.shutdown()
         trigger_end_info.update(dict(ended=True,
-                                     status='processed',
+                                     status='deleted' if self.config['delete_data'] else 'processed',
                                      trigger_monitor_data_location=self.uri_for_monitor,
                                      mongo_reader_config={k: v for k, v in self.config.items()
                                                           if k != 'password' and
@@ -646,7 +646,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                                            self.executor)
                 self.last_subcollection_not_yet_deleted += 1
         else:
-            assert self.input_collections is not None    # Pycharm source linter doesn't realize this apparently
+            if self.input_collections is None:
+                raise RuntimeError("Wtf??")
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
                 self.log.info("Seen event at %s, clearing all data until then." % pax_to_human_time(time_since_start))
                 for coll in self.input_collections:
