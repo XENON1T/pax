@@ -122,5 +122,11 @@ while True:
     if args.preserve_now or args.check_only:
         break
 
+    # Update the pipeline status collection, to show we're running
+    rundb.pipeline_status_collection.insert({
+        {'name': 'delete_decider',
+         'time': datetime.datetime.utcnow()}
+    })
+
     print("Sleeping for %d seconds..." % args.wait)
     time.sleep(args.wait)

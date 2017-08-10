@@ -94,12 +94,18 @@ def main():
             # Just get a run, don't update the status to pending
             run_doc = rundb.collection.find_one(run_query)
 
+        if args.deleter:
+            # Insert a status doc to show we are running
+            # For the deleter this doesn't contain any other information
+            rundb.pipeline_status_collection.insert({'name': 'deleter',
+                                                     'time': datetime.datetime.utcnow()})
+
         if run_doc is None:
             if args.wait <= 0:
                 log.info("No runs to process: exiting.")
                 break
             log.info("No runs to process yet... waiting %d seconds", args.wait)
-            if not args.secret_mode:
+            if not args.secret_mode and not args.deleter:
                 rundb.pipeline_status_collection.insert({'name': 'eventbuilder_info',
                                                          'time': datetime.datetime.utcnow(),
                                                          'working_on_run': False})
