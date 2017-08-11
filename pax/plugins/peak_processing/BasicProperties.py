@@ -163,7 +163,10 @@ def integrate_until_fraction(w, fractions_desired, results):
         while fraction_seen + fraction_this_sample >= needed_fraction:
             # Yes, so we need to add the next sample fractionally
             area_needed = area_tot * (needed_fraction - fraction_seen)
-            results[current_fraction_index] = i + area_needed/x
+            if x != 0:
+                results[current_fraction_index] = i + area_needed/x
+            else:
+                results[current_fraction_index] = i
             # Advance to the next fraction
             current_fraction_index += 1
             if current_fraction_index > len(fractions_desired) - 1:

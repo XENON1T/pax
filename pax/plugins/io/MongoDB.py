@@ -46,50 +46,16 @@ class MongoBase:
         else:
             self.batch_window = self.config['batch_window']
 
-        # Retrieve information for connecting to the input database from the run doc
-        self.input_info = None
-        for doc in self.run_doc['data']:
-            if doc['type'] == 'untriggered':
-                self.input_info = doc
-                break
-        else:
-            raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
+        self.input_info, self.hosts, self.dbs, self.input_collections = connect_to_eb_dbs(
+            clientmaker=self.cm,
+            run_doc=self.run_doc,
+            detector=self.config['detector'],
+            split_collections=self.split_collections)
 
-        if ';' in self.input_info['location']:
-            self.split_hosts = True
-            self.input_info['location'] = self.input_info['location'].split(';')[0]
-        else:
-            self.split_hosts = False
-
-        self.input_info['database'] = self.input_info['location'].split('/')[-1]
-        if not self.input_info['database'] == 'untriggered' and self.config['detector'] == 'tpc':
-            raise ValueError("TPC data is expected in the 'untriggered' database,"
-                             " but this run is in %s?!" % self.input_info['database'])
+        self.split_hosts = len(self.hosts) != 1
 
         start_datetime = self.run_doc['start'].replace(tzinfo=pytz.utc).timestamp()
         self.time_of_run_start = int(start_datetime * units.s)
-
-        # Connect to the input database on the primary host
-        self.input_client = self.cm.get_client(database_name=self.input_info['database'],
-                                               uri=self.input_info['location'],
-                                               w=0)         # w=0 ensures fast deletes. We're not going to write.
-        self.input_db = self.input_client[self.input_info['database']]
-
-        if not self.split_collections:
-            self.input_collection = self.input_db.get_collection(self.input_info['collection'])
-        # In split collections mode, we use the subcollection methods (see below) to get the input collections
-
-        if self.split_hosts:
-            self.hosts = [parse_passwordless_uri(x)[0]
-                          for x in set(self.run_doc['reader']['ini']['mongo']['hosts'].values())]
-        else:
-            self.hosts = [parse_passwordless_uri(self.input_info['location'])[0]]
-
-        # Make pymongo db handles for all hosts. Double work if not split_hosts, but avoids double code later
-        self.dbs = [self.cm.get_client(database_name=self.input_info['database'],
-                                       host=host,
-                                       uri=self.input_info['location'],
-                                       w=0)[self.input_info['database']] for host in self.hosts]
 
         # Get the database in which the acquisition monitor data resides.
         if not self.split_hosts:
@@ -99,9 +65,6 @@ class MongoBase:
             aqm_host = self.config.get('acquisition_monitor_host', 'eb0')
             db_i = self.hosts.index(aqm_host)
             self.aqm_db = self.dbs[db_i]
-
-        if not self.split_collections:
-            self.input_collections = [db.get_collection(self.input_info['collection']) for db in self.dbs]
 
     def refresh_run_doc(self):
         """Update the internal run doc within this class
@@ -125,10 +88,7 @@ class MongoBase:
         every event
         Actually this turned out to be some other bug... probably we can remove collection caching now.
         """
-        if host_i is None:
-            db = self.input_db
-        else:
-            db = self.dbs[host_i]
+        db = self.dbs[0 if host_i is None else host_i]
         assert self.split_collections
         cache_key = (number, host_i)
         if cache_key in self._cached_subcollection_handles:
@@ -159,6 +119,53 @@ class MongoBase:
     def _from_mt(self, x):
         """Converts the time x from mongo units to pax units"""
         return int(x * self.sample_duration)
+
+
+def connect_to_eb_dbs(clientmaker, run_doc, detector='tpc', split_collections=True):
+    """Connect to eventbuilder databases. Returns tuple of
+     - input_info (dictionary with all sorts of info about the connection, e.g. hostnames, collection names, ...)
+     - hosts: list of MongoDB uris (strings)
+     - dbs: list of pymongo db handles
+     - input_collections: None if split_collections, else list of pymongo collection handles
+
+    This was split off from the base class to allow re-use in external code (specifically the deleter in event-builder).
+    """
+    for doc in run_doc['data']:
+        if doc['type'] == 'untriggered':
+            input_info = doc
+            break
+    else:
+        raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
+
+    if ';' in input_info['location']:
+        split_hosts = True
+        input_info['location'] = input_info['location'].split(';')[0]
+    else:
+        split_hosts = False
+
+    input_info['database'] = input_info['location'].split('/')[-1]
+    if input_info['database'] != 'untriggered' and detector == 'tpc':
+        raise ValueError("TPC data is expected in the 'untriggered' database,"
+                         " but this run is in %s?!" % input_info['database'])
+
+    if split_hosts:
+        hosts = [parse_passwordless_uri(x)[0]
+                 for x in set(run_doc['reader']['ini']['mongo']['hosts'].values())]
+    else:
+        hosts = [parse_passwordless_uri(input_info['location'])[0]]
+
+    # Make pymongo db handles for all hosts. Double work if not split_hosts, but avoids double code later
+    dbs = [clientmaker.get_client(database_name=input_info['database'],
+                                  host=host,
+                                  uri=input_info['location'],
+                                  w=0)[input_info['database']] for host in hosts]
+
+    if not split_collections:
+        input_collections = [db.get_collection(input_info['collection']) for db in dbs]
+    else:
+        input_collections = None
+
+    return input_info, hosts, dbs, input_collections
 
 
 class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
@@ -214,9 +221,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         if self.split_collections:
             if self.data_taking_ended:
                 # Get all collection names, find the last subcollection with some data that belongs to the current run.
-                subcols_with_stuff = [int(x.split('_')[-1]) for x in self.input_db.collection_names()
+                subcols_with_stuff = [int(x.split('_')[-1]) for x in self.dbs[0].collection_names()
                                       if x.startswith(self.run_doc['name']) and
-                                      self.input_db.get_collection(x).count()]
+                                      self.dbs[0].get_collection(x).count()]
                 if not len(subcols_with_stuff):
                     self.log.error("Run contains no collection(s) with any pulses!")
                     self.last_pulse_time = 0
@@ -233,7 +240,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                 if self.config.get('use_run_status_doc'):
                     # Dan made a doc with the approximate insertion point of each digitizer: the min of these should
                     # be safe to use (more or less.. a slight delay is still advisable. ask Dan for details)
-                    status_doc = self.input_db.get_collection('status').find_one({'collection': self.run_doc['name']})
+                    status_doc = self.dbs[0].get_collection('status').find_one({'collection': self.run_doc['name']})
                     if status_doc is None:
                         raise RuntimeError("Missing run status doc!")
                     safe_col = float('inf')
@@ -259,7 +266,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
 
                 check_collection = self.subcollection(self.latest_subcollection)
         else:
-            check_collection = self.input_collection
+            # There is just one collection (well, possibly one per host), just check that one.
+            check_collection = self.input_collections[0]
 
         # Find the last pulse in the collection
         cu = list(check_collection.find().sort('time', direction=pymongo.DESCENDING).limit(1))
@@ -302,8 +310,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                                                     'last_pulse_so_far_in_run': self.last_pulse_time,
                                                     'latest_subcollection': self.latest_subcollection,
                                                     'last_time_searched': lts,
-                                                    'working_on_run': True,
-                                                    })
+                                                    'working_on_run': True})
 
     def get_events(self):
         self.log.info("Eventbuilder get_events starting up")
@@ -447,7 +454,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
         # Compile the end of run info for the run doc and for display
         trigger_end_info = self.trigger.shutdown()
         trigger_end_info.update(dict(ended=True,
-                                     status='processed',
+                                     status='deleted' if self.config['delete_data'] else 'processed',
                                      trigger_monitor_data_location=self.uri_for_monitor,
                                      mongo_reader_config={k: v for k, v in self.config.items()
                                                           if k != 'password' and
@@ -579,18 +586,19 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoBase):
 
 
 class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
-    """Clears data whose events have been built from MongoDB>
-    Will do NOTHING unless delete_data = True in config.
-    This must run as part of the output group, so it gets the events in order.
+    """Clears data whose events have been built from MongoDB,
+    rescuing acquisition monitor pulses to a separate file first.
+
+    This must run as part of the output plugin group, so it gets the events in order.
+    It does not use the events' content, but needs to know which event times have been processed.
 
     If split_collections:
         Drop sub collections when events from subsequent collections start arriving.
-        Drop all remaining subcollections on shutdown
+        Drop all remaining subcollections on shutdown.
 
     Else (single collection mode):
         Keeps track of which time is safe to delete, then deletes data from the collection in batches.
         At shutdown, drop the collection
-
     """
     do_input_check = False
     do_output_check = False
@@ -600,15 +608,24 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
     def startup(self):
         MongoBase.startup(self)
         self.executor = ThreadPoolExecutor(max_workers=self.config['max_query_workers'])
-        if not self.config['delete_data']:
-            self.log.info("Will NOT rescue acquisition monitor pulses, need delete_data enabled for this")
-            return
+
+        # Should we actually delete data, or just rescue the acquisition monitor pulses?
+        self.actually_delete = self.config.get('delete_data', False)
+        if self.actually_delete:
+            self.log.info("Data will be DELETED from the Mongo database after it is acquired!")
+        else:
+            self.log.info("Data will REMAIN in the Mongo database (until delete permission is acquired).")
+
         aqm_file_path = self.config.get('acquisition_monitor_file_path')
         if aqm_file_path is None:
-            self.log.info("Will NOT rescue acquisition monitor pulses!")
+            self.log.info("No acquisition monitor data file path given -- will NOT rescue acquisition monitor pulses!")
+            self.aqm_output_handle = None
+        elif 'sum_wv' not in self.config['channels_in_detector']:
+            self.log.warning("Acquisition monitor path specified, "
+                             "but your detector doesn't have an acquisition monitor?")
             self.aqm_output_handle = None
         else:
-            # Get the acquisition monitor module from the pmts dictionary in the config
+            # Get the acquisition monitor module number from the pmts dictionary in the config
             # It's a bit bad we've hardcoded 'sum_wv' as detector name here...
             some_ch_from_aqm = self.config['channels_in_detector']['sum_wv'][0]
             self.aqm_module = self.config['pmts'][some_ch_from_aqm]['digitizer']['module']
@@ -619,9 +636,6 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         self.already_rescued_collections = []
 
     def transform_event(self, event_proxy):
-        if not self.config['delete_data']:
-            return event_proxy
-
         time_since_start = event_proxy.data['stop_time'] - self.time_of_run_start
         if self.split_collections:
             coll_number = self.subcollection_with_time(time_since_start)
@@ -632,6 +646,8 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                                            self.executor)
                 self.last_subcollection_not_yet_deleted += 1
         else:
+            if self.input_collections is None:
+                raise RuntimeError("Wtf??")
             if time_since_start > self.last_time_deleted + self.config['batch_window']:
                 self.log.info("Seen event at %s, clearing all data until then." % pax_to_human_time(time_since_start))
                 for coll in self.input_collections:
@@ -644,31 +660,33 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
         return event_proxy
 
     def shutdown(self):
-        if self.config['delete_data']:
+        # Wait for any slow drops to complete
+        self.log.info("Waiting for slow collection drops/rescues to complete...")
+        self.executor.shutdown()
+        self.log.info("Collection drops/rescues should be complete. Checking for remaining collections.")
 
-            # Wait for any slow drops to complete
-            self.log.info("Waiting for slow collection drops to complete...")
-            self.executor.shutdown()
-            self.log.info("Collection drops should be complete. Checking for remaining collections.")
+        pulses_in_remaining_collections = defaultdict(int)
+        for db in self.dbs:
+            for coll_name in db.collection_names():
+                if not coll_name.startswith(self.run_doc['name']):
+                    continue
+                if coll_name in self.already_rescued_collections and not self.actually_delete:
+                    # Of course these collections are still there, don't count them as 'remaining'
+                    continue
+                pulses_in_remaining_collections[coll_name] += db[coll_name].count()
 
-            pulses_in_remaining_collections = defaultdict(int)
-            for db in self.dbs:
-                for coll_name in db.collection_names():
-                    if not coll_name.startswith(self.run_doc['name']):
-                        continue
-                    pulses_in_remaining_collections[coll_name] += db[coll_name].count()
+        if len(pulses_in_remaining_collections):
+            self.log.info("Leftover collections with pulse counts: %s. Clearing/rescuing these now." % (
+                              str(pulses_in_remaining_collections)))
 
-            if len(pulses_in_remaining_collections):
-                self.log.info("Remaining collections with pulse counts: %s. Clearing these now." % (
-                                  str(pulses_in_remaining_collections)))
+            for colname in pulses_in_remaining_collections.keys():
+                self.drop_collection_named(colname)
+            self.log.info("Completed.")
 
-                for colname in pulses_in_remaining_collections.keys():
-                    self.drop_collection_named(colname)
-                self.log.info("Completed.")
+        else:
+            self.log.info("All collections have already been cleaned, great.")
 
-            else:
-                self.log.info("All collections have already been cleaned, great.")
-
+        if self.actually_delete:
             # Update the run doc to remove the 'untriggered' entry
             # since we just deleted the last of the untriggered data
             self.refresh_run_doc()
@@ -705,12 +723,13 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
 
     def delete_pulses(self, collection, start_mongo_time, stop_mongo_time):
         """Deletes all pulses in collection between start_mongo_time (inclusive) and stop_mongo_time (exclusive),
-        both in mongo time units (not pax units!).
+        both in mongo time units (not pax units!). Rescues acquisition monitor pulses just before deleting.
         """
         query = {'time': {'$gte': start_mongo_time,
                           '$lt': stop_mongo_time}}
         self.rescue_acquisition_monitor_pulses(collection, query)
-        collection.delete_many(query)
+        if self.actually_delete:
+            collection.delete_many(query)
 
     def drop_collection_named(self, collection_name, executor=None):
         """Drop the collection named collection_name from db, rescueing acquisition monitor pulses first.
@@ -725,7 +744,9 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.already_rescued_collections.append(collection_name)
                 self.rescue_acquisition_monitor_pulses(self.aqm_db[collection_name])
             else:
-                self.log.warning("Duplicated call to drop collection %s!" % collection_name)
+                self.log.warning("Duplicated call to rescue/delete collection %s!" % collection_name)
+        if not self.actually_delete:
+            return
         for db in self.dbs:
             if executor is None:
                 db.drop_collection(collection_name)

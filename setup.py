@@ -44,7 +44,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
     name='pax',
-    version='6.6.6',
+    version='6.8.0',
     description='PAX is the raw data processor for LXe TPCs.',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell and Jelle Aalbers for the XENON1T collaboration',
@@ -64,7 +64,7 @@ setup(
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},
     scripts=['bin/paxer', 'bin/event-builder', 'bin/paxmaker',
-             'bin/convert_pax_formats'],
+             'bin/convert_pax_formats', 'bin/delete_decider'],
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
