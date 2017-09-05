@@ -37,7 +37,6 @@ class DesaturatePulses(plugin.TransformPlugin):
             # Select a reference region just before the start of the saturated region
             reference_slice = slice(max(0, first_saturated - self.config['reference_region_samples']),
                                     first_saturated)
-
             # Find all pulses in TPC channels that overlap with the saturated & reference region
             other_pulses = [p for i, p in enumerate(event.pulses)
                             if p.left < last_saturated + pulse.left and p.right > pulse.left and
@@ -62,6 +61,11 @@ class DesaturatePulses(plugin.TransformPlugin):
 
             # Compute the ratio of this channel's waveform / the nonsaturated waveform in the reference region
             w = self.waveform_in_pe(pulse)
+            if len(sumw[reference_slice][sumw[reference_slice] > 1]) < self.config['reference_region_samples_treshold']:
+                # the pulse is saturated, but there are not enough reference samples to get a good ratio
+                # This actually distinguished between S1 and S2 and will only correct S2 signals
+                continue
+
             ratio = w[reference_slice].sum()/sumw[reference_slice].sum()
 
             # not < is preferred over >, since it will catch nan
