@@ -18,6 +18,7 @@ import time
 import argparse
 import datetime
 from prettytable import PrettyTable
+import configparser
 
 from pax.MongoDB_ClientMaker import PersistentRunsDBConnection
 
@@ -33,7 +34,7 @@ parser.add_argument('--check_only', action='store_true',
                     help="Just print which runs still have data present, then exit. Don't modify anything.")
 
 parser.add_argument('--grace', default=7200,
-                    help="Delete runs that have no external triggel this many seconds after acquisition is completed. "
+                    help="Delete runs that have no external trigger this many seconds after acquisition is completed. "
                          "Default: 7200.")
 
 parser.add_argument('--markfordeletion', default=0,
@@ -86,11 +87,19 @@ while True:
         pass
 
     else:
-        # Check for any NEW external triggers here.
-        #
-        # Add code here.
-        #
-        new_external_trigger = False
+        # Check for any NEW external triggers here.       
+        config = configparser.RawConfigParser()
+        path = '/project/lgrandi/supernovae/external_triggers/'
+        config.read(path+'external_trigger.cfg')
+
+        external_trigger_description = config.get('TRIGGER','source')
+        external_trigger_time = config.get('TRIGGER','timestamp')
+        
+        external_trigger_time = datetime.datetime.strptime(external_trigger_time,"%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=pytz.utc)
+        current_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+
+        if external_trigger_time > current_time - datetime.timedelta(seconds=int(args.wait)+1):  ##adding 1 here because it actually takes a bit more than the wait time
+            new_external_trigger = False   ## should be True for standard operation; leaving False until debugged
 
     if new_external_trigger:
         # Find the run that includes the trigger (if one exists), and mark it for preservation
