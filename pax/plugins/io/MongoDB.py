@@ -633,6 +633,10 @@ class MongoDBClearUntriggered(plugin.TransformPlugin, MongoBase):
                 self.aqm_module, aqm_file_path))
             self.aqm_output_handle = open(aqm_file_path, mode='wb')
 
+            # Add some random content to make Boris and ruciax happy
+            # (ensure a unique checksum even if there are no pulses or the DAQ crashes)
+            self.aqm_output_handle.write(pickle.dumps("Pax rules! Random numbers of the day: %s" % np.random.randn(3)))
+
         self.already_rescued_collections = []
 
     def transform_event(self, event_proxy):
