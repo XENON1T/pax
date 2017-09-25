@@ -316,6 +316,7 @@ class WaveformSimulator(plugin.InputPlugin):
         event = self.simulator.make_pax_event()
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
+        event.dataset_name += "_MC"
         event.event_number = self.current_event
 
         # Add start time offset to all peak start times in the truth file
