@@ -4,7 +4,20 @@ History
 -------
 
 ------------------
-6.7.0 (2017-08-07)
+6.8.1 (2017-09-26)
+------------------
+* New 3D data-driven FDC map (#611)
+* Fix de-saturation bug for very rare event (#601)
+* SR1 PMT gains set to default in fax config (#606)
+* S1 optical photon hit patterns with improved binning (#603)
+* New S1 area fraction top map (#598)
+* Prepare for supernova trigger (#568)
+* Don't keep LED data in buffer (#600)
+* Add random initial pickle to acquisition monitor file (#608)
+
+
+------------------
+6.8.0 (2017-08-07)
 ------------------
 * Two step gap clustering (#596) 
 * Add data-driven SPE distributions for each channel (fax) (#595)
