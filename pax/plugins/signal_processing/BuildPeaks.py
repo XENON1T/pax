@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy import interpolate
 from pax import plugin, dsputils
 from pax.plugins.peak_processing.BasicProperties import integrate_until_fraction
 
@@ -19,8 +19,17 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         # Maximum gap inside other clusters
         self.gap_threshold = self.config['max_gap_size_in_cluster'] / self.dt
 
-        # Rise time threshold to mark S1 candidates
-        self.rise_time_threshold = self.config.get('rise_time_threshold', 80)
+        # Rise time bound
+        self.s1_rise_time_bound = interpolate.interp1d([0, 5, 10, 100],
+                                                       [80, 75, 70, 70],
+                                                       fill_value='extrapolate', kind='linear')
+
+        # Rise time vs AFT cut
+        self.s1_rise_time_aft = interpolate.interp1d([0, 0.4, 0.5, 0.6, 0.70, 0.70, 1.0],
+                                                     [70, 70, 68, 65, 60, 0, 0], kind='linear')
+
+        self.first_top_ch = np.min(np.array(self.config['channels_top']))
+        self.last_top_ch = np.max(np.array(self.config['channels_top']))
 
         # tight coincidence
         self.tight_coincidence_window = self.config.get('tight_coincidence_window', 50) // self.dt
@@ -48,8 +57,6 @@ class GapSizeClustering(plugin.ClusteringPlugin):
             s1_mask = np.zeros(len(hits), dtype=np.bool)    # True if hit is part of S1 candidate
             for l_i, r_i, h in self.iterate_gap_clusters(hits, self.s1_gap_threshold):
                 l = h['left_central'].min()
-                # center = np.sum(h['center'] * h['area']) / h['area'].sum() / self.dt
-                # rise_time = (center - l)
                 area_sum = np.sum(h['area'])
                 peak = self.build_peak(hits=h, detector=detector)
                 # use summed WF to calculate peak properties
@@ -68,7 +75,16 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                 l = peak.index_of_maximum - self.tight_coincidence_window
                 r = peak.index_of_maximum + self.tight_coincidence_window
                 tight_coincidence = len(np.unique(h['channel'][(x >= l) & (x <= r)]))
-                if (tight_coincidence >= 3 and rise_time < self.rise_time_threshold) or (len(h) <= 2 and area_sum < 50):
+                # Area fraction on top
+                peak.area_fraction_top =\
+                    np.sum(peak.area_per_channel[self.first_top_ch:self.last_top_ch + 1]) / peak.area
+
+                rise_time_cut = self.s1_rise_time_aft(peak.area_fraction_top)
+                # If area is large enough, change to a looser threshold
+                if peak.area > 100:
+                    rise_time_cut = self.s1_rise_time_bound(peak.area)
+
+                if (tight_coincidence >= 3 and rise_time < rise_time_cut) or tight_coincidence <= 2 or area_sum < 5:
                     # Yes, this is an S1 candidate Or, this is a lone hit. Mark it as a peak,
                     # hits will be ignored in next stage.
                     s1_mask[l_i:r_i] = True
