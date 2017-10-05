@@ -277,14 +277,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoBase):
                     self.log.warning("Latest subcollection %d seems empty now, but wasn't before... Race condition/edge"
                                      " case in mongodb, bug in clearing code, or something else weird? Investigate if "
                                      "this occurs often!!" % self.latest_subcollection)
-                last_pulse_time = self.latest_subcollection * self.batch_window
+                self.last_pulse_time = self.latest_subcollection * self.batch_window
             else:
                 # Apparently the DAQ has not taken any pulses yet?
-                last_pulse_time = 0
+                self.last_pulse_time = 0
         else:
-            last_pulse_time = cu[0]['time']
-
-        self.last_pulse_time = self._from_mt(last_pulse_time)
+            self.last_pulse_time = self._from_mt(cu[0]['time'])
 
         if self.data_taking_ended:
             self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(self.last_pulse_time))
