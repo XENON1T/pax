@@ -14,6 +14,13 @@ matrix:
           env: PYTHON=2.7 ROOT=6.04
         - python: 3.4
           env: PYTHON=3.4 ROOT=6.04
+
+    allow_failures:
+        - python: 2.7
+          env: PYTHON=2.7 ROOT=5.34.32
+        - python: 2.7
+          env: PYTHON=2.7 ROOT=6.04
+
     #     - language: generic
     #       os: osx
     #       osx_image: xcode6.4
@@ -38,6 +45,7 @@ notifications:
   email:
     - ctunnell@nikhef.nl
     - jaalbers@nikhef.nl
+    - feigao.ge@gmail.com
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/09d571df0e21d4d4182f
@@ -70,7 +78,7 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy pyqt=4.11 matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.18.1 pyqt>=4.11 matplotlib pandas cython h5py numba>=0.28.1 pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
   - pip install coveralls nose coverage
 
