@@ -269,8 +269,7 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
                 '''
                 for sample in range(leftbound, rightbound):
                     if(pulse.left<=sample and pulse.right >=sample):
-                        wf_ch[sample - leftbound] = w[sample - pulse.left]
-                        
+                        wf_ch[sample - leftbound] = w[sample - pulse.left]      
             for j in range(int(rightbound - leftbound)):
                 h.SetBinContent(j,  wf_ch[j])
 
