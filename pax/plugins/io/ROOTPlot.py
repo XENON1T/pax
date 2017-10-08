@@ -268,10 +268,10 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
                     h.SetBinContent(int(i+pulse.left-leftbound), sample)
                 '''
                 for sample in range(leftbound, rightbound):
-                    if(pulse.left<=sample and pulse.right >=sample):
-                        wf_ch[sample - leftbound] = w[sample - pulse.left]      
+                    if(pulse.left <= sample and pulse.right >= sample):
+                        wf_ch[sample - leftbound] = w[sample - pulse.left]
             for j in range(int(rightbound - leftbound)):
-                h.SetBinContent(j,  wf_ch[j])
+                h.SetBinContent(j, wf_ch[j])
 
             h.SetStats(0)
             h.GetXaxis().SetTitle("Time [samples]")
