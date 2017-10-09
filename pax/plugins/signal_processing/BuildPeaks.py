@@ -75,9 +75,15 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                 l = peak.index_of_maximum - self.tight_coincidence_window
                 r = peak.index_of_maximum + self.tight_coincidence_window
                 tight_coincidence = len(np.unique(h['channel'][(x >= l) & (x <= r)]))
+
                 # Area fraction on top
                 peak.area_fraction_top =\
                     np.sum(peak.area_per_channel[self.first_top_ch:self.last_top_ch + 1]) / peak.area
+                # rounding peak aft
+                if peak.area_fraction_top < 0:
+                    peak.area_fraction_top = 0
+                elif peak.area_fraction_top > 1:
+                    peak.area_fraction_top = 1
 
                 rise_time_cut = self.s1_rise_time_aft(peak.area_fraction_top)
                 # If area is large enough, change to a looser threshold
