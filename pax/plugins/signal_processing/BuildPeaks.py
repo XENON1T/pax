@@ -56,7 +56,6 @@ class GapSizeClustering(plugin.ClusteringPlugin):
             # First cluster into small clusters. Try to find S1 candidates among them, and set these apart
             s1_mask = np.zeros(len(hits), dtype=np.bool)    # True if hit is part of S1 candidate
             for l_i, r_i, h in self.iterate_gap_clusters(hits, self.s1_gap_threshold):
-                l = h['left_central'].min()
                 area_sum = np.sum(h['area'])
                 peak = self.build_peak(hits=h, detector=detector)
                 # use summed WF to calculate peak properties
@@ -70,11 +69,6 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                 area_midpoint = area_times[10]
                 area_decile_from_midpoint = area_times[::2] - area_midpoint
                 rise_time = -area_decile_from_midpoint[1]
-                # tight coincidence for peak classification
-                x = h['index_of_maximum']
-                l = peak.index_of_maximum - self.tight_coincidence_window
-                r = peak.index_of_maximum + self.tight_coincidence_window
-                tight_coincidence = len(np.unique(h['channel'][(x >= l) & (x <= r)]))
 
                 # Area fraction on top
                 peak.area_fraction_top =\
@@ -87,10 +81,10 @@ class GapSizeClustering(plugin.ClusteringPlugin):
 
                 rise_time_cut = self.s1_rise_time_aft(peak.area_fraction_top)
                 # If area is large enough, change to a looser threshold
-                if peak.area > 100:
+                if peak.area > 100 or peak.area < 5:
                     rise_time_cut = self.s1_rise_time_bound(peak.area)
-
-                if (tight_coincidence >= 3 and rise_time < rise_time_cut) or tight_coincidence <= 2 or area_sum < 5:
+                coincidence = peak.n_contributing_channels
+                if rise_time < rise_time_cut or coincidence <= 4 or area_sum < 5:
                     # Yes, this is an S1 candidate Or, this is a lone hit. Mark it as a peak,
                     # hits will be ignored in next stage.
                     s1_mask[l_i:r_i] = True
