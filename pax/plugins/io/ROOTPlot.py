@@ -239,16 +239,17 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         # pulses to plot per channel and
         # hitlist with a list of all hit properties to add
         for channel, pulselist in pulses_to_write.items():
-            leftbound = -1
-            rightbound = -1
+            leftbound = peak.left
+            rightbound = peak.right
 
             # Needs an initial scan to find histogram range
+            '''
             for pulseid in pulselist:
                 if leftbound == -1 or event.pulses[pulseid].left < leftbound:
                     leftbound = event.pulses[pulseid].left
                 if rightbound == -1 or event.pulses[pulseid].right > rightbound:
                     rightbound = event.pulses[pulseid].right
-
+            '''
             # Make and book the histo. Put into hists so doesn't get overwritten
             histname = "%s_%i_channel_%i" % (peak.type, index, channel)
             histtitle = "Channel %i in %s[%i]" % (channel, peak.type, index)
@@ -257,12 +258,20 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
                           float(leftbound), float(rightbound))
 
             # Now put the bin values in the histogram
+            wf_ch = np.zeros(rightbound - leftbound)
             for pulseid in pulselist:
                 pulse = event.pulses[pulseid]
                 w = (self.config['digitizer_reference_baseline'] + pulse.baseline -
                      pulse.raw_data.astype(np.float64))
+                '''
                 for i, sample in enumerate(w):
                     h.SetBinContent(int(i+pulse.left-leftbound), sample)
+                '''
+                for sample in range(leftbound, rightbound):
+                    if(pulse.left <= sample and pulse.right >= sample):
+                        wf_ch[sample - leftbound] = w[sample - pulse.left]
+            for j in range(int(rightbound - leftbound)):
+                h.SetBinContent(j, wf_ch[j])
 
             h.SetStats(0)
             h.GetXaxis().SetTitle("Time [samples]")

@@ -105,18 +105,15 @@ def binom_test(k, n, p):
 
 
 class S1AreaFractionTopProbability(plugin.TransformPlugin):
-    """Computes p-value for S1 area fraction top
+    """Computes p-value for S1 area fraction top for each interaction
     """
 
     def startup(self):
-        aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_06Mar2017.json')
+        aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_20170808.json')
         self.aft_map = InterpolatingMap(aftmap_filename)
         self.low_pe_threshold = 10  # below this in PE, transition to hits
 
     def transform_event(self, event):
-        '''
-        Computes the probability for the s1 area fraction top for each interaction
-        '''
         for ia in event.interactions:
             s1 = event.peaks[ia.s1]
 
