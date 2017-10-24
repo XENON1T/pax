@@ -15,7 +15,7 @@ import pandas as pd
 import multihist    # noqa   # Not explicitly used, but pickle of gas gap warping map is in this format
 from scipy import stats
 from scipy.interpolate import interp1d
-
+from scipy.fftpack import irfft
 from pax import units, utils, datastructure
 from pax.PatternFitter import PatternFitter
 from pax.InterpolatingMap import InterpolatingMap
@@ -84,6 +84,17 @@ class Simulator(object):
             # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
             # (which is one row per channel)
             self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
+
+        # FFT based noise simulation
+        if c['real_noise_file_FFT']:
+            self.noise_data_FFT = np.load(utils.data_file_name(c['real_noise_file_FFT']))['arr_0']
+            # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
+            # (which is one row per channel)
+            self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
+
+        if c['topfreq_correlation']:
+            self.corrdata = np.load(utils.data_file_name(c['topfreq_correlation']))['arr_0']
+
 
         # Load light yields
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
@@ -316,8 +327,13 @@ class Simulator(object):
         end_index = event.length() - 1
         pulse_length = end_index - start_index + 1
 
+        # Setup coefficients for FFT based noise simulation
+        if self.config['real_noise_sample_mode'] == 'FFT':
+            choice = np.random.normal(self.noise_data_FFT[:, :, 0],self.noise_data_FFT[:, :, 1])
+            noise_to_add = irfft(choice)
+
         # Setup things for real noise simulation
-        if self.config['real_noise_sample_size']:
+        if self.config['real_noise_sample_mode'] == 'incoherent' or self.config['real_noise_sample_mode'] == 'coherent':
             noise_sample_len = self.config['real_noise_sample_size']
             available_noise_samples = self.noise_data.shape[1] // noise_sample_len
             needed_noise_samples = int(math.ceil(pulse_length / noise_sample_len))
@@ -492,12 +508,16 @@ class Simulator(object):
                 np.roll(real_noise, roll_number, axis=0)
 
                 # Adjust the noise amplitude if needed, then add it to the ADC wave
+                if self.config['real_noise_file_FFT']:
+                    noise_row = noise_to_add[channel - self.channel_offset]
+                    rep = math.ceil(pulse_length / 50000)
+                    real_noise = np.tile(noise_row, rep)
                 noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
+
                 if noise_amplitude != 1:
-                    # Determine a rough baseline for the noise, then adjust towards it
                     baseline = np.mean(real_noise[:min(len(real_noise), 50)])
                     real_noise = baseline + noise_amplitude * (real_noise - baseline)
-                adc_wave += real_noise[:pulse_length]
+                adc_wave += real_noise[start_index:pulse_length + start_index]
 
             else:
                 # If you don't want to superpose onto real noise,
@@ -505,7 +525,7 @@ class Simulator(object):
                 adc_wave += self.config['digitizer_reference_baseline']
 
             # Digitizers have finite number of bits per channel, so clip the signal.
-            adc_wave = np.clip(adc_wave, 0, 2 ** (self.config['digitizer_bits']))
+            adc_wave = np.clip(adc_wave, -2 ** (self.config['digitizer_bits']), 2 ** (self.config['digitizer_bits']))
 
             event.pulses.append(datastructure.Pulse(
                 channel=channel,
