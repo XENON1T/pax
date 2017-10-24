@@ -95,7 +95,6 @@ class Simulator(object):
         if c['topfreq_correlation']:
             self.corrdata = np.load(utils.data_file_name(c['topfreq_correlation']))['arr_0']
 
-
         # Load light yields
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
         self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
@@ -329,7 +328,7 @@ class Simulator(object):
 
         # Setup coefficients for FFT based noise simulation
         if self.config['real_noise_sample_mode'] == 'FFT':
-            choice = np.random.normal(self.noise_data_FFT[:, :, 0],self.noise_data_FFT[:, :, 1])
+            choice = np.random.normal(self.noise_data_FFT[:, :, 0], self.noise_data_FFT[:, :, 1])
             noise_to_add = irfft(choice)
 
         # Setup things for real noise simulation
