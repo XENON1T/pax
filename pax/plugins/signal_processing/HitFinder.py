@@ -1,8 +1,6 @@
 import numpy as np
 import numba
 
-import os
-
 from pax import plugin, datastructure, dsputils
 
 
