@@ -333,12 +333,12 @@ class ROOTWaveformDisplay(plugin.OutputPlugin):
         if peaktype == 's1':
             try:
                 thepeak = next(islice(event.s1s(), index, index+1))
-            except:
+            except (ValueError, TypeError):
                 return -1
         if peaktype == 's2':
             try:
                 thepeak = next(islice(event.s2s(), index, index+1))
-            except:
+            except (ValueError, TypeError):
                 return -1
 
         hitpattern = []
