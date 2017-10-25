@@ -1,8 +1,6 @@
 import numpy as np
 import numba
 
-import os
-
 from pax import plugin, datastructure, dsputils
 
 
@@ -53,13 +51,6 @@ class FindHits(plugin.TransformPlugin):
 
         self.max_hits_per_pulse = c['max_hits_per_pulse']
         self.reference_baseline = self.config['digitizer_reference_baseline']
-
-        self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
-        self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
-
-        if self.make_diagnostic_plots != 'never':
-            if not os.path.exists(self.make_diagnostic_plots_in):
-                os.makedirs(self.make_diagnostic_plots_in)
 
         self.always_find_single_hit = self.config.get('always_find_single_hit')
 
