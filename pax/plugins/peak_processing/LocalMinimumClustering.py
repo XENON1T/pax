@@ -91,29 +91,29 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
         # Next, split the peaks, sorting hits to the right peak by their maximum index.
         # Iterate over left, right bounds of the new peaks
         boundaries = list(zip([0] + [y+1 for y in split_points], split_points + [float('inf')]))
-        for l, r in boundaries:
+        for left, right in boundaries:
             # Convert to index in event
-            l += peak.left
-            r += peak.left
+            left += peak.left
+            right += peak.left
 
             # Select hits which have their maximum within this peak bounds
             # The last new peak must also contain hits at the right bound (though this is unlikely to happen)
-            hs = hits[(hits['index_of_maximum'] >= l) &
-                      (hits['index_of_maximum'] <= r)]
+            hs = hits[(hits['index_of_maximum'] >= left) &
+                      (hits['index_of_maximum'] <= right)]
 
             if not len(hs):
                 # Hits have probably been removed by area > 0 condition
                 self.log.info("Localminimumclustering requested creation of peak %s-%s without hits. "
                               "This is a possible outcome if there are large oscillations in one channel, "
-                              "but it should be very rare." % (l, r))
+                              "but it should be very rare." % (left, right))
                 continue
 
-            r = r if r < float('inf') else peak.right
+            right = right if right < float('inf') else peak.right
 
             if not len(hs):
                 raise RuntimeError("Attempt to create a peak without hits in LocalMinimumClustering!")
 
-            yield self.build_peak(hits=hs, detector=peak.detector, left=l, right=r)
+            yield self.build_peak(hits=hs, detector=peak.detector, left=left, right=right)
 
 
 @numba.jit(nopython=True)

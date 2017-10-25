@@ -118,9 +118,9 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
             # Compute a tight coincidence count (useful for distinguishing S1s from junk)
             x = peak.hits['index_of_maximum']
-            l = peak.index_of_maximum - self.tight_coincidence_samples
-            r = peak.index_of_maximum + self.tight_coincidence_samples
-            peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
+            left = peak.index_of_maximum - self.tight_coincidence_samples
+            right = peak.index_of_maximum + self.tight_coincidence_samples
+            peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= left) & (x <= right)]))
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
