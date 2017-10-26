@@ -62,7 +62,7 @@ setup(
                 'pax.trigger_plugins',
                 ],
     package_dir={'pax': 'pax'},
-    package_data={'pax': ['config/*.ini', 'data/*.*']},
+    package_data={'pax': ['config/*.ini', 'config/pmt_afterpulses/*.ini', 'data/*.*']},
     scripts=['bin/paxer', 'bin/event-builder', 'bin/paxmaker',
              'bin/convert_pax_formats', 'bin/delete_decider'],
     install_requires=requirements,
