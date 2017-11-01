@@ -4,6 +4,19 @@ History
 -------
 
 ------------------
+6.8.2 (2017-09-26)
+------------------
+* New SR0 Net for SR0 reprocessing (#612)
+* Tuning clustering for SR1 (#615) 
+* New maps for SR1 and SR0 (#625, #626 #628, #631)
+* Time dependent 3-D FDC (#632)
+* FAX update: single electron shape (#616), New PMT after pulse model for SR1 (#635), Update single-PE and S1 waveform model (#639)
+* No FDC in pax (#620)
+* Delete old maps (#627, #621, #623, #624)
+* Bug fixes (#618, #638, #633)
+* Code cleaning and style changes (#614, #619, #630, #634)
+
+------------------
 6.8.1 (2017-09-26)
 ------------------
 * New 3D data-driven FDC map (#611)
