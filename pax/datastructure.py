@@ -236,6 +236,29 @@ class Peak(StrictModel):
     #: Number of samples with ADC saturation in this peak, per channel
     n_saturated_per_channel = np.array([], dtype=np.int16)
 
+    #: f90
+    f10 = float('nan')
+    f20 = float('nan')
+    f30 = float('nan')
+    f40 = float('nan')
+    f50 = float('nan')
+    f60 = float('nan')
+    f70 = float('nan')
+    f80 = float('nan')
+    f90 = float('nan')
+    f100 = float('nan')
+    f110 = float('nan')
+    f120 = float('nan')
+    f130 = float('nan')
+    f140 = float('nan')
+    f150 = float('nan')
+    f160 = float('nan')
+    f170 = float('nan')
+    f180 = float('nan')
+    f190 = float('nan')
+    f200 = float('nan')
+    nick = 0
+    
     @property
     def is_channel_saturated(self):
         """Boolean array of n_channels which indicates if there was ADC saturation in any hit
