@@ -122,6 +122,13 @@ class SumWaveformProperties(plugin.TransformPlugin):
             right = peak.index_of_maximum + self.tight_coincidence_samples
             peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= left) & (x <= right)]))
 
+            # list of pmts that contribute to tight coincidence of the peak
+            peak.coincidence_per_channel = np.zeros_like(peak.hits_per_channel)
+            for hitt in peak.hits:
+                if hitt['index_of_maximum'] >= left and hitt['index_of_maximum'] <= right:
+                    pmt_index = hitt['channel']
+                    peak.coincidence_per_channel[pmt_index] = 1
+
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':

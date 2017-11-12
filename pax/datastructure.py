@@ -199,6 +199,9 @@ class Peak(StrictModel):
     #: Total areas of all hits per PMT (pe).
     area_per_channel = np.array([], dtype='float64')
 
+    # contribution to tight coincidence, 1 or 0 for each channel
+    coincidence_per_channel = np.array([], dtype=np.int16)
+
     #: Total area of all hits across all PMTs (pes).
     #: In XerawdpImitation mode, rightmost sample is not included in area integral.
     area = 0.0
