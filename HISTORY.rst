@@ -4,6 +4,11 @@ History
 -------
 
 ------------------
+6.8.3 (2017-09-26)
+------------------
+* saving per channel contribution to tight coincidence (#641)
+
+------------------
 6.8.2 (2017-09-26)
 ------------------
 * New SR0 Net for SR0 reprocessing (#612)
