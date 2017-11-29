@@ -47,7 +47,7 @@ class GapSizeClustering(plugin.ClusteringPlugin):
                                   (event.all_hits['channel'] <= channels[-1])]
             if len(hits) == 0:
                 continue
-            hits.sort(order='index_of_maximum')
+            hits.sort(order='left_central')
             dt = self.dt
 
             # First cluster into small clusters. Try to find S1 candidates among them, and set these apart
