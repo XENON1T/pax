@@ -10,21 +10,19 @@ from pax.datastructure import Hit
 def gaps_between_hits(hits):
     """Return array of gaps between hits: a hit's 'gap' is the # of samples before that hit free of other hits.
     The gap of the first hit is 0 by definition.
-    Hits should already be sorted by left boundary; we'll check this and throw an error if not.
+    Hits should already be sorted by index of maximum; we'll check this and throw an error if not.
     """
     n_hits = len(hits)
     gaps = np.zeros(n_hits, dtype=np.int64)
     if n_hits == 0:
         return gaps
     # Keep a running right boundary
-    boundary = hits[0].right_central
-    last_left = hits[0].left_central
+    boundary = hits[0].index_of_maximum
     for i, hit in enumerate(hits[1:]):
-        gaps[i + 1] = max(0, hit.left_central - boundary - 1)
-        boundary = max(hit.right_central, boundary)
-        if hit.left_central < last_left:
-            raise ValueError("Hits should be sorted by left_central")
-        last_left = hit.left_central
+        gaps[i + 1] = max(0, hit.index_of_maximum - boundary - 1)
+        if hit.index_of_maximum < boundary:
+            raise ValueError("Hits should be sorted by index_of_maximum")
+        boundary = max(hit.index_of_maximum, boundary)
     return gaps
 
 

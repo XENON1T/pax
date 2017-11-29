@@ -65,7 +65,7 @@ class TestReprocessing(unittest.TestCase):
             self.assertTrue('Event' in store)
             self.assertEqual(store['Event'].len(), 1)
             # TODO: the values below change if we change pax!
-            self.assertEqual(store['Peak'].len(), 45)
+            self.assertEqual(store['Peak'].len(), 46)
             self.assertEqual(store['Interaction'].len(), 5)
 
             store.close()
