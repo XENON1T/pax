@@ -31,9 +31,6 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         self.first_top_ch = np.min(np.array(self.config['channels_top']))
         self.last_top_ch = np.max(np.array(self.config['channels_top']))
 
-        # tight coincidence
-        self.tight_coincidence_window = self.config.get('tight_coincidence_window', 50) // self.dt
-
     @staticmethod
     def iterate_gap_clusters(hits, gap_threshold):
         gaps = dsputils.gaps_between_hits(hits)

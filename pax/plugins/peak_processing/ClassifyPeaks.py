@@ -26,14 +26,14 @@ class AdHocClassification1T(plugin.TransformPlugin):
             # classification based on rise_time and aft
             if -peak.area_decile_from_midpoint[1] < self.s1_rise_time_bound(peak.area):
                 # Peak rises fast, could be S1
-                if peak.tight_coincidence <= 2:
+                if peak.tight_coincidence <= 1:
                     # Too few PMTs contributing, hard to distinguish from junk
                     peak.type = 'unknown'
                 elif peak.area > 100 or peak.area < 5:
                     # Apply single electron s2 cut only in 5 - 100 PE range, otherwise only rely on rise time
                     peak.type = 's1'
                 elif -peak.area_decile_from_midpoint[1] < self.s1_rise_time_aft(peak.area_fraction_top):
-                    # Rise time and AFT as multi-demensional discriminator
+                    # Rise time and AFT as multi-dimensional discriminator
                     peak.type = 's1'
                 else:
                     peak.type = 's2'

@@ -56,7 +56,8 @@ class SumWaveformProperties(plugin.TransformPlugin):
     def startup(self):
         self.dt = dt = self.config['sample_duration']
         self.wv_field_len = int(self.config['peak_waveform_length'] / dt) + 1
-        self.tight_coincidence_samples = self.config['tight_coincidence_window'] // dt
+        self.tight_coincidence_samples_left = self.config['tight_coincidence_window_left'] // dt
+        self.tight_coincidence_samples_right = self.config['tight_coincidence_window_right'] // dt
         if not self.wv_field_len % 2:
             raise ValueError('peak_waveform_length must be an even multiple of the sample size')
 
@@ -118,8 +119,8 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
             # Compute a tight coincidence count (useful for distinguishing S1s from junk)
             x = peak.hits['index_of_maximum']
-            left = peak.index_of_maximum - self.tight_coincidence_samples
-            right = peak.index_of_maximum + self.tight_coincidence_samples
+            left = peak.index_of_maximum - self.tight_coincidence_samples_left
+            right = peak.index_of_maximum + self.tight_coincidence_samples_right
             peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= left) & (x <= right)]))
 
             # list of pmts that contribute to tight coincidence of the peak
