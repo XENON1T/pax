@@ -33,7 +33,7 @@ class AdHocClassification1T(plugin.TransformPlugin):
                     # Apply single electron s2 cut only in 5 - 100 PE range, otherwise only rely on rise time
                     peak.type = 's1'
                 elif -peak.area_decile_from_midpoint[1] < self.s1_rise_time_aft(peak.area_fraction_top):
-                    # Rise time and AFT as multi-demensional discriminator
+                    # Rise time and AFT as multi-dimensional discriminator
                     peak.type = 's1'
                 else:
                     peak.type = 's2'
