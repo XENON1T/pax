@@ -73,7 +73,7 @@ def binom_test(k, n, p):
     d = d*rerr
     n_iter = int(max(np.round(np.log10(n))+1, 2))
     if k < n*p:
-        j_min, j_max = n*p, n
+        j_min, j_max = k, n
 
         def check(d, y0, y1):
             return ((y0 >= d) and (d > y1))
@@ -83,13 +83,14 @@ def binom_test(k, n, p):
             j_min = j_max = 0
             n_iter = 0
         else:
-            j_min, j_max = 0, n*p
+            j_min, j_max = 0, k
 
             def check(d, y0, y1):
                 return ((y0 <= d) and (d < y1))
 
-    for _ in range(n_iter):  # successive approximation loop
-        j_range = np.linspace(j_min, j_max, 10, endpoint=True)
+    for i in range(n_iter):  # successive approximation loop
+        n_pts = 20 if i == 0 else 10
+        j_range = np.linspace(j_min, j_max, n_pts, endpoint=True)
         y = binom_pmf(j_range, n, p)
         for i in range(len(j_range)-1):
             if check(d, y[i], y[i+1]):
