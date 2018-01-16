@@ -71,8 +71,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     def startup(self):
         self.s1_light_yield_map = self.processor.simulator.s1_light_yield_map
         self.s1_patterns = self.processor.simulator.s1_patterns
-        self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
+        self.inactive_pmts = np.where(np.array(self.config['gains'][:len(self.tpc_channels)]) < 1)[0]
         self.include_saturation_correction = self.config.get('include_saturation_correction', False)
 
     def transform_event(self, event):
@@ -88,7 +88,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
 
             if self.s1_patterns is not None:
-                confused_s1_channels = np.union1d(s1.saturated_channels, self.zombie_pmts_s1)
+                confused_s1_channels = np.union1d(s1.saturated_channels, self.inactive_pmts)
 
                 # Correct for S1 saturation
                 try:

@@ -140,7 +140,7 @@ class Simulator(object):
             self.uniform_to_pe_arr = None
 
         # Init s1 pattern maps
-        # NB: do NOT adjust patterns for QE, map is data derived, so no need.
+        # We're assuming the map is MC-derived, so we adjust for QE (just like for the S2 maps)
         log.debug("Initializing s1 patterns...")
         if c.get('s1_patterns_file', None) is not None:
             self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
