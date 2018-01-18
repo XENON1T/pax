@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+6.9.0 (2018-01-18)
+------------------
+* Clustering change: Tuning gap size parameters, using index_of_maximum instead of left_central (#642), configuration of tight coincidence (#644)
+* Maps changes: Alpha map using time depending 3d FDC for SR1 (#643), per-PMT S2 LCE map update (#646), True LCE map (#658), Update time-dependent 3D FDC maps for SR1 (#662), Add SR0 and update SR1 corrected LCE maps (#661), Update S2 xy map (#664)
+* Tensor Flow NN: 3D FDC for TFNN in SR0 (#656), Time-dependent 3D FDC for Tensor Flow Neural Net (#655), tensorflow based nn of SR0 (#651), tensorflow based nn (#650), New TF Json with bad PMT List (#659)
+* Bug FIX: Don't include inactive PMTs in S1 pattern fit (#663), Bugfix for AFT calculation (#657),  * Enhencement: Refactor S1 AFT probability calculation (#660), Add SR-dependent configs from processing (#652), More reasonable electron lifetime default (#647), Add sr1 pmt after pulse configs from beginning/middle/end of the runs (#645)
+
+------------------
 6.8.3 (2017-09-26)
 ------------------
 * saving per channel contribution to tight coincidence (#641)
