@@ -123,9 +123,10 @@ def main():
 
             # Give some warning
             print("I'm going to delete the data for run %d (%s). "
-                  "If you don't want this you have 1 minute to hit CTRL-C..." % (run_doc['number'], run_doc['name']))
-            for t in range(6):
-                print("%d seconds left...\n" % (60 - 10 * t))
+                  "If you don't want this you have some time to hit CTRL-C..." % (run_doc['number'], run_doc['name']))
+            del_timeout = 300
+            for t in range(del_timeout // 10):
+                print("%d seconds left...\n" % (del_timeout - 10 * t))
                 time.sleep(10)
 
             print("Starting deletion of untriggered data")
