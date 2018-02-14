@@ -4,7 +4,7 @@ import json
 import re
 
 import numpy as np
-from scipy.spatial import KDTree, cKDTree
+from scipy.spatial import cKDTree
 
 
 ##
@@ -117,7 +117,7 @@ class InterpolatingMap(object):
         if len(np.array(coordinates).shape) <= 1:
 
             result = self.interpolators[map_name](coordinates)
-            try: 
+            try:
                 return float(result[0])
             except(TypeError, IndexError):
                 return float(result)
@@ -125,7 +125,7 @@ class InterpolatingMap(object):
         else:
             coordinates = np.array(coordinates).reshape((self.dimensions,-1)).T
             result = self.interpolators[map_name].v__call__(self.interpolators[map_name], coordinates)
-        
+
             if len(result) == 1:
                 return float(result[0])
             else:
