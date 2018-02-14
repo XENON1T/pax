@@ -4,7 +4,7 @@ import json
 import re
 
 import numpy as np
-from scipy.spatial import KDTree
+from scipy.spatial import cKDTree
 
 
 ##
@@ -20,18 +20,22 @@ class InterpolateAndExtrapolate(object):
         """By default, interpolates between the 2 * dimensions of space nearest neighbours,
         weighting factors = 1 / distance to neighbour
         """
-        self.kdtree = KDTree(points)
+        self.kdtree = cKDTree(points)
         self.values = values
         if neighbours_to_use is None:
             neighbours_to_use = points.shape[1] * 2
         self.neighbours_to_use = neighbours_to_use
 
-    def __call__(self, *args):
+    def __call__(self, args):
         # Call with one point at a time only!!!
+        # Now can call with multiple points in form of (self, [(x, y, z), (x, y, z)...])
         if np.any(np.isnan(args)):
             return np.nan
         distances, indices = self.kdtree.query(args, self.neighbours_to_use)
+        # We are not ruturning sum of weight when using np.average
         return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
+
+    v__call__ = np.vectorize(__call__, signature = '(),(i)->()')
 
 
 class InterpolatingMap(object):
@@ -110,8 +114,19 @@ class InterpolatingMap(object):
                 raise ValueError("InterpolatingMap.get_value only takes map_name keyword argument")
 
         map_name = kwargs.get('map_name', 'map')
-        result = self.interpolators[map_name](*coordinates)
-        try:
-            return float(result[0])
-        except (TypeError, IndexError):
-            return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
+        if len(np.array(coordinates).shape) <= 1:
+
+            result = self.interpolators[map_name](coordinates)
+            try:
+                return float(result[0])
+            except(TypeError, IndexError):
+                return float(result)
+
+        else:
+            coordinates = np.array(coordinates).reshape((self.dimensions,-1)).T
+            result = self.interpolators[map_name].v__call__(self.interpolators[map_name], coordinates)
+
+            if len(result) == 1:
+                return float(result[0])
+            else:
+                return result
