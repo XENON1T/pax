@@ -121,7 +121,8 @@ class InterpolatingMap(object):
             except(TypeError, IndexError):
                 return float(result)
 
-        else:'''This part is not in use due to couldn't implement np.vectorize for numpy<1.12'''
+        # Following part is not in use due to couldn't implement np.vectorize for numpy<1.12
+        else:
             coordinates = np.array(coordinates).reshape((self.dimensions,-1)).T
             result = self.interpolators[map_name].v__call__(self.interpolators[map_name], coordinates)
 
