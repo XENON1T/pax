@@ -85,8 +85,7 @@ install:
   # Install pax
   - pip install mongodbproxy    # Somehow needs explicit install?
   - python setup.py install
-  - pip install numpy==1.13.*
-  
+
   # Run a simple test file, to see if the tests load
   # If there is an import failure, you don't get to know which import is failing otherwise
   - python tests/test_maxpmt.py
