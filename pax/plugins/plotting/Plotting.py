@@ -237,7 +237,7 @@ class PlotBase(plugin.OutputPlugin):
                 annotation_list = self.annotation_filter(event, nsamples)
                 print(annotation_filter)
             for peak in event.peaks:
-                if self.config.get('hide_peak_info') or peak.type == 'lone_hit':
+                if self.config.get('hide_peak_info') or peak.type == 'lone_hit' or peak.type == 'unknown':
                     continue
                 if annotation_filter is not None:
                     # Go to next peak if not in annotation list, otherwise annotate!
@@ -323,7 +323,7 @@ class PlotBase(plugin.OutputPlugin):
                     linewidth=0, alpha=0.5,
                     markersize=10 * size_factor)
 
-    def plot_hitpattern(self, peak, array='top', ax=None):
+    def plot_hitpattern(self, peak, event, array='top', ax=None):
         if ax is None:
             ax = plt.gca()
         if self.config.get('show_all_pmts', True):
@@ -339,6 +339,27 @@ class PlotBase(plugin.OutputPlugin):
                        vmax=self.hitpattern_limits[1],
                        alpha=0.4,
                        s=200)
+
+        # Plot position if it's an S2
+        if peak.type == 's2':
+            for rp in peak.reconstructed_positions:
+                if rp.algorithm == 'PosRecNeuralNet':
+                    x_peak = getattr(rp, 'x')
+                    y_peak = getattr(rp, 'y')
+
+                    ax.plot([x_peak], [y_peak],
+                            marker='x', color='r', alpha=0.8, markersize=14, markeredgewidth=3)
+
+        # Plot main S2 position if there is one
+        if len(event.interactions) != 0:
+            s2 = event.peaks[event.interactions[0].s2]
+            for rp in s2.reconstructed_positions:
+                if rp.algorithm == 'PosRecNeuralNet':
+                    x_peak = getattr(rp, 'x')
+                    y_peak = getattr(rp, 'y')
+
+                    ax.plot([x_peak], [y_peak],
+                            marker='x', color='orange', alpha=0.4, markersize=14, markeredgewidth=3)
 
         # Plot the PMT numbers
         for pmt in pmts_hit:
@@ -413,7 +434,7 @@ class PlottingHitPattern(PlotBase):
                         continue
                     ax = subplots_to_use.pop(0)
                     ax.set_title('%s %s' % (peak_type, array))
-                    self.plot_hitpattern(peak=peak, array=array, ax=ax)
+                    self.plot_hitpattern(peak=peak, event=event, array=array, ax=ax)
 
 
 class PlotChannelWaveforms3D(PlotBase):
@@ -717,9 +738,9 @@ class PeakViewer(PlotBase):
         event_text += 'Event recorded at %s UTC, %09d ns\n' % (
             epoch_to_human_time(self.trigger_time_ns),
             self.trigger_time_ns % units.s)
-        suspicious_channels = np.where(event.is_channel_suspicious)[0]
-        event_text += 'Suspicious channels (# hits rejected):\n ' + ', '.join([
-            '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels]) + '\n'
+        # suspicious_channels = np.where(event.is_channel_suspicious)[0]
+        # event_text += 'Suspicious channels (# hits rejected):\n ' + ', '.join([
+        #     '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels]) + '\n'
         self.fig.text(x, y, self.wrap_multiline(event_text, self.max_characters), verticalalignment='top')
         self.peak_text = self.fig.text(x, start_y + 3 * row_y + y_sep_middle, '', verticalalignment='top')
 
@@ -831,8 +852,8 @@ class PeakViewer(PlotBase):
         # Update the hitpatterns
         self.top_hitp_ax.cla()
         self.bot_hitp_ax.cla()
-        self.top_hitp_sc = self.plot_hitpattern(peak=peak, ax=self.top_hitp_ax, array='top')
-        self.bot_hitp_sc = self.plot_hitpattern(peak=peak, ax=self.bot_hitp_ax, array='bottom')
+        self.top_hitp_sc = self.plot_hitpattern(peak=peak, event=self.event, ax=self.top_hitp_ax, array='top')
+        self.bot_hitp_sc = self.plot_hitpattern(peak=peak, event=self.event, ax=self.bot_hitp_ax, array='bottom')
 
         # Update peak waveforms
         peak_padding = self.config.get('peak_padding_samples', 30)
@@ -849,21 +870,21 @@ class PeakViewer(PlotBase):
             peak.left,
             peak.right,
             peak.hit_time_mean / units.us,)
-        peak_text += 'Area: %0.2f pe, contained in %d hits in %d channels\n' % (
-            peak.area, len(peak.hits), len(peak.contributing_channels))
+        peak_text += 'Area: %0.2f pe, contained in %d hits\n' % (
+            peak.area, len(peak.hits))
         peak_text += 'Fraction in top: %0.2f\n' % peak.area_fraction_top
-        peak_text += 'Peak widths: hit time std = %dns,\n' \
-                     ' 50%% area range = %dns, 90%% area range = %dns\n' % (peak.hit_time_std,
+        peak_text += 'Peak shape: rise time = %dns,\n' \
+                     ' 50%% area range = %dns, 90%% area range = %dns\n' % (-peak.area_decile_from_midpoint[1],
                                                                             peak.range_area_decile[5],
                                                                             peak.range_area_decile[9])
         try:
-            pos = peak.get_position_from_preferred_algorithm(['PosRecTopPatternFit', 'PosRecNeuralNet',
+            pos = peak.get_position_from_preferred_algorithm(['PosRecNeuralNet', 'PosRecTopPatternFit',
                                                               'PosRecRobustWeightedMean', 'PosRecWeightedSum',
                                                               'PosRecMaxPMT'])
         except ValueError:
             peak_text += "Position reconstruction failed!"
         else:
-            peak_text += 'Top hitpattern reconstruction: (%0.2f, %0.2f), gof %0.1f.\n' % (
+            peak_text += 'Neural network reconstruction: (%0.2f, %0.2f), gof %0.1f.\n' % (
                 pos.x, pos.y, pos.goodness_of_fit)
         peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm\n' % (peak.top_hitpattern_spread,
                                                                         peak.bottom_hitpattern_spread)
