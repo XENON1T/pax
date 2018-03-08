@@ -217,7 +217,33 @@ class Simulator(object):
                                                 fill_value=0, bounds_error=False)
 
             self.luminescence_converters.append(uniform_to_emission_time)
+            
+        ##
+        # Load krypton S2 hitpatterns
+        ##
+        patterns_fn = self.config.get('kr_patterns_file', '/home/mvonk/MachineLearning/kr_patterns.npz')
+        data_fn = self.config.get('kr_data_file', '/home/mvonk/MachineLearning/sr1_kr83m_top_big.hdf5')
+        load = np.load(patterns_fn)
+        patterns = load['patterns']               # Load S2 patterns
+        data = pd.HDFStore(data_fn)['data']     # Load event metadata
 
+        # Remove double scatters in Kr (I think?)
+        cs2_bounds = (1.25e4, 2.5e4)
+        data = data[data['largest_other_s2'] < cs2_bounds[1]]
+        assert len(data) == len(patterns)
+
+        # Cut the values where x_nn is not defined (nan values)
+        good_events = ~(np.isnan(data['x_nn']) | np.isnan(data['y_nn']))
+        data = data[good_events]
+        patterns = patterns[good_events]
+        assert len(data) == len(patterns)
+        
+        from scipy.spatial import KDTree
+        pos_of_kr_patterns = np.vstack([data['x_nn'].values, 
+                                        data['y_nn'].values]).T
+        self.kr_pos_tree = KDTree(pos_of_kr_patterns)
+        self.kr_patterns = patterns / patterns.sum(axis=1).reshape(-1, 1)
+        
         self.clear_signals_queue()
 
     def clear_signals_queue(self):
@@ -706,24 +732,24 @@ class Simulator(object):
         :return: numpy array of length == sim.config['n_channels'] with photon count per channel
         """
         if z == - self.config['gate_to_anode_distance']:
-            # Use the S2 pattern information
-            if not self.s2_patterns:
-                return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
-
+            # Make an S2 hitpattern by sampling a Kr hitpattern
+            
+            # Get hitpattern from reference dataset closest to desired position
+            _, pattern_i = self.kr_pos_tree.query([x, y])
+            pat = self.kr_patterns[pattern_i]
+            
             # How many photons to the top array?
             n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
 
-            # Distribute a fraction of the top photons randomly, if the user asked for it
-            # This enables robustness testing of the position reconstruction
-            p_random = self.config.get('randomize_fraction_of_s2_top_array_photons', 0)
-            if p_random:
-                n_random = np.random.binomial(n=n_photons, p=p_random)
-                hitp = self.distribute_photons_by_pattern(n_top - n_random, self.s2_patterns, (x, y))
-                hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
-            else:
-                hitp = self.distribute_photons_by_pattern(n_top, self.s2_patterns, (x, y))
+            # Distribute photons according to pattern
+            n_top_pmts = len(self.config['channels_top'])
+            hits = np.random.choice(np.arange(n_top_pmts), p=pat, size=n_top) 
 
-            # The bottom photons are distributed randomly
+            # Get top pattern from histogram of these photons
+            hitp = np.zeros(self.config['n_channels'], dtype=np.int)
+            hitp[:n_top_pmts] = np.bincount(hits, minlength=n_top_pmts)
+            
+            # Add bottom hitpattern
             hitp += self.randomize_photons_over_channels(n_photons - n_top, channels=self.config['channels_bottom'])
             return hitp
 
