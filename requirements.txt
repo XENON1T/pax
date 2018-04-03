@@ -18,4 +18,4 @@ mock==2.0.0
 rabbitpy==1.0.0
 multihist==0.5.4
 msgpack-python==0.5.6
-pytz
+pytz==2018.3
