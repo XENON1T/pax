@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
+    <title>pax package &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.6.2',
+        VERSION:     '6.9.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,9 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -317,7 +318,7 @@ Needed to roll our own because scipy&#8217;s linear Nd interpolator refuses to e
 
 <dl class="class">
 <dt id="pax.InterpolatingMap.InterpolatingMap">
-<em class="property">class </em><code class="descclassname">pax.InterpolatingMap.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.InterpolatingMap.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Construct s a scalar function using linear interpolation, weighted by euclidean distance.</p>
 <dl class="docutils">
@@ -392,6 +393,19 @@ kwargs will be passed to pymongo.mongoclient/Monary</p>
 <dt id="pax.MongoDB_ClientMaker.MongoProxy">
 <code class="descclassname">pax.MongoDB_ClientMaker.</code><code class="descname">MongoProxy</code><span class="sig-paren">(</span><em>x</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#pax.MongoDB_ClientMaker.MongoProxy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="class">
+<dt id="pax.MongoDB_ClientMaker.PersistentRunsDBConnection">
+<em class="property">class </em><code class="descclassname">pax.MongoDB_ClientMaker.</code><code class="descname">PersistentRunsDBConnection</code><span class="sig-paren">(</span><em>clientmaker_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/MongoDB_ClientMaker.html#PersistentRunsDBConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.MongoDB_ClientMaker.PersistentRunsDBConnection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Helper class for maitaining a persistent collection to the XENON1T runs database</p>
+<dl class="method">
+<dt id="pax.MongoDB_ClientMaker.PersistentRunsDBConnection.check">
+<code class="descname">check</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/MongoDB_ClientMaker.html#PersistentRunsDBConnection.check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.MongoDB_ClientMaker.PersistentRunsDBConnection.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the runs db connection we currently have is alive. If not, we try to re-acquire it forever.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="function">
 <dt id="pax.MongoDB_ClientMaker.dummy">
@@ -1321,6 +1335,11 @@ just add the difference between that point and the area midpoint.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.coincidence_per_channel">
+<code class="descname">coincidence_per_channel</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Peak.coincidence_per_channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.contributing_channels">
 <code class="descname">contributing_channels</code><a class="headerlink" href="#pax.datastructure.Peak.contributing_channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of channels which contribute one or more hits to this peak</p>
@@ -1923,7 +1942,7 @@ Boundary indices are inclusive, i.e. the right boundary is the last index which 
 <code class="descclassname">pax.dsputils.</code><code class="descname">gaps_between_hits</code><a class="reference internal" href="_modules/pax/dsputils.html#gaps_between_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.gaps_between_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return array of gaps between hits: a hit&#8217;s &#8216;gap&#8217; is the # of samples before that hit free of other hits.
 The gap of the first hit is 0 by definition.
-Hits should already be sorted by left boundary; we&#8217;ll check this and throw an error if not.</p>
+Hits should already be sorted by index of maximum; we&#8217;ll check this and throw an error if not.</p>
 </dd></dl>
 
 <dl class="function">
@@ -2304,7 +2323,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'D': &lt;class 'numpy.float64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'C': dtype('O'), 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2319,7 +2338,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'float64': '/D', 'S': '/C', 'bool': '/O', 'float32': '/F', 'int16': '/S', 'int64': '/L', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'int16': '/S', 'bool': '/O', 'int32': '/I', 'float64': '/D', 'S': '/C', 'float32': '/F', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2815,6 +2834,12 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="pax.simulation.Simulator.get_gains">
+<code class="descname">get_gains</code><span class="sig-paren">(</span><em>channel</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.get_gains"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.get_gains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw n SPE areas for channel</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="pax.simulation.Simulator.get_luminescence_times">
 <code class="descname">get_luminescence_times</code><span class="sig-paren">(</span><em>n</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.get_luminescence_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.get_luminescence_times" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -3109,14 +3134,11 @@ punch() returns ms since timer creation or last punch</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -3127,8 +3149,8 @@ punch() returns ms since timer creation or last punch</p>
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/pax.txt"

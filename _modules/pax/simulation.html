@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
+    <title>pax.simulation &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6.2',
+        VERSION:     '6.9.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -45,29 +46,30 @@
 <span class="sd">The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">multihist</span>    <span class="c1"># noqa   # Not explicitly used, but pickle of gas gap warping map is in this format</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">datastructure</span>
-<span class="kn">from</span> <span class="nn">pax.PatternFitter</span> <span class="kn">import</span> <span class="n">PatternFitter</span>
-<span class="kn">from</span> <span class="nn">pax.InterpolatingMap</span> <span class="kn">import</span> <span class="n">InterpolatingMap</span>
-<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">Memoize</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span><span class="p">,</span> <span class="n">datastructure</span>
+<span class="kn">from</span> <span class="nn">pax.PatternFitter</span> <span class="k">import</span> <span class="n">PatternFitter</span>
+<span class="kn">from</span> <span class="nn">pax.InterpolatingMap</span> <span class="k">import</span> <span class="n">InterpolatingMap</span>
+<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="k">import</span> <span class="n">Memoize</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;SimulationCore&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Simulator"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator">[docs]</a><span class="k">class</span> <span class="nc">Simulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_to_init</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_to_init</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_to_init</span>
 
         <span class="c1"># Should we repeat events?</span>
@@ -94,9 +96,9 @@
         <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
             <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span> <span class="k">if</span> <span class="n">ch</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_dead_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_dead_pmts&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span> <span class="k">if</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">ch</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_s1_excluded_pmts&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;magically_avoid_s1_excluded_pmts&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> \
            <span class="s1">&#39;channels_excluded_for_s1&#39;</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
             <span class="n">channels_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels_for_photons</span>
                                     <span class="k">if</span> <span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_excluded_for_s1&#39;</span><span class="p">]]</span>
@@ -114,7 +116,7 @@
 
             <span class="c1"># Integrate and normalize it</span>
             <span class="c1"># Note we&#39;re storing the integrated pulse, while the user gives the regular pulse.</span>
-            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pe_pulse_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ys</span><span class="p">),</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pe_pulse_function&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ys</span><span class="p">),</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Simulating </span><span class="si">%s</span><span class="s1"> samples before and </span><span class="si">%s</span><span class="s1"> samples after PMT pulse centers.&#39;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;samples_after_pulse_center&#39;</span><span class="p">]))</span>
@@ -134,66 +136,71 @@
         <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rz_position_distortion_map&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rz_position_distortion_map</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;rz_position_distortion_map&#39;</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rz_position_distortion_map</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rz_position_distortion_map</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Init s2 per pmt lce map</span>
         <span class="n">qes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;quantum_efficiencies&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s2_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s2_patterns_file&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s2_patterns_file&#39;</span><span class="p">]),</span>
                                              <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s2_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                                              <span class="n">adjust_to_qe</span><span class="o">=</span><span class="n">qes</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">]],</span>
                                              <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_gain_error&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s2_patterns</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1">##</span>
         <span class="c1"># Load pdf for single photoelectron, if available</span>
         <span class="c1">##</span>
         <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;photon_area_distribution&#39;</span><span class="p">):</span>
-            <span class="c1"># Extract the spe pdf from a csv file in form of bin, prob.</span>
-            <span class="n">charge</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;photon_area_distribution&#39;</span><span class="p">]),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
-                    <span class="n">q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="n">prob</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-                    <span class="c1"># don&#39;t allow negative charge, which can occur from noise subtraction</span>
-                    <span class="n">prob</span> <span class="o">=</span> <span class="n">prob</span> <span class="k">if</span> <span class="n">q</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-                    <span class="n">charge</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
-                    <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
+            <span class="c1"># Extract the spe pdf from a csv file into a pandas dataframe</span>
+            <span class="n">spe_shapes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;photon_area_distribution&#39;</span><span class="p">]))</span>
 
-            <span class="c1"># Create a converter from uniform random numbers to SPE gains</span>
-            <span class="c1"># note not really pdf, does not necessarily sum to 1 due to forcing probability of negative charge to be 0</span>
-            <span class="n">spe_bins</span><span class="p">,</span> <span class="n">spe_pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">charge</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-            <span class="c1"># change spe_bins to have mean equal to 1</span>
-            <span class="n">mean_spe</span> <span class="o">=</span> <span class="p">(</span><span class="n">spe_bins</span> <span class="o">*</span> <span class="n">spe_pdf</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">spe_pdf</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="n">spe_bins</span> <span class="o">=</span> <span class="n">spe_bins</span><span class="o">/</span><span class="n">mean_spe</span>
-            <span class="c1"># convert pdf -&gt; cdf</span>
-            <span class="n">cdfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">spe_pdf</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">spe_pdf</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">cdfs</span><span class="p">,</span> <span class="n">spe_bins</span><span class="p">)</span>
+            <span class="c1"># Create a converter array from uniform random numbers to SPE gains (one interpolator per channel)</span>
+            <span class="c1"># Scale the distributions so that they have an SPE mean of 1 and then calculate the cdf</span>
+            <span class="c1"># We have set the distribution of the off channels to be explicitly 0 as a precaution</span>
+            <span class="c1"># as of now these channels are</span>
+            <span class="c1"># 1, 2, 12, 26, 34, 62, 65, 79, 86, 88, 102, 118, 130, 134, 135, 139,</span>
+            <span class="c1"># 148, 150, 152, 162, 178, 183, 190, 198, 206, 213, 214, 234, 239, 244</span>
+
+            <span class="n">uniform_to_pe_arr</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">spe_shapes</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>  <span class="c1"># skip the first element which is the &#39;charge&#39; header</span>
+                <span class="k">if</span> <span class="n">spe_shapes</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">mean_spe</span> <span class="o">=</span> <span class="p">(</span><span class="n">spe_shapes</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">spe_shapes</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">spe_shapes</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                    <span class="n">scaled_bins</span> <span class="o">=</span> <span class="n">spe_shapes</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">mean_spe</span>
+                    <span class="n">cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">spe_shapes</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">spe_shapes</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># if sum is 0, just make some dummy axes to pass to interpolator</span>
+                    <span class="n">cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                    <span class="n">scaled_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cdf</span><span class="p">)</span>
+
+                <span class="n">uniform_to_pe_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interp1d</span><span class="p">(</span><span class="n">cdf</span><span class="p">,</span> <span class="n">scaled_bins</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">uniform_to_pe_arr</span> <span class="o">!=</span> <span class="p">[]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">uniform_to_pe_arr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe_arr</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe_arr</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Init s1 pattern maps</span>
-        <span class="c1"># NB: do NOT adjust patterns for QE, map is data derived, so no need.</span>
+        <span class="c1"># We&#39;re assuming the map is MC-derived, so we adjust for QE (just like for the S2 maps)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing s1 patterns...&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s1_patterns_file&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s1_patterns_file&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="n">PatternFitter</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;s1_patterns_file&#39;</span><span class="p">]),</span>
                                              <span class="n">zoom_factor</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;s1_patterns_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                                              <span class="n">adjust_to_qe</span><span class="o">=</span><span class="n">qes</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">]],</span>
                                              <span class="n">default_errors</span><span class="o">=</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_qe_error&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;relative_gain_error&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1">##</span>
         <span class="c1"># Luminescence time distribution precomputation</span>
         <span class="c1">##</span>
 
         <span class="c1"># For which gas gaps do we have to compute the luminescence time distribution?</span>
-        <span class="n">gas_gap_warping_map</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;gas_gap_warping_map&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">gas_gap_warping_map</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;gas_gap_warping_map&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">base_dg</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">gas_gap_warping_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">gas_gap_warping_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">gas_gap_warping_map</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
                 <span class="n">mh</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gas_gap_length</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">base_dg</span> <span class="o">+</span> <span class="n">mh</span><span class="o">.</span><span class="n">lookup</span><span class="p">([</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -212,7 +219,7 @@
         <span class="c1"># Slope of the drift velocity vs field relation</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">number_density_gas</span>
 
-        <span class="nd">@np.vectorize</span>
+        <span class="nd">@np</span><span class="o">.</span><span class="n">vectorize</span>
         <span class="k">def</span> <span class="nf">yield_per_dr</span><span class="p">(</span><span class="n">E</span><span class="p">):</span>
             <span class="c1"># Gives something proportional to the yield, not the yield itself!</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">E</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">kV</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">bar</span>
@@ -231,7 +238,7 @@
             <span class="c1"># Field in the gas gap. r is distance from anode center: start at r=rL</span>
             <span class="n">E0</span> <span class="o">=</span> <span class="n">V</span><span class="o">/</span><span class="p">(</span><span class="n">rL</span> <span class="o">-</span> <span class="n">rA</span> <span class="o">+</span> <span class="n">rA</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rA</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rW</span><span class="p">)))</span>
 
-            <span class="nd">@np.vectorize</span>
+            <span class="nd">@np</span><span class="o">.</span><span class="n">vectorize</span>
             <span class="k">def</span> <span class="nf">Er</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="n">rW</span><span class="p">:</span>
                     <span class="k">return</span> <span class="mi">0</span>
@@ -250,7 +257,7 @@
 
             <span class="c1"># Invert CDF using interpolator</span>
             <span class="n">uniform_to_emission_time</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">yield_density</span><span class="p">),</span> <span class="n">T</span><span class="p">,</span>
-                                                <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                                                <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">luminescence_converters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uniform_to_emission_time</span><span class="p">)</span>
 
@@ -297,6 +304,29 @@
                 <span class="n">all_arriving_times_bottom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">all_arriving_times_bottom</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">all_arriving_times_top</span><span class="p">,</span> <span class="n">all_arriving_times_bottom</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="Simulator.get_gains"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.get_gains">[docs]</a>    <span class="k">def</span> <span class="nf">get_gains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw n SPE areas for channel&quot;&quot;&quot;</span>
+        <span class="n">gain_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">gain_mean</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Use real spe data to generate gains for spe</span>
+            <span class="n">gains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe_arr</span><span class="p">[</span><span class="n">channel</span><span class="p">](</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+            <span class="n">gains</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gain_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+
+            <span class="c1"># Sample from a truncated Gaussian</span>
+            <span class="n">gains</span> <span class="o">=</span> <span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="n">gain_mean</span><span class="p">,</span>
+                                        <span class="n">my_std</span><span class="o">=</span><span class="n">gain_sigma</span><span class="p">,</span>
+                                        <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                        <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
+                                        <span class="n">n_rvs</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">gains</span></div>
+
 <div class="viewcode-block" id="Simulator.make_pax_event"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.make_pax_event">[docs]</a>    <span class="k">def</span> <span class="nf">make_pax_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Simulate PMT response to the queued photon signals</span>
 <span class="sd">        Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix</span>
@@ -325,6 +355,25 @@
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
         <span class="n">dv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;digitizer_bits&#39;</span><span class="p">])</span>
 
+        <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">end_index</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">pulse_length</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># Setup things for real noise simulation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_sample_size&#39;</span><span class="p">]:</span>
+            <span class="n">noise_sample_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_sample_size&#39;</span><span class="p">]</span>
+            <span class="n">available_noise_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">noise_sample_len</span>
+            <span class="n">needed_noise_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">pulse_length</span> <span class="o">/</span> <span class="n">noise_sample_len</span><span class="p">))</span>
+
+            <span class="n">noise_sample_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;real_noise_sample_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;incoherent&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">noise_sample_mode</span> <span class="o">==</span> <span class="s1">&#39;coherent&#39;</span><span class="p">:</span>
+                <span class="c1"># Choose a single set of noise sample numbers for the event</span>
+                <span class="n">chosen_noise_sample_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                                <span class="n">available_noise_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                                                <span class="n">needed_noise_samples</span><span class="p">)</span>
+
+                <span class="n">roll_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">noise_sample_len</span><span class="p">)</span>
+
         <span class="c1"># Build waveform channel by channel</span>
         <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">photon_detection_times</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># If the channel is dead, fake, or not in the TPC, we don&#39;t do anything.</span>
@@ -339,89 +388,61 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">):</span>
                 <span class="n">n_dpe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;p_double_pe_emision&#39;</span><span class="p">])</span>
                 <span class="k">if</span> <span class="n">n_dpe</span><span class="p">:</span>
-                    <span class="n">dpe_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">n_dpe</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                    <span class="n">dpe_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">n_dpe</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">photon_detection_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">dpe_times</span><span class="p">])</span>
 
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Simulating </span><span class="si">%d</span><span class="s2"> photons in channel </span><span class="si">%d</span><span class="s2"> (gain=</span><span class="si">%s</span><span class="s2">, gain_sigma=</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span> <span class="n">channel</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]))</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="c1"># Use real spe data to generate gains for spe</span>
-                <span class="n">gains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uniform_to_pe</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">)))</span>
-                <span class="n">gains</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Sample from a truncated Gaussian</span>
-                <span class="n">gains</span> <span class="o">=</span> <span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
-                                            <span class="n">my_std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
-                                            <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                            <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
-                                            <span class="n">n_rvs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">))</span>
+            <span class="n">gains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gains</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">))</span>
 
             <span class="c1"># Add PMT afterpulses</span>
             <span class="n">ap_times</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">ap_amplifications</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">ap_gains</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1"># if we have specify the pmt afterpulses in each PMT channel</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;each_pmt_afterpulse_types&#39;</span><span class="p">]:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;each_pmt_afterpulse_types&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]:</span>
+
+            <span class="c1"># Get the afterpulse settings for this channel:</span>
+            <span class="c1">#  1. If we have a specific afterpulse config for this channel, we use it</span>
+            <span class="c1">#  2. Else we fall back to a default configuration</span>
+            <span class="c1">#  3. If this does not exist, we don&#39;t make any afterpulses</span>
+            <span class="n">all_ap_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_afterpulse_types&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="s1">&#39;each_pmt_afterpulse_types&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">and</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;each_pmt_afterpulse_types&#39;</span><span class="p">]:</span>
+                <span class="n">all_ap_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;each_pmt_afterpulse_types&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">ap_data</span> <span class="ow">in</span> <span class="n">all_ap_data</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ap_data</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="k">for</span> <span class="n">ap_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;each_pmt_afterpulse_types&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">ap_data</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                    <span class="c1"># print(ap_data)</span>
-                    <span class="c1"># How many photons will make this kind of afterpulse?</span>
-                    <span class="n">n_afterpulses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>
-                            <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span>
-                            <span class="n">p</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">]</span>
-                            <span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">n_afterpulses</span><span class="p">:</span>
-                        <span class="k">continue</span>
-                    <span class="c1"># Find the time and gain of the afterpulses</span>
-                    <span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_parameters&#39;</span><span class="p">]</span>
-                    <span class="n">dist_kwargs</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_afterpulses</span>
-                    <span class="n">ap_times</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">+</span>
-                                    <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_distribution&#39;</span><span class="p">])(</span><span class="o">**</span><span class="n">dist_kwargs</span><span class="p">))</span>
-                    <span class="k">if</span> <span class="s1">&#39;amp_mean&#39;</span> <span class="ow">in</span> <span class="n">ap_data</span><span class="p">:</span>
-                        <span class="n">ap_amplifications</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span>
-                                    <span class="n">my_mean</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;amp_mean&#39;</span><span class="p">],</span>
-                                    <span class="n">my_std</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;amp_rms&#39;</span><span class="p">],</span>
-                                    <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                    <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
-                                    <span class="n">n_rvs</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">))</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">ap_amplifications</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="n">n_afterpulses</span><span class="p">)</span>
-                    <span class="n">ap_gains</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
-                                                        <span class="n">my_std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">],</span>
-                                                        <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                        <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
-                                                        <span class="n">n_rvs</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">))</span>
-            <span class="c1"># if not, but we have an average configuration</span>
-            <span class="c1"># of pmt afterpulses over all PMTs</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_afterpulse_types&#39;</span><span class="p">]:</span>
-                <span class="k">for</span> <span class="n">ap_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_afterpulse_types&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                    <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gain_mean&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
-                    <span class="n">ap_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;gain_rms&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;gain_sigmas&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">])</span>
+                <span class="c1"># print(ap_data)</span>
 
-                    <span class="c1"># How many photons will make this kind of afterpulse?</span>
-                    <span class="n">n_afterpulses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span>
-                                                       <span class="n">p</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">])</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">n_afterpulses</span><span class="p">:</span>
-                        <span class="k">continue</span>
+                <span class="c1"># How many photons will make this kind of afterpulse?</span>
+                <span class="n">n_afterpulses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>
+                        <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">),</span>
+                        <span class="n">p</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">]</span>
+                        <span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">n_afterpulses</span><span class="p">:</span>
+                    <span class="k">continue</span>
 
-                    <span class="c1"># Find the time and gain of the afterpulses</span>
-                    <span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_parameters&#39;</span><span class="p">]</span>
-                    <span class="n">dist_kwargs</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_afterpulses</span>
-                    <span class="n">ap_times</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">+</span>
-                                    <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_distribution&#39;</span><span class="p">])(</span><span class="o">**</span><span class="n">dist_kwargs</span><span class="p">))</span>
-                    <span class="n">ap_gains</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span><span class="n">my_mean</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;gain_mean&#39;</span><span class="p">],</span>
-                                                        <span class="n">my_std</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;gain_rms&#39;</span><span class="p">],</span>
-                                                        <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                        <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
-                                                        <span class="n">n_rvs</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">))</span>
+                <span class="c1"># Find the time and gain of the afterpulses</span>
+                <span class="n">dist_kwargs</span> <span class="o">=</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_parameters&#39;</span><span class="p">]</span>
+                <span class="n">dist_kwargs</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_afterpulses</span>
+                <span class="n">ap_times</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">+</span>
+                                <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;time_distribution&#39;</span><span class="p">])(</span><span class="o">**</span><span class="n">dist_kwargs</span><span class="p">))</span>
 
-            <span class="c1"># If none of the setting specified, do not make afterpulses</span>
+                <span class="c1"># Afterpulse gains can be different from regular gains: sample an amplification factor</span>
+                <span class="k">if</span> <span class="s1">&#39;amp_mean&#39;</span> <span class="ow">in</span> <span class="n">ap_data</span><span class="p">:</span>
+                    <span class="n">ap_amplifications</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">truncated_gauss_rvs</span><span class="p">(</span>
+                                <span class="n">my_mean</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;amp_mean&#39;</span><span class="p">],</span>
+                                <span class="n">my_std</span><span class="o">=</span><span class="n">ap_data</span><span class="p">[</span><span class="s1">&#39;amp_rms&#39;</span><span class="p">],</span>
+                                <span class="n">left_boundary</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                <span class="n">right_boundary</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
+                                <span class="n">n_rvs</span><span class="o">=</span><span class="n">n_afterpulses</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ap_amplifications</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="n">n_afterpulses</span><span class="p">)</span>
+
+                <span class="n">ap_gains</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_gains</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">n_afterpulses</span><span class="p">))</span>
+
+            <span class="c1"># Combine the afterpulses with the normal PMT pulses</span>
             <span class="n">ap_gains</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">*</span><span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ap_gains</span><span class="p">,</span> <span class="n">ap_amplifications</span><span class="p">)]</span>
             <span class="n">gains</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">gains</span><span class="p">,</span> <span class="n">ap_gains</span><span class="p">))</span>
             <span class="n">photon_detection_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">photon_detection_times</span><span class="p">,</span> <span class="n">ap_times</span><span class="p">))</span>
@@ -440,10 +461,6 @@
 
             <span class="c1"># Simulate an event-long waveform in this channel</span>
             <span class="c1"># Remember start padding has already been added to times, so just one padding in end_index</span>
-            <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">end_index</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="n">pulse_length</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
-
             <span class="n">current_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pulse_length</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pmt_pulse_centers</span><span class="p">):</span>
@@ -497,19 +514,26 @@
 
             <span class="c1"># Did you want to superpose onto real noise samples?</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_file&#39;</span><span class="p">]:</span>
-                <span class="n">sample_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;real_noise_sample_size&#39;</span><span class="p">]</span>
-                <span class="n">available_noise_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">sample_size</span>
-                <span class="n">needed_noise_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">pulse_length</span> <span class="o">/</span> <span class="n">sample_size</span><span class="p">))</span>
-                <span class="n">chosen_noise_sample_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
-                                                                <span class="n">available_noise_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-                                                                <span class="n">needed_noise_samples</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">noise_sample_mode</span> <span class="o">!=</span> <span class="s1">&#39;coherent&#39;</span><span class="p">:</span>
+                    <span class="c1"># For each channel, choose different noise sample numbers</span>
+                    <span class="n">chosen_noise_sample_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                                    <span class="n">available_noise_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                                                    <span class="n">needed_noise_samples</span><span class="p">)</span>
+
+                    <span class="n">roll_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">noise_sample_len</span><span class="p">)</span>
+
                 <span class="c1"># Extract the chosen noise samples and concatenate them</span>
                 <span class="c1"># Have to use a listcomp here, unless you know a way to select multiple slices in numpy?</span>
                 <span class="c1">#  -- yeah making an index list with np.arange would work, but honestly??</span>
                 <span class="n">real_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="p">[</span><span class="n">channel</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span><span class="p">][</span><span class="n">nsn</span> <span class="o">*</span> <span class="n">sample_size</span><span class="p">:(</span><span class="n">nsn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">sample_size</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">noise_data</span><span class="p">[</span><span class="n">channel</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span><span class="p">][</span><span class="n">nsn</span> <span class="o">*</span> <span class="n">noise_sample_len</span><span class="p">:(</span><span class="n">nsn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">noise_sample_len</span><span class="p">]</span>
                     <span class="k">for</span> <span class="n">nsn</span> <span class="ow">in</span> <span class="n">chosen_noise_sample_numbers</span>
                 <span class="p">])</span>
+
+                <span class="c1"># Roll the noise samples by a fraction of the sample size,</span>
+                <span class="c1"># to avoid same artifacts falling at the same point every time</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">real_noise</span><span class="p">,</span> <span class="n">roll_number</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
                 <span class="c1"># Adjust the noise amplitude if needed, then add it to the ADC wave</span>
                 <span class="n">noise_amplitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;adjust_noise_amplitude&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">noise_amplitude</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
@@ -536,7 +560,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_signals_queue</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">event</span></div>
 
-<div class="viewcode-block" id="Simulator.s2_electrons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s2_electrons">[docs]</a>    <span class="k">def</span> <span class="nf">s2_electrons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons_generated</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulator.s2_electrons"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.s2_electrons">[docs]</a>    <span class="k">def</span> <span class="nf">s2_electrons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons_generated</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a list of electron arrival times in the ELR region caused by an S2 process.</span>
 
 <span class="sd">            electrons             -   total # of drift electrons generated at the interaction site</span>
@@ -761,7 +785,7 @@
                                                     <span class="n">channels</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lces</span><span class="p">)),</span>
                                                     <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="n">lces</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Simulator.randomize_photons_over_channels"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.randomize_photons_over_channels">[docs]</a>    <span class="k">def</span> <span class="nf">randomize_photons_over_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulator.randomize_photons_over_channels"><a class="viewcode-back" href="../../simulator.html#pax.simulation.Simulator.randomize_photons_over_channels">[docs]</a>    <span class="k">def</span> <span class="nf">randomize_photons_over_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_photons</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Distribute photon_timings over channels according to relative_lce_per_channel</span>
 
 <span class="sd">        :param n_photons: number of photons to distribute</span>
@@ -776,17 +800,17 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
 
         <span class="c1"># Include only channels that can receive photons</span>
-        <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_for_photons&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
             <span class="n">sel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_for_photons&#39;</span><span class="p">])</span>
             <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="n">sel</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">relative_lce_per_channel</span> <span class="o">=</span> <span class="n">relative_lce_per_channel</span><span class="p">[</span><span class="n">sel</span><span class="p">]</span>
 
         <span class="c1"># Ensure relative LCEs are valid, and sum to one (among the remaining channels):</span>
-        <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">relative_lce_per_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">relative_lce_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">relative_lce_per_channel</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">relative_lce_per_channel</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">relative_lce_per_channel</span><span class="p">)</span>
 
@@ -844,7 +868,7 @@
     <span class="p">))</span> <span class="o">/</span> <span class="n">dt</span></div>
 
 
-<span class="nd">@np.vectorize</span>
+<span class="nd">@np</span><span class="o">.</span><span class="n">vectorize</span>
 <span class="k">def</span> <span class="nf">exp_pulse</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">tf</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Integrated current (i.e. charge) of a single-pe PMT pulse centered at t=0</span>
 <span class="sd">    Assumes an exponential rise and fall waveform model</span>
@@ -877,7 +901,11 @@
     <span class="sd">&quot;&quot;&quot;Get Gauss with specified mean and std, truncated to boundaries</span>
 <span class="sd">    See http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_truncated_gauss</span><span class="p">(</span><span class="n">my_mean</span><span class="p">,</span> <span class="n">my_std</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">)</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">n_rvs</span><span class="p">)</span> <span class="o">*</span> <span class="n">my_std</span> <span class="o">+</span> <span class="n">my_mean</span></div>
+    <span class="k">if</span> <span class="n">my_std</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_truncated_gauss</span><span class="p">(</span><span class="n">my_mean</span><span class="p">,</span> <span class="n">my_std</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">)</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">n_rvs</span><span class="p">)</span> <span class="o">*</span> <span class="n">my_std</span> <span class="o">+</span> <span class="n">my_mean</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;improper STD for truncated Gaussian&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">my_mean</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_rvs</span></div>
 </pre></div>
 
           </div>
@@ -896,14 +924,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -914,8 +939,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

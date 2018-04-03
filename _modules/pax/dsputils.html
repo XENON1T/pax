@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
+    <title>pax.dsputils &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6.2',
+        VERSION:     '6.9.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -41,36 +42,34 @@
             
   <h1>Source code for pax.dsputils</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numba</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">exceptions</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Hit</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">exceptions</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="k">import</span> <span class="n">Hit</span>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:](</span><span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:](</span><span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <div class="viewcode-block" id="gaps_between_hits"><a class="viewcode-back" href="../../pax.html#pax.dsputils.gaps_between_hits">[docs]</a><span class="k">def</span> <span class="nf">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return array of gaps between hits: a hit&#39;s &#39;gap&#39; is the # of samples before that hit free of other hits.</span>
 <span class="sd">    The gap of the first hit is 0 by definition.</span>
-<span class="sd">    Hits should already be sorted by left boundary; we&#39;ll check this and throw an error if not.</span>
+<span class="sd">    Hits should already be sorted by index of maximum; we&#39;ll check this and throw an error if not.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n_hits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
     <span class="n">gaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_hits</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_hits</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">gaps</span>
     <span class="c1"># Keep a running right boundary</span>
-    <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right_central</span>
-    <span class="n">last_left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left_central</span>
+    <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index_of_maximum</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-        <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">right_central</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span> <span class="o">&lt;</span> <span class="n">last_left</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hits should be sorted by left_central&quot;</span><span class="p">)</span>
-        <span class="n">last_left</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">left_central</span>
+        <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">&lt;</span> <span class="n">boundary</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hits should be sorted by index_of_maximum&quot;</span><span class="p">)</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">gaps</span></div>
 
 
-<div class="viewcode-block" id="count_hits_per_channel"><a class="viewcode-back" href="../../pax.html#pax.dsputils.count_hits_per_channel">[docs]</a><span class="k">def</span> <span class="nf">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="count_hits_per_channel"><a class="viewcode-back" href="../../pax.html#pax.dsputils.count_hits_per_channel">[docs]</a><span class="k">def</span> <span class="nf">count_hits_per_channel</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">),</span> <span class="n">minlength</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span></div>
 
 
@@ -102,7 +101,7 @@
     <span class="k">return</span> <span class="n">new_area</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span></div>
 
 
-<div class="viewcode-block" id="adc_to_pe"><a class="viewcode-back" href="../../pax.html#pax.dsputils.adc_to_pe">[docs]</a><span class="k">def</span> <span class="nf">adc_to_pe</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">use_reference_gain</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">use_reference_gain_if_zero</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="adc_to_pe"><a class="viewcode-back" href="../../pax.html#pax.dsputils.adc_to_pe">[docs]</a><span class="k">def</span> <span class="nf">adc_to_pe</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">use_reference_gain</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_reference_gain_if_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Gives the conversion factor from ADC counts above baseline to pe/bin</span>
 <span class="sd">    Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</span>
 <span class="sd">      - config should be a configuration dictionary (self.config in a pax plugin)</span>
@@ -119,11 +118,11 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Attempt to request gain for channel </span><span class="si">%d</span><span class="s2">, only </span><span class="si">%d</span><span class="s2"> channels known. &quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Attempt to request gain for channel </span><span class="si">%d</span><span class="s2">, only </span><span class="si">%d</span><span class="s2"> channels known. &quot;</span>
               <span class="s2">&quot;Returning reference gain instead.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;gains&#39;</span><span class="p">])))</span>
-        <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="n">e6</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">use_reference_gain_if_zero</span> <span class="ow">and</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">use_reference_gain</span><span class="p">:</span>
-        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
+        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="n">e6</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="n">adc_to_e</span> <span class="o">/</span> <span class="n">pmt_gain</span></div>
@@ -138,8 +137,8 @@
     <span class="k">return</span> <span class="n">detector_by_channel</span></div>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <div class="viewcode-block" id="extend_intervals"><a class="viewcode-back" href="../../pax.html#pax.dsputils.extend_intervals">[docs]</a><span class="k">def</span> <span class="nf">extend_intervals</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">intervals</span><span class="p">,</span> <span class="n">left_extension</span><span class="p">,</span> <span class="n">right_extension</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extends intervals on w by left_extension to left and right_extension to right, never exceeding w&#39;s bounds</span>
 <span class="sd">    :param w: Waveform intervals live on. Only used for edges (kind of pointless to pass...)</span>
@@ -174,8 +173,8 @@
             <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_possible_l</span><span class="p">,</span> <span class="n">intervals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">left_extension</span><span class="p">)</span></div>
 
 
-<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../pax.html#pax.dsputils.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fills result_buffer with l, r bounds of intervals in w &gt; threshold.</span>
 <span class="sd">    :param w: Waveform to do hitfinding in</span>
@@ -188,7 +187,7 @@
     <span class="n">result_buffer_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_buffer</span><span class="p">)</span>
     <span class="n">last_index_in_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
-    <span class="n">in_interval</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">in_interval</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">current_interval</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">current_interval_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
@@ -196,12 +195,12 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">in_interval</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
             <span class="c1"># Start of an interval</span>
-            <span class="n">in_interval</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">in_interval</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">current_interval_start</span> <span class="o">=</span> <span class="n">i</span>
 
         <span class="k">if</span> <span class="n">in_interval</span> <span class="ow">and</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="n">threshold</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="n">last_index_in_w</span><span class="p">):</span>
             <span class="c1"># End of the current interval</span>
-            <span class="n">in_interval</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">in_interval</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="c1"># The interval ended just before this index</span>
             <span class="c1"># Unless we ended ONLY because this is the last index, then the interval ends right here</span>
@@ -235,14 +234,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -253,8 +249,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

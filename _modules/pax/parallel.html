@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.parallel &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
+    <title>pax.parallel &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6.2',
+        VERSION:     '6.9.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -40,17 +41,17 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.parallel</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span></span><span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
 <span class="kn">import</span> <span class="nn">multiprocessing</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">exceptions</span>
-<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">Processor</span>
-<span class="kn">from</span> <span class="nn">.configuration</span> <span class="kn">import</span> <span class="n">combine_configs</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">exceptions</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">Processor</span>
+<span class="kn">from</span> <span class="nn">.configuration</span> <span class="k">import</span> <span class="n">combine_configs</span>
 
 <span class="kn">import</span> <span class="nn">psutil</span>
 <span class="kn">import</span> <span class="nn">rabbitpy</span>
@@ -58,7 +59,7 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">queue</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">Queue</span> <span class="kn">as</span> <span class="nn">queue</span>
+    <span class="kn">import</span> <span class="nn">Queue</span> <span class="k">as</span> <span class="nn">queue</span>
 
 <span class="n">Empty</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span>
 
@@ -79,7 +80,7 @@
 <span class="sd">    -- at least the put, get and qsize methods...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue_name</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue_name</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue_name</span> <span class="o">=</span> <span class="n">queue_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">rabbitpy</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
@@ -92,8 +93,8 @@
 
 <div class="viewcode-block" id="RabbitQueue.get"><a class="viewcode-back" href="../../pax.html#pax.parallel.RabbitQueue.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get an item from the queue. Kwargs are ignored (often used in standard library queue.get calls)&quot;&quot;&quot;</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">acknowledge</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">acknowledge</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">Empty</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">body</span><span class="p">)</span></div>
 
@@ -109,12 +110,12 @@
     <span class="sd">&quot;&quot;&quot;A wrapper similar to RabbitQueue for RabbitMQ FanOut exchanges</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exchange_name</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exchange_name</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">rabbitpy</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">channel</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">rabbitpy</span><span class="o">.</span><span class="n">Exchange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">exchange_name</span><span class="p">,</span> <span class="n">exchange_type</span><span class="o">=</span><span class="s1">&#39;fanout&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">declare</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">rabbitpy</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">rabbitpy</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">declare</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="p">)</span>
 
@@ -142,7 +143,7 @@
     <span class="sd">&quot;&quot;&quot;Return RabbitMQ connection URL from argparser args&quot;&quot;&quot;</span>
     <span class="n">urikwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">parsed_args</span><span class="p">,</span> <span class="s1">&#39;rabbit_&#39;</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>
                  <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="s1">&#39;username password host port&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()}</span>
-    <span class="k">return</span> <span class="s1">&#39;amqp://{username}:{password}@{host}:{port}/</span><span class="si">%2f</span><span class="s1">?timeout=60&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">urikwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="s1">&#39;amqp://</span><span class="si">{username}</span><span class="s1">:</span><span class="si">{password}</span><span class="s1">@</span><span class="si">{host}</span><span class="s1">:</span><span class="si">{port}</span><span class="s1">/</span><span class="si">%2f</span><span class="s1">?timeout=60&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">urikwargs</span><span class="p">)</span></div>
 
 <span class="c1">##</span>
 <span class="c1"># Pax multiprocessing code</span>
@@ -152,33 +153,33 @@
 <div class="viewcode-block" id="multiprocess_configuration"><a class="viewcode-back" href="../../pax.html#pax.parallel.multiprocess_configuration">[docs]</a><span class="k">def</span> <span class="nf">multiprocess_configuration</span><span class="p">(</span><span class="n">n_cpus</span><span class="p">,</span> <span class="n">pax_id</span><span class="p">,</span> <span class="n">base_config_kwargs</span><span class="p">,</span> <span class="n">processing_queue_kwargs</span><span class="p">,</span> <span class="n">output_queue_kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Yields configuration override dicts for multiprocessing&quot;&quot;&quot;</span>
     <span class="c1"># Config overrides for child processes</span>
-    <span class="n">common_override</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pax</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">autorun</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">show_progress_bar</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span>
+    <span class="n">common_override</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pax</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">autorun</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
                            <span class="n">DEFAULT</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">pax_id</span><span class="o">=</span><span class="n">pax_id</span><span class="p">))</span>
 
     <span class="n">input_override</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pax</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">plugin_group_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">],</span>
-                                   <span class="n">encoder_plugin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                                   <span class="n">decoder_plugin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                   <span class="n">encoder_plugin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">decoder_plugin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                    <span class="n">output</span><span class="o">=</span><span class="s1">&#39;Queues.PushToQueue&#39;</span><span class="p">),</span>
                           <span class="n">Queues</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="o">**</span><span class="n">processing_queue_kwargs</span><span class="p">))</span>
 
     <span class="n">worker_override</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pax&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="s1">&#39;Queues.PullFromQueue&#39;</span><span class="p">,</span>
                                    <span class="n">output</span><span class="o">=</span><span class="s1">&#39;Queues.PushToQueue&#39;</span><span class="p">,</span>
-                                   <span class="n">event_numbers_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                                   <span class="n">events_to_process</span><span class="o">=</span><span class="bp">None</span><span class="p">),</span>
+                                   <span class="n">event_numbers_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">events_to_process</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
                        <span class="c1"># PullFromQueue can&#39;t have a timeout in the workers, see #444</span>
                        <span class="s1">&#39;Queues.PullFromQueue&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">timeout_after_sec</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
                                                     <span class="o">**</span><span class="n">processing_queue_kwargs</span><span class="p">),</span>
-                       <span class="s1">&#39;Queues.PushToQueue&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">preserve_ids</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                                                  <span class="n">many_to_one</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                       <span class="s1">&#39;Queues.PushToQueue&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">preserve_ids</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                  <span class="n">many_to_one</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                                   <span class="o">**</span><span class="n">output_queue_kwargs</span><span class="p">)}</span>
 
     <span class="n">output_override</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pax</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">plugin_group_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">],</span>
-                                    <span class="n">encoder_plugin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                                    <span class="n">decoder_plugin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                                    <span class="n">event_numbers_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                                    <span class="n">events_to_process</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                    <span class="n">encoder_plugin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">decoder_plugin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">event_numbers_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">events_to_process</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                     <span class="nb">input</span><span class="o">=</span><span class="s1">&#39;Queues.PullFromQueue&#39;</span><span class="p">),</span>
-                           <span class="n">Queues</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ordered_pull</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                           <span class="n">Queues</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">ordered_pull</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                        <span class="o">**</span><span class="n">output_queue_kwargs</span><span class="p">))</span>
 
     <span class="n">overrides</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">input_override</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[(</span><span class="s1">&#39;worker&#39;</span><span class="p">,</span> <span class="n">worker_override</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n_cpus</span> <span class="o">+</span> <span class="p">[(</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="n">output_override</span><span class="p">)]</span>
@@ -207,9 +208,9 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pax_instance</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="ne">SystemExit</span><span class="p">):</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Shutting down all plugins...&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Shutting down all plugins...&quot;</span><span class="p">)</span>
             <span class="n">pax_instance</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Exiting&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exiting&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="multiprocess_locally"><a class="viewcode-back" href="../../pax.html#pax.parallel.multiprocess_locally">[docs]</a><span class="k">def</span> <span class="nf">multiprocess_locally</span><span class="p">(</span><span class="n">n_cpus</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -250,11 +251,11 @@
         <span class="n">status_line</span><span class="p">(</span><span class="n">running_workers</span><span class="p">,</span> <span class="n">processing_queue</span><span class="p">,</span> <span class="n">output_queue</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="multiprocess_remotely"><a class="viewcode-back" href="../../pax.html#pax.parallel.multiprocess_remotely">[docs]</a><span class="k">def</span> <span class="nf">multiprocess_remotely</span><span class="p">(</span><span class="n">n_cpus</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">pax_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">,</span>
+<div class="viewcode-block" id="multiprocess_remotely"><a class="viewcode-back" href="../../pax.html#pax.parallel.multiprocess_remotely">[docs]</a><span class="k">def</span> <span class="nf">multiprocess_remotely</span><span class="p">(</span><span class="n">n_cpus</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">pax_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">DEFAULT_RABBIT_URI</span><span class="p">,</span>
                           <span class="n">startup_queue_name</span><span class="o">=</span><span class="s1">&#39;pax_startup&#39;</span><span class="p">,</span> <span class="n">crash_watch_fanout_name</span><span class="o">=</span><span class="s1">&#39;pax_crashes&#39;</span><span class="p">,</span>
                           <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">manager</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Manager</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">pax_id</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">pax_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">pax_id</span> <span class="o">=</span> <span class="s1">&#39;pax_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">utils</span><span class="o">.</span><span class="n">randomstring</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
 
     <span class="c1"># Setup an output and worker queue. We connect to the processing queue here just to display the queue size.</span>
@@ -289,7 +290,7 @@
         <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">local_paxes</span> <span class="o">=</span> <span class="n">check_local_processes_while_remote_processing</span><span class="p">(</span><span class="n">local_paxes</span><span class="p">,</span> <span class="n">crash_fanout</span><span class="p">,</span>
-                                                                    <span class="n">terminate_host_on_crash</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                                                                    <span class="n">terminate_host_on_crash</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">status_line</span><span class="p">(</span><span class="n">local_paxes</span><span class="p">,</span> <span class="n">processing_queue</span><span class="p">,</span> <span class="n">output_queue</span><span class="p">)</span></div>
 
@@ -308,7 +309,7 @@
                                <span class="n">usage</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="check_local_processes_while_remote_processing"><a class="viewcode-back" href="../../pax.html#pax.parallel.check_local_processes_while_remote_processing">[docs]</a><span class="k">def</span> <span class="nf">check_local_processes_while_remote_processing</span><span class="p">(</span><span class="n">running_paxes</span><span class="p">,</span> <span class="n">crash_fanout</span><span class="p">,</span> <span class="n">terminate_host_on_crash</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="check_local_processes_while_remote_processing"><a class="viewcode-back" href="../../pax.html#pax.parallel.check_local_processes_while_remote_processing">[docs]</a><span class="k">def</span> <span class="nf">check_local_processes_while_remote_processing</span><span class="p">(</span><span class="n">running_paxes</span><span class="p">,</span> <span class="n">crash_fanout</span><span class="p">,</span> <span class="n">terminate_host_on_crash</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Check on locally running paxes in running_paxes, returns list of remaining running pax processes.</span>
 <span class="sd">     - Remove any paxes that have exited normally</span>
 <span class="sd">     - If a pax has crashed, push a message to the crash fanout to terminate all paxes with the same id</span>
@@ -325,7 +326,7 @@
     <span class="k">for</span> <span class="n">crashed_w</span> <span class="ow">in</span> <span class="n">p_by_status</span><span class="p">[</span><span class="s1">&#39;crashed&#39;</span><span class="p">]:</span>
         <span class="n">pax_id</span> <span class="o">=</span> <span class="n">crashed_w</span><span class="o">.</span><span class="n">pax_id</span>
         <span class="n">exctype</span><span class="p">,</span> <span class="n">traceb</span> <span class="o">=</span> <span class="n">get_exception_from_process</span><span class="p">(</span><span class="n">p_by_status</span><span class="p">[</span><span class="s1">&#39;crashed&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Pax </span><span class="si">%s</span><span class="s2"> crashed!</span><span class="se">\n</span><span class="s2">Dumping exception traceback:</span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s2">Notifying crash fanout.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pax </span><span class="si">%s</span><span class="s2"> crashed!</span><span class="se">\n</span><span class="s2">Dumping exception traceback:</span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s2">Notifying crash fanout.&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="n">pax_id</span><span class="p">,</span> <span class="n">format_exception_dump</span><span class="p">(</span><span class="n">traceb</span><span class="p">)</span>
         <span class="p">))</span>
         <span class="n">crash_fanout</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">pax_id</span><span class="p">,</span> <span class="n">exctype</span><span class="p">,</span> <span class="n">traceb</span><span class="p">))</span>
@@ -337,7 +338,7 @@
     <span class="c1"># If any of the remote paxes crashed, we will learn about it from the crash fanout.</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">pax_id</span><span class="p">,</span> <span class="n">exctype</span><span class="p">,</span> <span class="n">traceb</span> <span class="o">=</span> <span class="n">crash_fanout</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Remote crash notification for pax </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Remote crash notification for pax </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
               <span class="s2">&quot;Remote exception traceback dump:</span><span class="se">\n\n</span><span class="si">%s</span><span class="se">\n</span><span class="s2">.Terminating paxes with id </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="n">pax_id</span><span class="p">,</span> <span class="n">format_exception_dump</span><span class="p">(</span><span class="n">traceb</span><span class="p">),</span> <span class="n">pax_id</span><span class="p">))</span>
 
@@ -371,7 +372,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">plist</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">exitcode</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">exitcode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">result</span><span class="p">[</span><span class="s1">&#39;running&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">p</span><span class="o">.</span><span class="n">exitcode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">result</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
@@ -398,20 +399,20 @@
         <span class="c1"># cProfile.runctx(&#39;Processor(**kwargs)&#39;, globals(), locals(), &#39;profile-%s.out&#39; % os.getpid())</span>
         <span class="n">Processor</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">shared_dict</span><span class="p">[</span><span class="s1">&#39;exception_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">shared_dict</span><span class="p">[</span><span class="s1">&#39;exception_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="n">shared_dict</span><span class="p">[</span><span class="s1">&#39;traceback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
         <span class="k">raise</span></div>
 
 
 <div class="viewcode-block" id="format_exception_dump"><a class="viewcode-back" href="../../pax.html#pax.parallel.format_exception_dump">[docs]</a><span class="k">def</span> <span class="nf">format_exception_dump</span><span class="p">(</span><span class="n">traceb</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceb</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="bp">True</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">traceb</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="kc">True</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="get_exception_from_process"><a class="viewcode-back" href="../../pax.html#pax.parallel.get_exception_from_process">[docs]</a><span class="k">def</span> <span class="nf">get_exception_from_process</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
     <span class="n">crdict</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">shared_dict</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">exc_type</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">crdict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;exception_type&#39;</span><span class="p">,</span> <span class="s1">&#39;UnknownPropagatedException&#39;</span><span class="p">),</span>
-                        <span class="n">exceptions</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+                        <span class="n">exceptions</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
         <span class="n">exc_type</span> <span class="o">=</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">UnknownPropagatedException</span>
     <span class="n">traceb</span> <span class="o">=</span> <span class="n">crdict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;traceback&#39;</span><span class="p">,</span> <span class="s1">&#39;No traceback reported&#39;</span><span class="p">)</span>
@@ -424,7 +425,7 @@
 <span class="sd">    Maintains a cache to make sure this is not polled more than once per second</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="k">return</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="mi">1</span><span class="n">e6</span>
     <span class="k">except</span> <span class="n">psutil</span><span class="o">.</span><span class="n">NoSuchProcess</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 </pre></div>
@@ -445,14 +446,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -463,8 +461,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

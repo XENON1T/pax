@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 6.6.2 documentation</title>
+    <title>pax.configuration &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '6.6.2',
+        VERSION:     '6.9.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.6.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
@@ -41,20 +42,20 @@
             
   <h1>Source code for pax.configuration</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="k">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
 
 <span class="kn">import</span> <span class="nn">six</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="kn">import</span> <span class="n">InvalidConfigurationError</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="k">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">pax.exceptions</span> <span class="k">import</span> <span class="n">InvalidConfigurationError</span>
 
 
-<div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">maybe_call_mongo</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maybe_call_mongo</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Load pax configuration using configuration data. See the docstring of Processor for more info.</span>
 <span class="sd">    :param: maybe_call_mongo: if True, at the end of loading the config (but before applying config_dict)</span>
 <span class="sd">    :return: nested dictionary of evaluated configuration values, use as: config[section][key].</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">config_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">config_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">config_dict</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Support for string arguments</span>
@@ -65,7 +66,7 @@
 
     <span class="n">configp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">inline_comment_prefixes</span><span class="o">=</span><span class="s1">&#39;#&#39;</span><span class="p">,</span>
                            <span class="n">interpolation</span><span class="o">=</span><span class="n">ExtendedInterpolation</span><span class="p">(),</span>
-                           <span class="n">strict</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                           <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                            <span class="n">default_section</span><span class="o">=</span><span class="s1">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">)</span>
 
     <span class="c1"># Allow for case-sensitive configuration keys</span>
@@ -77,7 +78,7 @@
         <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="n">config_name</span> <span class="o">+</span> <span class="s1">&#39;.ini&#39;</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">config_path</span> <span class="ow">in</span> <span class="n">config_paths</span><span class="p">:</span>
         <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">config_string</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">config_dict</span> <span class="o">==</span> <span class="p">{}:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;You did not specify any configuration :-(&quot;</span><span class="p">)</span>
@@ -163,9 +164,9 @@
 
     <span class="k">if</span> <span class="n">maybe_call_mongo</span> <span class="ow">and</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;look_for_config_in_runs_db&#39;</span><span class="p">):</span>
         <span class="c1"># Connect to MongoDB. Do import here, since someone may wish to run pax without mongo</span>
-        <span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="kn">import</span> <span class="n">ClientMaker</span>         <span class="c1"># noqa</span>
+        <span class="kn">from</span> <span class="nn">pax.MongoDB_ClientMaker</span> <span class="k">import</span> <span class="n">ClientMaker</span>         <span class="c1"># noqa</span>
         <span class="n">run_collection</span> <span class="o">=</span> <span class="n">ClientMaker</span><span class="p">(</span><span class="n">evaled_config</span><span class="p">[</span><span class="s1">&#39;MongoDB&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">get_client</span><span class="p">(</span>
-            <span class="s1">&#39;run&#39;</span><span class="p">,</span> <span class="n">autoreconnect</span><span class="o">=</span><span class="bp">True</span><span class="p">)[</span><span class="s1">&#39;run&#39;</span><span class="p">][</span><span class="s1">&#39;runs_new&#39;</span><span class="p">]</span>
+            <span class="s1">&#39;run&#39;</span><span class="p">,</span> <span class="n">autoreconnect</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s1">&#39;run&#39;</span><span class="p">][</span><span class="s1">&#39;runs_new&#39;</span><span class="p">]</span>
 
         <span class="c1"># Get the run document, either by explicitly specified run number, or by the input name</span>
         <span class="c1"># The last option is a bit of a hack... if you don&#39;t like it, think of some way to always pass</span>
@@ -259,14 +260,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -277,8 +275,8 @@
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 
