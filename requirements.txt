@@ -13,7 +13,7 @@ scikit-learn==0.19.1
 h5py==2.7.1
 six==1.11.0
 numexpr==2.6.4
-psutil
+psutil==5.4.3
 mock
 rabbitpy
 multihist
