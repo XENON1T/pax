@@ -6,7 +6,7 @@ scipy==1.0.1
 tqdm==4.20.0                 # Progress bar library
 prettytable==7          # Timing report formatting
 pandas>=0.16         # Used for some optional I/O stuff
-flake8
+flake8==3.5.0
 python-snappy>=0.5
 numba>=0.19
 scikit-learn
