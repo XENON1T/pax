@@ -15,7 +15,7 @@ six==1.11.0
 numexpr==2.6.4
 psutil==5.4.3
 mock==2.0.0
-rabbitpy
+rabbitpy==1.0.0
 multihist
 msgpack-python
 pytz
