@@ -8,14 +8,14 @@ cache: pip
 
 matrix:
     include:
-        - python: 2.7
-          env: PYTHON=2.7 ROOT=5.34.32
+        #- python: 2.7
+        #  env: PYTHON=2.7 ROOT=5.34.32
         - python: 3.4
           env: PYTHON=3.4 ROOT=5.34.32
         #- python: 2.7
         #  env: PYTHON=2.7 ROOT=6.04
-        #- python: 3.4
-        #  env: PYTHON=3.4 ROOT=6.04
+        - python: 3.4
+          env: PYTHON=3.4 ROOT=6.04
 
     allow_failures:
         - python: 2.7
@@ -92,6 +92,7 @@ install:
   - conda create -q -n pax python=${PYTHON} root=${ROOT} cython pip rootpy jupyter root_pandas psutil
   - source activate pax
   - pip install coveralls nose coverage
+  - pip install -r requirements.txt
   - pip list
 
   # Install pax
