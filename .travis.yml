@@ -56,6 +56,12 @@ notifications:
 services:
   - mongodb
 
+addons:
+  apt:
+    packages:
+    # SciPy dependencies.
+    - gfortran
+    - libatlas-base-dev
 
 before_script:
     - sudo apt-get update
