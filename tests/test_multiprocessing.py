@@ -106,8 +106,9 @@ class TestMultiprocessing(unittest.TestCase):
 
     def test_multiprocessing(self):
         multiprocess_locally(n_cpus=2,
-                             config_names='XENON1T',
-                             config_dict=dict(pax=dict(stop_after=10,
+                             config_names='XENON100',
+                             config_dict=dict(pax=dict(input_name=102834,
+                                                       stop_after=10,
                                                        look_for_config_in_runs_db=False)))
 
     def test_process_event_list_multiprocessing(self):
@@ -120,7 +121,8 @@ class TestMultiprocessing(unittest.TestCase):
                           'output_name': 'test_output',
                           'encoder_plugin': None,
                           'output': 'Table.TableWriter',
-                          'look_for_config_in_runs_db': False},
+                          'look_for_config_in_runs_db': False,
+                          'input_name' : 102834},
                   'Table.TableWriter': {'output_format': 'csv'}}
 
         multiprocess_locally(n_cpus=2, config_names='XENON1T', config_dict=config)
