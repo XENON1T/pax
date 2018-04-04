@@ -16,6 +16,12 @@ requirements = open('requirements.txt').read().splitlines()
 # configparser is not in the python2 standard library:
 if six.PY2:
     requirements.append('configparser')
+  
+# Avoids "KeyError: 'ROOT'" in TravisCI, see PR #250.
+try:
+    import ROOT
+except ImportError:
+    pass
 
 # Snappy cannot be installed automatically on windows
 if os.name == 'nt':
