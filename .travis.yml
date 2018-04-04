@@ -82,6 +82,7 @@ install:
   - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy pyqt matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
   - pip install coveralls nose coverage
+  - pip list
 
   # Install pax
   - pip install mongodbproxy   # Somehow needs explicit install?
