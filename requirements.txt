@@ -1,16 +1,16 @@
 numpy==1.14.2
 pymongo==3.0.3
 matplotlib==2.0.0
-scipy==0.19.1
+
 tqdm==4.11.2                 # Progress bar library
 prettytable==0.7.2          # Timing report formatting
 pandas==0.19.2         # Used for some optional I/O stuff
 flake8==2.5.4
 python-snappy==0.5
 numba==0.28.1
-scikit-learn==0.18.1
+
 h5py==2.6.0
-six==1.10.0
+
 numexpr==2.6.1
 mock==2.0.0
 rabbitpy==0.27.1
@@ -18,5 +18,8 @@ multihist==0.5.4
 msgpack-python==0.4.7
 pytz==2016.10
 
+scipy>=0.18.1 # pyup: ignore
+six>=1.10.0 # pyup: ignore
+scikit-learn>=0.18.0 # pyup: ignore
 psutil>=5.0.0  # pyup: ignore
 wheel>=0.23.0  # pyup: ignore
