@@ -78,12 +78,13 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.18.1 pyqt>=4.11 matplotlib pandas cython h5py numba>=0.28.1 pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
+  - conda update -n base conda
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy pyqt matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
   - pip install coveralls nose coverage
 
   # Install pax
-  - pip install mongodbproxy    # Somehow needs explicit install?
+  - pip install mongodbproxy   # Somehow needs explicit install?
   - python setup.py install
 
   # Run a simple test file, to see if the tests load
