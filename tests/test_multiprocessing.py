@@ -106,7 +106,7 @@ class TestMultiprocessing(unittest.TestCase):
 
     def test_multiprocessing(self):
         multiprocess_locally(n_cpus=2,
-                             config_names='XENON100',
+                             config_names='XENON1T',
                              config_dict=dict(pax=dict(stop_after=10)))
 
     def test_process_event_list_multiprocessing(self):
@@ -121,7 +121,7 @@ class TestMultiprocessing(unittest.TestCase):
                           'output': 'Table.TableWriter'},
                   'Table.TableWriter': {'output_format': 'csv'}}
 
-        multiprocess_locally(n_cpus=2, config_names='XENON100', config_dict=config)
+        multiprocess_locally(n_cpus=2, config_names='XENON1T', config_dict=config)
 
         # Check we actually wrote two events (and a header row)
         self.assertTrue(os.path.exists('test_output'))
