@@ -89,7 +89,7 @@ install:
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
   - conda update -n base conda
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} cython pip rootpy jupyter root_pandas psutil python-snappy numba
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} cython pip rootpy jupyter root_pandas psutil python-snappy numba=0.28.1
   - source activate pax
   - pip install coveralls nose coverage
   - pip install -r requirements.txt
