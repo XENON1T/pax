@@ -74,7 +74,7 @@ class Model(object):
                         pass
                     elif isinstance(v, bytes):
                         # Numpy arrays can be also initialized from a 'string' of bytes...
-                        v = np.fromstring(v, dtype=default_value.dtype)
+                        v = np.frombuffer(v, dtype=default_value.dtype)
                     elif hasattr(v, '__iter__'):
                         # ... or an iterable
                         v = np.array(v, dtype=default_value.dtype)
