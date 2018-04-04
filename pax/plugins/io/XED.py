@@ -231,7 +231,7 @@ class DecodeXED(plugin.TransformPlugin):
             for channel_id in event_proxy.data['channels_included']:
                 # Read channel size (in 4bit words), subtract header size, convert
                 # from 4-byte words to bytes
-                channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
+                channel_data_size = int(4 * (np.frombuffer(chunk_fake_file.read(4),
                                                            dtype='<u4')[0] - 1))
 
                 # Read the channel data into another fake binary file
@@ -248,7 +248,7 @@ class DecodeXED(plugin.TransformPlugin):
                         break
 
                     # Control words starting with zero indicate a number of sample PAIRS to skip
-                    control_word = int(np.fromstring(control_word_string,
+                    control_word = int(np.frombuffer(control_word_string,
                                                      dtype='<u4')[0])
                     if control_word < 2 ** 31:
                         sample_position += 2 * control_word
@@ -260,7 +260,7 @@ class DecodeXED(plugin.TransformPlugin):
                         data_samples = 2 * (control_word - (2 ** 31))
 
                         # Note endianness
-                        samples_pulse = np.fromstring(channel_fake_file.read(2 * data_samples),
+                        samples_pulse = np.frombuffer(channel_fake_file.read(2 * data_samples),
                                                       dtype="<i2")
 
                         event.pulses.append(Pulse(
