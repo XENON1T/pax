@@ -6,7 +6,7 @@ prettytable==0.7.2          # Timing report formatting
 pandas==0.19.2         # Used for some optional I/O stuff
 flake8==2.5.4
 python-snappy==0.5
-numba==0.28.1
+numba
 h5py==2.6.0
 numexpr==2.6.1
 mock==2.0.0
