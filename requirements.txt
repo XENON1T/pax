@@ -15,7 +15,7 @@ six
 numexpr
 psutil
 mock
-rabbitpy
+rabbitpy==1.0.0
 multihist
 msgpack-python
 pytz
