@@ -16,6 +16,6 @@ numexpr
 psutil
 mock
 rabbitpy
-multihist
+multihist==0.5.4
 msgpack-python
 pytz
