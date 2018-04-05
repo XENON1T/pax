@@ -4,14 +4,16 @@ language: python
 
 sudo: false
 
+cache: pip
+
 matrix:
     include:
-        - python: 2.7
-          env: PYTHON=2.7 ROOT=5.34.32
+        #- python: 2.7
+        #  env: PYTHON=2.7 ROOT=5.34.32
         - python: 3.4
           env: PYTHON=3.4 ROOT=5.34.32
-        - python: 2.7
-          env: PYTHON=2.7 ROOT=6.04
+        #- python: 2.7
+        #  env: PYTHON=2.7 ROOT=6.04
         - python: 3.4
           env: PYTHON=3.4 ROOT=6.04
 
@@ -44,8 +46,8 @@ matrix:
 notifications:
   email:
     - ctunnell@nikhef.nl
-    - jaalbers@nikhef.nl
-    - feigao.ge@gmail.com
+#    - jaalbers@nikhef.nl
+#    - feigao.ge@gmail.com
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/09d571df0e21d4d4182f
@@ -56,8 +58,16 @@ notifications:
 services:
   - mongodb
 
+addons:
+  apt:
+    packages:
+    # SciPy dependencies.
+    - gfortran
+    - libatlas-base-dev
 
 before_script:
+    - sudo apt-get update
+    - sudo apt-get install build-essential
     - if [ "$TRAVIS_OS_NAME" == "linux" ]; then  
           export DISPLAY=:99.0; 
           sh -e /etc/init.d/xvfb start; 
@@ -78,12 +88,15 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.18.1 pyqt>=4.11 matplotlib pandas cython h5py numba>=0.28.1 pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
+  - conda update -n base conda
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} cython pip rootpy jupyter root_pandas psutil python-snappy numba=0.28.1
   - source activate pax
   - pip install coveralls nose coverage
+  - pip install -r requirements.txt
+  - pip list
 
   # Install pax
-  - pip install mongodbproxy    # Somehow needs explicit install?
+  - pip install mongodbproxy   # Somehow needs explicit install?
   - python setup.py install
 
   # Run a simple test file, to see if the tests load
