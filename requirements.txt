@@ -18,4 +18,4 @@ mock
 rabbitpy
 multihist
 msgpack-python
-pytz
+pytz==2018.3
