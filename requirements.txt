@@ -12,7 +12,7 @@ numba>=0.19
 scikit-learn
 h5py
 six
-numexpr
+numexpr==2.6.4
 psutil
 mock
 rabbitpy
