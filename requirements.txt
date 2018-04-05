@@ -14,7 +14,7 @@ h5py
 six
 numexpr
 psutil
-mock
+mock==2.0.0
 rabbitpy
 multihist
 msgpack-python
