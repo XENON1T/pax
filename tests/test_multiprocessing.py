@@ -107,9 +107,7 @@ class TestMultiprocessing(unittest.TestCase):
     def test_multiprocessing(self):
         multiprocess_locally(n_cpus=2,
                              config_names='XENON100',
-                             config_dict=dict(pax=dict(input_name=102834,
-                                                       stop_after=10,
-                                                       look_for_config_in_runs_db=False)))
+                             config_dict=dict(pax=dict(stop_after=10)))
 
     def test_process_event_list_multiprocessing(self):
         """Take a list of event numbers from a file, and process them on two cores
@@ -120,12 +118,10 @@ class TestMultiprocessing(unittest.TestCase):
                           'plugin_group_names': ['input', 'output'],
                           'output_name': 'test_output',
                           'encoder_plugin': None,
-                          'output': 'Table.TableWriter',
-                          'look_for_config_in_runs_db': False,
-                          'input_name' : 102834},
+                          'output': 'Table.TableWriter'},
                   'Table.TableWriter': {'output_format': 'csv'}}
 
-        multiprocess_locally(n_cpus=2, config_names='XENON1T', config_dict=config)
+        multiprocess_locally(n_cpus=2, config_names='XENON100', config_dict=config)
 
         # Check we actually wrote two events (and a header row)
         self.assertTrue(os.path.exists('test_output'))
