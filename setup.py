@@ -17,15 +17,7 @@ requirements = open('requirements.txt').read().splitlines()
 if six.PY2:
     requirements.append('configparser')
 
-# For some reason h5py is often not seen by pip if it was installed by conda...
-# so check for h5py presence manually, and remove it from requirements if already found.
-try:
-    import h5py
-except ImportError:
-    pass
-else:
-    del requirements[requirements.index('h5py')]
-
+# Avoids "KeyError: 'ROOT'" in TravisCI, see PR #250.
 try:
     import ROOT
 except ImportError:
