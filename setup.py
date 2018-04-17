@@ -11,7 +11,10 @@ except ImportError:
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
+# Fetch requirements, but remove explicit version pins.
+# Use pip install -r requirements.txt for repeatable installations
 requirements = open('requirements.txt').read().splitlines()
+requirements = [x.split('=')[0] for x in requirements]
 
 # configparser is not in the python2 standard library:
 if six.PY2:
