@@ -331,6 +331,9 @@ class Simulator(object):
 
                 roll_number = np.random.randint(noise_sample_len)
 
+        # Setup the lone-hit arrival_times_per_channel
+        lone_hit_arrival_times_per_channels = self.lone_hits(max_time)
+
         # Build waveform channel by channel
         for channel, photon_detection_times in self.arrival_times_per_channel.items():
             # If the channel is dead, fake, or not in the TPC, we don't do anything.
@@ -351,6 +354,11 @@ class Simulator(object):
             log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
+
+            # Combine the lone-hits with the normal PMT pulses
+            photon_detection_times = np.concatenate(
+                (photon_detection_times, lone_hit_arrival_times_per_channels[channel])
+            )
 
             gains = self.get_gains(channel, len(photon_detection_times))
 
@@ -404,7 +412,7 @@ class Simulator(object):
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
 
-            #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
+            # Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
 
             # Build the waveform pulse by pulse (bin by bin was slow, hope this is faster)
@@ -657,6 +665,41 @@ class Simulator(object):
             t3=c['triplet_lifetime_gas'],
             singlet_ratio=c['singlet_fraction_gas']
         )
+
+    def lone_hits(self, max_time):
+        # generate the lone hits based on the frequency maps
+        # need the config of the lone-hit rate in each channel:
+        # sim.config['lone_hit_rate_per_channel'], and it shall be dictionary with key of pmt ids
+        # sim.config['lone_hit_rate'] (global rate for all pmts)
+        if ('lone_hit_rate_per_channel' not in self.config) and ('lone_hit_rate' not in self.config):
+            return np.asarray(
+                [[]]*int(self.config['n_channels'])
+            )
+        # Lone hit rate map
+        lone_hit_rate_map = np.asarray(
+                [float(self.config.get('lone_hit_rate', 0.))]*int(self.config['n_channels'])
+            )
+        if 'lone_hit_rate_per_channel' in self.config:
+            lone_hit_rate_map[list(self.config['lone_hit_rate_per_channel'].keys())] = \
+                list(self.config['lone_hit_rate_per_channel'].values())
+        # total number of lone hits among all channels
+        # the length shall be (-self.config['event_padding'], max_time)
+        total_num_lone_hits = int(np.sum(lone_hit_rate_map)*(max_time+self.config['event_padding']))
+        lone_hit_channels = np.random.choice(
+            self.config['n_channels'],
+            size=total_num_lone_hits,
+            p=np.asarray(lone_hit_rate_map) / np.sum(lone_hit_rate_map),
+        )
+        lone_hit_hitp, _ = np.histogram(
+            lone_hit_channels,
+            bins=self.config['n_channels'],
+            range=(0, self.config['n_channels']),
+        )
+        lone_hit_times = np.random.uniform(-self.config['event_padding'], max_time, size=total_num_lone_hits)
+        return np.split(
+            lone_hit_times,
+            np.cumsum(lone_hit_hitp)
+        )[:-1]
 
     def singlet_triplet_delays(self, times, t1, t3, singlet_ratio):
         """
