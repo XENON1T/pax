@@ -129,11 +129,7 @@ def find_split_points(w, min_height, min_ratio):
     # to locate minima and maxima
     left = np.clip(np.where(w>min_height)[0][0]-500, 0, np.inf)
     right = np.clip(np.where(w>min_height)[0][-1]+500, 0, len(w))
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 5510e35e39e50c6de0fc5591c0748ab768bdef13
     _w = dsputils.smooth_lowess(w[left:right], np.arange(right-left), frac = 60/(right-left))
     dw = np.diff(_w, n=1)
     minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
@@ -193,8 +189,4 @@ def find_tail_point(w, min_height, ratio):
     if len(tail)>0:
         return tail[:1]
     else:
-<<<<<<< HEAD
         return []
-=======
-        return []
->>>>>>> 5510e35e39e50c6de0fc5591c0748ab768bdef13
