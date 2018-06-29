@@ -151,14 +151,14 @@ def smooth_lowess(y, x, frac=1.0/2.0, it=1):
     for ix in range(it):
         wmatrix = w * np.tile(delta,n).reshape(n, n)   # w_ij * delta_*j
 
-        # Here capital case X Y has nothing to do with lower case x y, 
+        # Here capital case X Y has nothing to do with lower case x y,
         # Derived from linear regression in order to solve 'm' and 'k'
         # Ya_i=m_i+k_i*Xa_i and Yb_i=m_i+k_i*Xb_i
         Ya = np.sum(wmatrix * ymatrix, axis=1) / np.sum(wmatrix, axis=1)
         Xa = np.sum(wmatrix * xmatrix, axis=1) / np.sum(wmatrix, axis=1)
         Yb = np.sum(wmatrix * xmatrix * ymatrix, axis=1) / np.sum(wmatrix * xmatrix, axis=1)
         Xb = np.sum(wmatrix * xmatrix * xmatrix, axis=1) / np.sum(wmatrix * xmatrix, axis=1)
-        
+
         yestimate = Ya + (Yb - Ya) / (Xb - Xa) * (x - Xa)
         residuals = y - yestimate
         s = np.median(np.abs(residuals))
@@ -202,7 +202,6 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
             # Use lowess to smooth raw waveform and split at relative minima.
             if itv_end - current_interval_start>350:
                 broader_interval_start = current_interval_start
-                current_sign = +1
 
                 _w = w[broader_interval_start:itv_end][::2].copy()
                 _w = smooth_lowess(_w, np.arange(len(_w)), frac = 30/len(_w))
