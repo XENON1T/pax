@@ -129,6 +129,7 @@ def extend_intervals(w, intervals, left_extension, right_extension):
                 min_possible_l = intervals[i - 1][1] + 1
             intervals[i][0] = max(min_possible_l, intervals[i][0] - left_extension)
 
+
 def smooth_lowess(y, x, frac=1.0/2.0):
     """
     Smoothing using lowess
@@ -140,15 +141,15 @@ def smooth_lowess(y, x, frac=1.0/2.0):
     # w_ij = (1-abs((x_j-x_i)/(neighborhood))**3)**3 if x_j IN the neighborhood of x_i
     # w_ij = 0 if x_j in NOT IN the neighborhood of x_i
     # Of corse w_ij is symmetric
-    w = np.clip(np.abs((x[:,None]-x[None,:])/neighborhood), 0.0, 1.0)
+    w = np.clip(np.abs((x[:, None]-x[None, :])/neighborhood), 0.0, 1.0)
     w = (1-w**3)**3
 
     delta = np.ones(n)
     # We use matrices to speed up calculation but memory costly
-    xmatrix = np.tile(x,n).reshape(n, n) # x_*j
-    ymatrix = np.tile(y,n).reshape(n, n) # y_*j
+    xmatrix = np.tile(x, n).reshape(n, n)  # x_*j
+    ymatrix = np.tile(y, n).reshape(n, n)  # y_*j
 
-    wmatrix = w * np.tile(delta,n).reshape(n, n)   # w_ij * delta_*j
+    wmatrix = w * np.tile(delta, n).reshape(n, n)   # w_ij * delta_*j
 
     # Here capital case X Y has nothing to do with lower case x y,
 
@@ -163,9 +164,10 @@ def smooth_lowess(y, x, frac=1.0/2.0):
     residuals = y - yestimate
     s = np.median(np.abs(residuals))
     delta = np.clip(residuals / (6.0 * s), -1, 1)
-    delta = (1 - delta **2 ) **2
+    delta = (1 - delta ** 2) ** 2
 
     return yestimate
+
 
 def find_intervals_above_threshold(w, threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > threshold.
@@ -200,11 +202,11 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
 
             # Split interval if the interval >350 samples
             # Use lowess to smooth raw waveform and split at relative minima.
-            if itv_end - current_interval_start>350:
+            if itv_end - current_interval_start > 350:
                 broader_interval_start = current_interval_start
 
                 _w = w[broader_interval_start:itv_end][::2].copy()
-                _w = smooth_lowess(_w, np.arange(len(_w)), frac = 30/len(_w))
+                _w = smooth_lowess(_w, np.arange(len(_w)), frac=30/len(_w))
                 dw = _w[1:] - _w[:-1]
                 for j in np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]:
                     result_buffer[current_interval, 0] = current_interval_start

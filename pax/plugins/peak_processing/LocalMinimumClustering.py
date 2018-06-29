@@ -122,28 +122,29 @@ def find_split_points(w, min_height, min_ratio):
       - larger than minimum + min_height
       - larger than minimum * min_ratio # No longer required
     """
-    if np.max(w)<min_height:
+    if np.max(w) < min_height:
         return []
 
     # Smooth sum waveform, then use first and sign of second order dirivitive
     # to locate minima and maxima
-    left = np.clip(np.where(w>min_height)[0][0]-500, 0, np.inf)
-    right = np.clip(np.where(w>min_height)[0][-1]+500, 0, len(w))
+    left = np.clip(np.where(w > min_height)[0][0]-500, 0, np.inf)
+    right = np.clip(np.where(w > min_height)[0][-1]+500, 0, len(w))
 
-    _w = dsputils.smooth_lowess(w[left:right], np.arange(right-left), frac = 60/(right-left))
+    _w = dsputils.smooth_lowess(w[left:right], np.arange(right-left), frac=60/(right-left))
     dw = np.diff(_w, n=1)
     minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
     maxima = np.where((np.hstack((dw, 1)) < 0) & (np.hstack((-1, dw)) >= 0))[0]
-    
+
     # We don't care about minima if it don't have maxima on both side
     # This automatically make one less minima then maxima
-    if len(maxima) < 2: return []
-    minima = minima[(minima>maxima[0]) & (minima<maxima[-1])]
-    
+    if len(maxima) < 2:
+        return []
+    minima = minima[(minima > maxima[0]) & (minima < maxima[-1])]
+
     # We look for the last minima between big peaks
-    good_minima = [int(minima[ix]+left) for ix in range(len(minima)) \
-        if ((_w[maxima][ix+1] - _w[minima][ix] > min_height) \
-            & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
+    good_minima = [int(minima[ix]+left) for ix in range(len(minima))
+                   if ((_w[maxima][ix+1] - _w[minima][ix] > min_height)
+                       & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
 
     return good_minima
 
@@ -156,26 +157,27 @@ class TailSeparation(LocalMinimumClustering):
         w = self.event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
         split_points = list(find_tail_point(w,
                                             min_height=self.config['min_height'],
-                                            ratio = self.config['tail_cutoff_ratio']))
+                                            ratio=self.config['tail_cutoff_ratio']))
         if not len(split_points):
             return [peak]
         else:
             self.log.debug("Splitting %d-%d into %d peaks" % (peak.left, peak.right, len(split_points) + 1))
             return list(self.split_peak(peak, split_points))
 
+
 def find_tail_point(w, min_height, ratio):
 
-    if np.max(w)<min_height:
+    if np.max(w) < min_height:
         return []
 
     # Quick fit to the waveform and locate tail position
     ix = np.arange(len(w))
-    
+
     # Use center population to estimate mean and sigma
-    cnt = w>0.02*np.max(w)
+    cnt = w > 0.02*np.max(w)
     mean = np.sum(ix[cnt]*w[cnt])/np.sum(w[cnt])
     sigma = (np.sum((ix[cnt]-mean)**2*w[cnt])/np.sum(w[cnt]))**0.5
-    
+
     # Use estimated mean and sigma to find amplitude
     def gaussian(x, amp, mu, sigma):
         return amp * norm.pdf(x, loc=mu, scale=sigma)
@@ -183,10 +185,10 @@ def find_tail_point(w, min_height, ratio):
     amp = np.sum(w[cnt]*gaussian(ix[cnt], 1, mean, sigma))/np.sum(gaussian(ix[cnt], 1, mean, sigma)**2)
 
     # Define tail by waveform height drop below certain ratio of amplitude
-    tail = np.where(w<ratio*amp)[0]
-    tail = tail[(tail>mean+2*sigma)&(tail!=len(w))]
+    tail = np.where(w < ratio*amp)[0]
+    tail = tail[(tail > mean+2*sigma) & (tail != len(w))]
 
-    if len(tail)>0:
+    if len(tail) > 0:
         return tail[:1]
     else:
         return []
