@@ -1,5 +1,5 @@
 from pax import plugin, datastructure, dsputils
-import numba
+from scipy.stats import norm
 import numpy as np
 import logging
 from pax.plugins.signal_processing.HitFinder import build_hits
@@ -179,10 +179,7 @@ def find_tail_point(w, min_height, ratio):
     sigma = (np.sum((ix[cnt]-mean)**2*w[cnt])/np.sum(w[cnt]))**0.5
 
     # Use estimated mean and sigma to find amplitude
-    def gaussian(x, amp, mu, sigma):
-        return amp * norm.pdf(x, loc=mu, scale=sigma)
-
-    amp = np.sum(w[cnt]*gaussian(ix[cnt], 1, mean, sigma))/np.sum(gaussian(ix[cnt], 1, mean, sigma)**2)
+    amp = np.sum(w[cnt]*norm.pdf(ix[cnt], mean, sigma))/np.sum(norm.pdf(ix[cnt], mean, sigma)**2)
 
     # Define tail by waveform height drop below certain ratio of amplitude
     tail = np.where(w < ratio*amp)[0]
