@@ -126,7 +126,6 @@ class SumWaveformProperties(plugin.TransformPlugin):
                 l = peak.index_of_maximum - window
                 r = peak.index_of_maximum + window
                 peak.tight_coincidence_thresholds[ip] = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
-
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':
