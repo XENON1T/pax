@@ -275,6 +275,7 @@ class Peak(StrictModel):
     #: Number of channels that have a hit maximum within a short (configurable) window around the peak's sum
     #: waveform maximum.
     tight_coincidence = INT_NAN
+    tight_coincidence_thresholds = np.zeros(5, dtype=np.int16)  # various tight coincidence levels
 
     ##
     # Time distribution information
