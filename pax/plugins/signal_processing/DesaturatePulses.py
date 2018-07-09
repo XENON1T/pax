@@ -54,7 +54,7 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Select a reference region just before the start of the saturated region
                 reference_slice = slice(max(0, first_saturated - self.config['reference_region_samples']),
-                                    first_saturated-1)
+                                        first_saturated)
 
                 # Compute the (gain-weighted) sum waveform of the non-saturated pulses
                 min_left = min([p.left for p in other_pulses + [pulse]])
@@ -105,21 +105,22 @@ class DesaturatePulses(plugin.TransformPlugin):
                 # Choose +2 pe/ns instead 0 to avoid ending on the flat waveform
                 turning_point = np.where((np.hstack((dv, -10)) > 2) & (np.hstack((10, dv)) <= 2))[0]
 
-                if len(turning_point)>0:
+                if len(turning_point) > 0:
                     end = last_saturated + turning_point[0]
 
                 # Determine where to stop correction
                 # By checking the moving average of absolute deviation (MAAD) between raw and corrected pulse height
                 deviation = np.abs(sumw[start:end]*ratio - w[start:end])
                 size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
-                conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])                
+                conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
                 deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
 
                 # Compare MAAD before and after the saturated peak
                 try:
                     last_saturated = np.clip(np.arange(start, end+1), last_saturated, np.inf)
-                    last_saturated = last_saturated[deviation_moving_average>deviation_moving_average[first_saturated-start]][-1]
-                except:
+                    last_saturated = last_saturated[deviation_moving_average >
+                                                    deviation_moving_average[first_saturated-start]][-1]
+                except (ValueError, RuntimeError, TypeError, NameError):
                     last_saturated = end
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
