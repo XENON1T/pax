@@ -39,7 +39,7 @@ class DesaturatePulses(plugin.TransformPlugin):
                             if p.left < pulse.right and p.right > pulse.left and
                             not is_saturated[i] and
                             p.channel in tpc_channels and
-                            not p.channel in self.config['large_after_pulsing_channels']]
+                            p.channel not in self.config['large_after_pulsing_channels']]
 
             if not len(other_pulses):
                 # Rare case where no other pulses available, one channel going crazy?
@@ -70,7 +70,8 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Compute the ratio of this channel's waveform / the nonsaturated waveform in the reference region
                 w = self.waveform_in_pe(pulse)
-                if len(sumw[reference_slice][sumw[reference_slice] > 1]) < self.config['reference_region_samples_treshold']:
+                if len(sumw[reference_slice][sumw[reference_slice] > 1]) \
+                        < self.config['reference_region_samples_treshold']:
                     # the pulse is saturated, but there are not enough reference samples to get a good ratio
                     # This actually distinguished between S1 and S2 and will only correct S2 signals
                     continue
