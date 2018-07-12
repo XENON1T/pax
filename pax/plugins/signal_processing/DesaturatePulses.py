@@ -117,13 +117,12 @@ class DesaturatePulses(plugin.TransformPlugin):
                 #deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
 
                 # Compare MAAD before and after the saturated peak
-                #try:
+                # try:
                 #    last_saturated = np.clip(np.arange(start, end), last_saturated, np.inf)
                 #    last_saturated = last_saturated[deviation_moving_average >
                 #                                    deviation_moving_average[first_saturated-start]][-1]
-                #except (ValueError, RuntimeError, TypeError, NameError):
+                # except (ValueError, RuntimeError, TypeError, NameError):
                 #    last_saturated = end
-                
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
                 # The waveform should never be reduced due to this (then the correction is making things worse)
