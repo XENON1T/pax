@@ -133,7 +133,7 @@ def find_split_points(w, min_height, min_ratio):
     _w = dsputils.smooth_lowess(w[left:right], np.arange(right-left), frac=60/(right-left))
     dw = np.diff(_w, n=1)
     minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
-    maxima = np.where((np.hstack((dw, 1)) < 0) & (np.hstack((-1, dw)) >= 0))[0]
+    maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
 
     # We don't care about minima if it don't have maxima on both side
     # This automatically make one less minima then maxima
