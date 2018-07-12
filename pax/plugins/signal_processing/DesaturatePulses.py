@@ -118,7 +118,7 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Compare MAAD before and after the saturated peak
                 try:
-                    last_saturated = np.clip(np.arange(start, end+1), last_saturated, np.inf)
+                    last_saturated = np.clip(np.arange(start, end), last_saturated, np.inf)
                     last_saturated = last_saturated[deviation_moving_average >
                                                     deviation_moving_average[first_saturated-start]][-1]
                 except (ValueError, RuntimeError, TypeError, NameError):
@@ -126,7 +126,7 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
                 # The waveform should never be reduced due to this (then the correction is making things worse)
-                saturated_to_correct = np.arange(first_saturated, last_saturated)
+                saturated_to_correct = np.arange(int(first_saturated), int(last_saturated))
                 w[saturated_to_correct] = np.clip(sumw[saturated_to_correct] * ratio, 0, float('inf'))
 
                 # Convert back to raw ADC counts and store the corrected waveform
