@@ -111,22 +111,23 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Determine where to stop correction
                 # By checking the moving average of absolute deviation (MAAD) between raw and corrected pulse height
-                deviation = np.abs(sumw[start:end]*ratio - w[start:end])
-                size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
-                conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
-                deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
+                #deviation = np.abs(sumw[start:end]*ratio - w[start:end])
+                #size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
+                #conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
+                #deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
 
                 # Compare MAAD before and after the saturated peak
-                try:
-                    last_saturated = np.clip(np.arange(start, end+1), last_saturated, np.inf)
-                    last_saturated = last_saturated[deviation_moving_average >
-                                                    deviation_moving_average[first_saturated-start]][-1]
-                except (ValueError, RuntimeError, TypeError, NameError):
-                    last_saturated = end
+                #try:
+                #    last_saturated = np.clip(np.arange(start, end), last_saturated, np.inf)
+                #    last_saturated = last_saturated[deviation_moving_average >
+                #                                    deviation_moving_average[first_saturated-start]][-1]
+                #except (ValueError, RuntimeError, TypeError, NameError):
+                #    last_saturated = end
+                
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
                 # The waveform should never be reduced due to this (then the correction is making things worse)
-                saturated_to_correct = np.arange(first_saturated, last_saturated)
+                saturated_to_correct = np.arange(int(first_saturated), int(end))
                 w[saturated_to_correct] = np.clip(sumw[saturated_to_correct] * ratio, 0, float('inf'))
 
                 # Convert back to raw ADC counts and store the corrected waveform
