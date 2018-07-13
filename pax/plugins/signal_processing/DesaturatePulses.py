@@ -96,7 +96,7 @@ class DesaturatePulses(plugin.TransformPlugin):
                 else:
                     end = _where_saturated_list[peak_i+1][0]-self.config['reference_region_samples']
 
-                start = max(0, first_saturated - self.config['reference_region_samples'])
+                # start = max(0, first_saturated - self.config['reference_region_samples'])
 
                 # Second end before the first upwards turning point
                 v = sumw[last_saturated: end]
@@ -111,10 +111,10 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 # Determine where to stop correction
                 # By checking the moving average of absolute deviation (MAAD) between raw and corrected pulse height
-                #deviation = np.abs(sumw[start:end]*ratio - w[start:end])
-                #size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
-                #conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
-                #deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
+                # deviation = np.abs(sumw[start:end]*ratio - w[start:end])
+                # size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
+                # conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
+                # deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
 
                 # Compare MAAD before and after the saturated peak
                 # try:
