@@ -2,7 +2,18 @@
 
 language: python
 
+dist: trusty
+
 sudo: false
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+      - build-essential
+      - libc6-dev
+      - libpthread-stubs0-dev
+      - snappy
 
 matrix:
     include:
@@ -20,25 +31,6 @@ matrix:
           env: PYTHON=2.7 ROOT=5.34.32
         - python: 2.7
           env: PYTHON=2.7 ROOT=6.04
-
-    #     - language: generic
-    #       os: osx
-    #       osx_image: xcode6.4
-    #       env: PYTHON=2.7 ROOT=5.34.32
-    #     - language: generic
-    #       os: osx
-    #       osx_image: xcode6.4
-    #       env: PYTHON=2.7 ROOT=6.04
-    #     - language: generic
-    #       os: osx
-    #       osx_image: xcode6.4
-    #       env: PYTHON=3.4 ROOT=5.34.32
-    #     - language: generic
-    #       os: osx
-    #       osx_image: xcode6.4
-    #       env: PYTHON=3.4 ROOT=6.04
-    # allow_failures:
-    #     - os: osx
 
 
 notifications:
@@ -64,7 +56,9 @@ before_script:
           sleep 3; 
       fi
 
-install:
+
+before_install:
+  
   # Conda
   - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then curl --silent http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -o miniconda.sh; fi
   - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
@@ -78,13 +72,17 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy=0.18.1 pyqt>=4.11 matplotlib pandas cython h5py numba>=0.28.1 pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
+  - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy h5py pyqt matplotlib pandas cython numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
+
+install:
   - pip install coveralls nose coverage
 
   # Install pax
   - pip install mongodbproxy    # Somehow needs explicit install?
+  - pip install -r requirements.txt
   - python setup.py install
+  - pip freeze
 
   # Run a simple test file, to see if the tests load
   # If there is an import failure, you don't get to know which import is failing otherwise

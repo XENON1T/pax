@@ -134,7 +134,7 @@ class S1AreaFractionTopProbability(plugin.TransformPlugin):
     """
 
     def startup(self):
-        aftmap_filename = utils.data_file_name('s1_aft_xyz_XENON1T_20170808.json')
+        aftmap_filename = utils.data_file_name('XENON1T_s1_aft_xyz_20170808.json')
         self.aft_map = InterpolatingMap(aftmap_filename)
 
     def transform_event(self, event):

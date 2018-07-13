@@ -9,7 +9,7 @@ from pax.core import data_file_name
 from pax import units
 
 
-map_file = 's2_xy_lce_map_XENON100_Xerawdp0.4.5'
+map_file = '../../pax/data/XENON100_s2_xy_patterns_Xerawdp0.4.5.json.gz'
 
 try:
     os.mkdir(map_file)
