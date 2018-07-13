@@ -127,10 +127,11 @@ def find_split_points(w, min_height, min_ratio):
 
     # Smooth sum waveform, then use first and sign of second order dirivitive
     # to locate minima and maxima
-    left = np.clip(np.where(w > min_height)[0][0]-500, 0, np.inf)
-    right = np.clip(np.where(w > min_height)[0][-1]+500, 0, len(w))
+    left = int(np.clip(np.where(w > min_height)[0][0]-500, 0, np.inf))
+    right = int(np.clip(np.where(w > min_height)[0][-1]+500, 0, len(w)))
 
-    _w = dsputils.smooth_lowess(w[left:right], np.arange(right-left), frac=60/(right-left))
+    partial_xindex = np.arange(right-left)[::2]
+    _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
     dw = np.diff(_w, n=1)
     minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
     maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
@@ -142,7 +143,7 @@ def find_split_points(w, min_height, min_ratio):
     minima = minima[(minima > maxima[0]) & (minima < maxima[-1])]
 
     # We look for the last minima between big peaks
-    good_minima = [int(minima[ix]+left) for ix in range(len(minima))
+    good_minima = [int(partial_xindex[minima[ix]]+left) for ix in range(len(minima))
                    if ((_w[maxima][ix+1] - _w[minima][ix] > min_height)
                        & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
 

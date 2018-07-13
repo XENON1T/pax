@@ -205,14 +205,15 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
             if itv_end - current_interval_start > 350:
                 broader_interval_start = current_interval_start
 
-                _w = w[broader_interval_start:itv_end][::2].copy()
-                _w = smooth_lowess(_w, np.arange(len(_w)), frac=30/len(_w))
+                _w = w[broader_interval_start:itv_end].copy()
+                conv = np.ones(100)/100
+                _w = np.convolve(_w, conv, 'same')
                 dw = _w[1:] - _w[:-1]
                 for j in np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]:
                     result_buffer[current_interval, 0] = current_interval_start
-                    result_buffer[current_interval, 1] = j*2+broader_interval_start
+                    result_buffer[current_interval, 1] = j+broader_interval_start
 
-                    current_interval_start = j*2+broader_interval_start+1
+                    current_interval_start = j+broader_interval_start+1
                     current_interval += 1
 
             # Add bounds to result buffer
