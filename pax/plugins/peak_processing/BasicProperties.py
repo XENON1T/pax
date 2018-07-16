@@ -88,8 +88,8 @@ class SumWaveformProperties(plugin.TransformPlugin):
             weights = np.clip(w, 0, float('inf'))
             if not np.sum(weights) > 0:
                 self.log.debug("Sum waveform of peak %d %d-%d (%0.2f pe area) sums to a nonpositive value... unusual!"
-                                 " Cannot align peak's sum waveform, and will be deleted." % (peak_i, peak.left,
-                                                                                                peak.right, peak.area))
+                               " Cannot align peak's sum waveform, and will be deleted." % (peak_i, peak.left,
+                                                                                            peak.right, peak.area))
                 peaks_to_delete.append(peak_i)
                 continue
             else:
