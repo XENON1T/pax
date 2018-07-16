@@ -216,13 +216,16 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
                     current_interval_start = j+broader_interval_start+1
                     current_interval += 1
 
+                    if current_interval == result_buffer_size:
+                        return current_interval
+
             # Add bounds to result buffer
             result_buffer[current_interval, 0] = current_interval_start
             result_buffer[current_interval, 1] = itv_end
             current_interval += 1
 
             if current_interval == result_buffer_size:
-                break
+                return current_interval
 
     n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
     return n_intervals
