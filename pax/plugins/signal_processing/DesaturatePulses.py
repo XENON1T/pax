@@ -6,6 +6,7 @@ from pax.dsputils import adc_to_pe
 class DesaturatePulses(plugin.TransformPlugin):
     """Estimates the waveform shape in channels that go beyond the digitizer's dynamic range, using
     the other channels' waveform shape as a template.
+    pulse.w will be changed from int16 to float64
 
     See Fei & Yuehan's note: media=xenon:feigao:xenon1t_background_comparison_jan2017.html
     """
@@ -96,8 +97,6 @@ class DesaturatePulses(plugin.TransformPlugin):
                 else:
                     end = _where_saturated_list[peak_i+1][0]-self.config['reference_region_samples']
 
-                # start = max(0, first_saturated - self.config['reference_region_samples'])
-
                 # Second end before the first upwards turning point
                 v = sumw[last_saturated: end]
                 conv = np.ones(self.config['convolution_length'])/self.config['convolution_length']
@@ -108,21 +107,6 @@ class DesaturatePulses(plugin.TransformPlugin):
 
                 if len(turning_point) > 0:
                     end = last_saturated + turning_point[0]
-
-                # Determine where to stop correction
-                # By checking the moving average of absolute deviation (MAAD) between raw and corrected pulse height
-                # deviation = np.abs(sumw[start:end]*ratio - w[start:end])
-                # size = int(min(self.config['convolution_length'], np.floor(end-start)/2))
-                # conv_half = np.concatenate([np.zeros(size), np.ones(size)/size])
-                # deviation_moving_average = np.convolve(conv_half, deviation, mode='same')
-
-                # Compare MAAD before and after the saturated peak
-                # try:
-                #    last_saturated = np.clip(np.arange(start, end), last_saturated, np.inf)
-                #    last_saturated = last_saturated[deviation_moving_average >
-                #                                    deviation_moving_average[first_saturated-start]][-1]
-                # except (ValueError, RuntimeError, TypeError, NameError):
-                #    last_saturated = end
 
                 # Reconstruct the waveform in the saturated region according to this ratio.
                 # The waveform should never be reduced due to this (then the correction is making things worse)

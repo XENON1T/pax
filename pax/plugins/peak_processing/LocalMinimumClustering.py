@@ -120,7 +120,6 @@ def find_split_points(w, min_height, min_ratio):
     """"Finds local minima in w,
     whose peaks to the left and right both satisfy:
       - larger than minimum + min_height
-      - larger than minimum * min_ratio # No longer required
     """
     if np.max(w) < min_height:
         return []
@@ -151,9 +150,11 @@ def find_split_points(w, min_height, min_ratio):
 
 
 class TailSeparation(LocalMinimumClustering):
+    """Split off the tail from none s1, lone_hit peaks
+    """
 
     def cluster_peak(self, peak):
-        if peak.type == 'lone_hit':
+        if peak.type == 'lone_hit' or peak.type == 's1':
             return [peak]
         w = self.event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
         split_points = list(find_tail_point(w,
@@ -167,7 +168,11 @@ class TailSeparation(LocalMinimumClustering):
 
 
 def find_tail_point(w, min_height, ratio):
-
+    """Find best fit area,
+    that minimize std of gaussian approximation from waveform.
+    find when waveform fall below area * ratio,
+    and at least 2 sigma away from mean time.
+    """
     if np.max(w) < min_height:
         return []
 
