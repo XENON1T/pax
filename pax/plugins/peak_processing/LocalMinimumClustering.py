@@ -126,27 +126,36 @@ def find_split_points(w, min_height, min_ratio):
 
     # Smooth sum waveform, then use first and sign of second order dirivitive
     # to locate minima and maxima
-    left = int(np.clip(np.where(w > min_height)[0][0]-500, 0, np.inf))
-    right = int(np.clip(np.where(w > min_height)[0][-1]+500, 0, len(w)))
+    above_min = np.where(w > min_height)[0]
+    above_min_diff = np.diff(above_min, n=1)
+    above_min_diff = np.where(above_min_diff > 1000)[0]
 
-    partial_xindex = np.arange(right-left)[::2]
-    _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
-    dw = np.diff(_w, n=1)
-    minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
-    maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
+    above_min_list = np.split(above_min, above_min_diff+1)
 
-    # We don't care about minima if it don't have maxima on both side
-    # This automatically make one less minima then maxima
-    if len(maxima) < 2:
-        return []
-    minima = minima[(minima > maxima[0]) & (minima < maxima[-1])]
+    all_good_minima = []
+    for above_min in above_min_list:
+        left = int(np.clip(above_min[0]-500, 0, np.inf))
+        right = int(np.clip(above_min[-1]+500, 0, len(w)))
 
-    # We look for the last minima between big peaks
-    good_minima = [int(partial_xindex[minima[ix]]+left) for ix in range(len(minima))
-                   if ((_w[maxima][ix+1] - _w[minima][ix] > min_height)
-                       & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
+        partial_xindex = np.arange(right-left)[::2]
+        _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
+        dw = np.diff(_w, n=1)
+        minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
+        maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
 
-    return good_minima
+        # We don't care about minima if it don't have maxima on both side
+        # This automatically make one less minima then maxima
+        if len(maxima) < 2:
+            continue
+        minima = minima[(minima > maxima[0]) & (minima < maxima[-1])]
+
+        # We look for the last minima between big peaks
+        good_minima = [int(partial_xindex[minima[ix]]+left) for ix in range(len(minima))
+                       if ((_w[maxima][ix+1] - _w[minima][ix] > min_height)
+                           & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
+        all_good_minima += good_minima
+
+    return all_good_minima
 
 
 class TailSeparation(LocalMinimumClustering):
