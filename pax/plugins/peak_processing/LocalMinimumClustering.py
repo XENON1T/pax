@@ -138,7 +138,13 @@ def find_split_points(w, min_height, min_ratio):
         right = int(np.clip(above_min[-1]+500, 0, len(w)))
 
         partial_xindex = np.arange(right-left)[::2]
-        _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
+
+        # Some issue with memory usage by lowess, 10000/5000 samples will require 1/.18 Gb memory
+        # Skip abnormal long peaks
+        if right-left > 5e3:
+            continue
+        else:
+            _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
         dw = np.diff(_w, n=1)
         minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
         maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
