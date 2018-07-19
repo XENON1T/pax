@@ -130,8 +130,45 @@ def extend_intervals(w, intervals, left_extension, right_extension):
             intervals[i][0] = max(min_possible_l, intervals[i][0] - left_extension)
 
 
-@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.int64[:, :]),
-           nopython=True)
+def smooth_lowess(y, x, frac=1.0/2.0):
+    """
+    Smoothing using lowess
+    return y expectation at input x positions
+    """
+    n = len(x)
+    neighborhood = np.ceil(frac*n)
+
+    # w_ij = (1-abs((x_j-x_i)/(neighborhood))**3)**3 if x_j IN the neighborhood of x_i
+    # w_ij = 0 if x_j in NOT IN the neighborhood of x_i
+    # Of corse w_ij is symmetric
+    w = np.clip(np.abs((x[:, None]-x[None, :])/neighborhood), 0.0, 1.0)
+    w = (1-w**3)**3
+
+    delta = np.ones(n)
+    # We use matrices to speed up calculation but memory costly
+    xmatrix = np.tile(x, n).reshape(n, n)  # x_*j
+    ymatrix = np.tile(y, n).reshape(n, n)  # y_*j
+
+    wmatrix = w * np.tile(delta, n).reshape(n, n)   # w_ij * delta_*j
+
+    # Here capital case X Y has nothing to do with lower case x y,
+
+    # Derived from linear regression in order to solve 'm' and 'k'
+    # Ya_i=m_i+k_i*Xa_i and Yb_i=m_i+k_i*Xb_i
+    Ya = np.sum(wmatrix * ymatrix, axis=1) / np.sum(wmatrix, axis=1)
+    Xa = np.sum(wmatrix * xmatrix, axis=1) / np.sum(wmatrix, axis=1)
+    Yb = np.sum(wmatrix * xmatrix * ymatrix, axis=1) / np.sum(wmatrix * xmatrix, axis=1)
+    Xb = np.sum(wmatrix * xmatrix * xmatrix, axis=1) / np.sum(wmatrix * xmatrix, axis=1)
+
+    yestimate = Ya + (Yb - Ya) / (Xb - Xa) * (x - Xa)
+    residuals = y - yestimate
+    s = np.median(np.abs(residuals))
+    delta = np.clip(residuals / (6.0 * s), -1, 1)
+    delta = (1 - delta ** 2) ** 2
+
+    return yestimate
+
+
 def find_intervals_above_threshold(w, threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > threshold.
     :param w: Waveform to do hitfinding in
@@ -163,13 +200,32 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
             # Unless we ended ONLY because this is the last index, then the interval ends right here
             itv_end = i - 1 if x <= threshold else i
 
+            # Split interval if the interval >350 samples
+            # Use lowess to smooth raw waveform and split at relative minima.
+            if itv_end - current_interval_start > 350:
+                broader_interval_start = current_interval_start
+
+                _w = w[broader_interval_start:itv_end].copy()
+                conv = np.ones(100)/100
+                _w = np.convolve(_w, conv, 'same')
+                dw = _w[1:] - _w[:-1]
+                for j in np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]:
+                    result_buffer[current_interval, 0] = current_interval_start
+                    result_buffer[current_interval, 1] = j+broader_interval_start
+
+                    current_interval_start = j+broader_interval_start+1
+                    current_interval += 1
+
+                    if current_interval == result_buffer_size:
+                        return current_interval
+
             # Add bounds to result buffer
             result_buffer[current_interval, 0] = current_interval_start
             result_buffer[current_interval, 1] = itv_end
             current_interval += 1
 
             if current_interval == result_buffer_size:
-                break
+                return current_interval
 
     n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
     return n_intervals

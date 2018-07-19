@@ -1,5 +1,5 @@
 from pax import plugin, datastructure, dsputils
-import numba
+from scipy.stats import norm
 import numpy as np
 import logging
 from pax.plugins.signal_processing.HitFinder import build_hits
@@ -116,34 +116,97 @@ class LocalMinimumClustering(plugin.ClusteringPlugin):
             yield self.build_peak(hits=hs, detector=peak.detector, left=left, right=right)
 
 
-@numba.jit(nopython=True)
 def find_split_points(w, min_height, min_ratio):
     """"Finds local minima in w,
     whose peaks to the left and right both satisfy:
       - larger than minimum + min_height
-      - larger than minimum * min_ratio
     """
-    last_max = 0
-    min_since_max = 99999999999999.9
-    min_since_max_i = 0
+    if np.max(w) < min_height:
+        return []
 
-    for i, x in enumerate(w):
-        if x < min_since_max:
-            # New minimum since last max
-            min_since_max = x
-            min_since_max_i = i
+    # Smooth sum waveform, then use first and sign of second order dirivitive
+    # to locate minima and maxima
+    above_min = np.where(w > min_height)[0]
+    above_min_diff = np.diff(above_min, n=1)
+    above_min_diff = np.where(above_min_diff > 1000)[0]
 
-        if min(last_max, x) > max(min_since_max + min_height,
-                                  min_since_max * min_ratio):
-            # Significant local minimum: tell caller, reset both max and min finder
-            yield min_since_max_i
-            last_max = x
-            min_since_max = 99999999999999.9
-            min_since_max_i = i
+    above_min_list = np.split(above_min, above_min_diff+1)
 
-        if x > last_max:
-            # New max, reset minimum finder state
-            # Notice this is AFTER the split check, to accomodate very fast rising second peaks
-            last_max = x
-            min_since_max = 99999999999999.9
-            min_since_max_i = i
+    all_good_minima = []
+    for above_min in above_min_list:
+        left = int(np.clip(above_min[0]-500, 0, np.inf))
+        right = int(np.clip(above_min[-1]+500, 0, len(w)))
+
+        partial_xindex = np.arange(right-left)[::2]
+
+        # Some issue with memory usage by lowess, 10000/5000 samples will require 1/.18 Gb memory
+        # Skip abnormal long peaks
+        if right-left > 5e3:
+            continue
+        else:
+            _w = dsputils.smooth_lowess(w[left:right][::2], partial_xindex, frac=30/(right-left))
+        dw = np.diff(_w, n=1)
+        minima = np.where((np.hstack((dw, -1)) > 0) & (np.hstack((1, dw)) <= 0))[0]
+        maxima = np.where((np.hstack((dw, 1)) <= 0) & (np.hstack((-1, dw)) > 0))[0]
+
+        # We don't care about minima if it don't have maxima on both side
+        # This automatically make one less minima then maxima
+        if len(maxima) < 2:
+            continue
+        minima = minima[(minima > maxima[0]) & (minima < maxima[-1])]
+
+        # We look for the last minima between big peaks
+        good_minima = [int(partial_xindex[minima[ix]]+left) for ix in range(len(minima))
+                       if ((_w[maxima][ix+1] - _w[minima][ix] > min_height)
+                           & any(_w[maxima][:ix+1] - _w[minima][ix] > min_height))]
+        all_good_minima += good_minima
+
+    return all_good_minima
+
+
+class TailSeparation(LocalMinimumClustering):
+    """Split off the tail from none s1, lone_hit peaks
+    """
+
+    def cluster_peak(self, peak):
+        if peak.type == 'lone_hit' or peak.type == 's1':
+            return [peak]
+        w = self.event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
+        split_points = list(find_tail_point(w,
+                                            min_height=self.config['min_height'],
+                                            ratio=self.config['tail_cutoff_ratio']))
+        if not len(split_points):
+            return [peak]
+        else:
+            self.log.debug("Splitting %d-%d into %d peaks" % (peak.left, peak.right, len(split_points) + 1))
+            return list(self.split_peak(peak, split_points))
+
+
+def find_tail_point(w, min_height, ratio):
+    """Find best fit area,
+    that minimize std of gaussian approximation from waveform.
+    find when waveform fall below area * ratio,
+    and at least 2 sigma away from mean time.
+    """
+    if np.max(w) < min_height:
+        return []
+
+    # Quick fit to the waveform and locate tail position
+    ix = np.arange(len(w))
+
+    # Use center population to estimate mean and sigma
+    cnt = w > 0.02*np.max(w)
+    mean = np.sum(ix[cnt]*w[cnt])/np.sum(w[cnt])
+    sigma = (np.sum((ix[cnt]-mean)**2*w[cnt])/np.sum(w[cnt]))**0.5
+
+    # Use estimated mean and sigma to find amplitude
+    amp = np.sum(w[cnt]*norm.pdf(ix[cnt], mean, sigma))/np.sum(norm.pdf(ix[cnt], mean, sigma)**2)
+
+    # Define tail by waveform height drop below certain ratio of amplitude
+    tail = np.where(w < ratio*amp)[0]
+    tail = tail[(tail > mean+2*sigma) & (tail != len(w))]
+
+    if len(tail) > 0:
+        return tail[:1]
+    else:
+        return []

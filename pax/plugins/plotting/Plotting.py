@@ -1,5 +1,4 @@
 """Interactive plotting
-
 Use matplotlib to display various things about the event.
 """
 
@@ -508,7 +507,6 @@ class PlotChannelWaveforms3D(PlotBase):
 class PlotChannelWaveforms2D(PlotBase):
 
     """ Plots the pulses in each channel, like like PlotChannelWaveforms3D, but seen from above
-
     Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
     """
