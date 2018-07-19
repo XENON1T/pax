@@ -62,34 +62,34 @@ major: clean docs
 	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion major
-	git push
 	git push --tags
+	git push
 	git checkout stable
 	git merge master
-	git push
 	git push --tags
+	git push
 	git checkout master
 
 minor: clean docs
 	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion minor
-	git push
 	git push --tags
+	git push
 	git checkout stable
 	git merge master
-	git push
 	git push --tags
+	git push
 	git checkout master
 
 patch: clean docs
 	vim HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
 	bumpversion patch
-	git push
 	git push --tags
+	git push
 	git checkout stable
 	git merge master
-	git push
 	git push --tags
+	git push
 	git checkout master
