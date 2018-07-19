@@ -4,6 +4,17 @@ History
 -------
 
 ------------------
+7.0.0 (2018-07-19)
+------------------
+* Clustering and desaturation upgrade for high-E (#712)
+* Enabling lone-hit simulation in FAX (#708)
+* notebooks to update RunDB and fix NN file version issue (#713)
+* Some minor improvement: Lower tight coincidence to 2-fold at pax level (#705), speed improvement for map interpolation (#676, #672), update S1 pulse shape parameter (#673, #665), show reconstructed position in WF plot (#677)
+* FIX related to Maps/inputs: 4th FDC map (#670), PMT after pulse (#671),maps renaming (#654), add missing tensorflow files (#679), new NN files after SR1 (#712)
+* Code style and dependencies: Issue template (#707), solfware dependencies (#701, #683), increase deletion timeout (#667)
+
+
+------------------
 6.9.0 (2018-01-18)
 ------------------
 * Clustering change: Tuning gap size parameters, using index_of_maximum instead of left_central (#642), configuration of tight coincidence (#644)
