@@ -121,7 +121,11 @@ class SumWaveformProperties(plugin.TransformPlugin):
             l = peak.index_of_maximum - self.tight_coincidence_samples
             r = peak.index_of_maximum + self.tight_coincidence_samples
             peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
-
+            # varying tight coincidence intervals
+            for ip, window in enumerate([5, 4, 3, 2, 1]):
+                l = peak.index_of_maximum - window
+                r = peak.index_of_maximum + window
+                peak.tight_coincidence_thresholds[ip] = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':
