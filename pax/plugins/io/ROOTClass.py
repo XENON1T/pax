@@ -191,6 +191,7 @@ class EncodeROOTClass(plugin.TransformPlugin):
                             for _fn, length in ((
                                 ('area_per_channel', n_channels),
                                 ('hits_per_channel', n_channels),
+                                ('coincidence_per_channel', n_channels),
                                 ('n_saturated_per_channel', n_channels),
                                 ('sum_waveform', n_waveform_samples),
                                 ('sum_waveform_top', n_waveform_samples),
