@@ -4,7 +4,14 @@ History
 -------
 
 ------------------
-6.7.0 (2017-08-07)
+6.8.0.1 (2018-08-02)
+------------------
+* Lowering the tight coincidence threshold to 2 (c24334e)
+* Variable coincidence levels for different window sizes (#710)
+* Store per channel contribution to tight coincidence (#641)
+
+------------------
+6.8.0 (2017-08-07)
 ------------------
 * Two step gap clustering (#596) 
 * Add data-driven SPE distributions for each channel (fax) (#595)
