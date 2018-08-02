@@ -64,8 +64,6 @@ class SumWaveformProperties(plugin.TransformPlugin):
         dt = self.dt
         field_length = self.wv_field_len
 
-        print ("\nWTF0 in BasicProperties\n")
-
         for peak in event.peaks:
             peak.sum_waveform = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
             peak.sum_waveform_top = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
@@ -132,17 +130,11 @@ class SumWaveformProperties(plugin.TransformPlugin):
                 r = peak.index_of_maximum + window
                 peak.tight_coincidence_thresholds[ip] = len(np.unique(peak.hits['channel'][(x >= l) & (x <= r)]))
 
-            print (peak.tight_coincidence, peak.tight_coincidence_thresholds)
-
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':
                 put_w_in_center_of_field(event.get_sum_waveform('tpc_top').samples[peak.left:peak.right + 1],
                                          peak.sum_waveform_top, cog_idx)
-
-        print ("\nWTF1 in BasicProperties\n")
-        for peak in event.peaks:
-            print (peak.tight_coincidence, peak.tight_coincidence_thresholds)
 
         return event
 
