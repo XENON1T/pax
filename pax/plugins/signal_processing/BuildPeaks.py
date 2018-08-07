@@ -22,6 +22,8 @@ class GapSizeClustering(plugin.ClusteringPlugin):
         # Rise time threshold to mark S1 candidates
         self.rise_time_threshold = self.config.get('rise_time_threshold', 80)
 
+        self.tight_coincidence_window = self.config.get('tight_coincidence_window', 50) // self.dt
+
     @staticmethod
     def iterate_gap_clusters(hits, gap_threshold):
         gaps = dsputils.gaps_between_hits(hits)
