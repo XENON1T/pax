@@ -4,7 +4,14 @@ History
 -------
 
 ------------------
-7.0.0 (2018-07-19)
+6.10.1 (2018-08-13)
+------------------
+* Add per PMT contribution to tight coincidence level (#717)
+* Push git-tag before actual commit (#714)
+* clean map name and RunDB example (#715, #716)
+
+------------------
+6.10.0 (2018-07-19)
 ------------------
 * Clustering and desaturation upgrade for high-E (#712)
 * Enabling lone-hit simulation in FAX (#708)
