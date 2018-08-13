@@ -11,6 +11,7 @@ msgpack-python==0.5.6
 # Unupgradable
 python-snappy==0.5.0  # pyup: ignore
 wheel>=0.23.0  # pyup: ignore
+setuptools>=30.0.0  # pyup: ignore
 numpy==1.11.3  # pyup: ignore
 matplotlib==2.0.0  # pyup: ignore
 scipy==0.18.1  # pyup: ignore
