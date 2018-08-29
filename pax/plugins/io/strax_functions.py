@@ -4,12 +4,12 @@
 import numpy as np
 import numba
 
-        
+
 def records_needed(pulse_length, samples_per_record):
     """Return records needed to store pulse_length samples"""
     return 1 + (pulse_length - 1) // samples_per_record
 
-    
+
 def sort_by_time(x):
     """Sort pulses by time, then channel.
     Assumes you have no more than 10k channels, and records don't span
@@ -22,6 +22,7 @@ def sort_by_time(x):
     sort_key = (x['time'] - x['time'].min()) * 10000 + x['channel']
     sort_i = np.argsort(sort_key)
     return x[sort_i]
+
 
 def record_dtype(samples_per_record):
     """Data type for a waveform record.
@@ -58,6 +59,7 @@ def record_dtype(samples_per_record):
           'data'), np.int16, 110)
     ]
 
+
 @numba.jit(nopython=True, nogil=True, cache=True)
 def baseline(records, baseline_samples=40):
     """Subtract pulses from int(baseline), store baseline in baseline field
@@ -91,30 +93,29 @@ def baseline(records, baseline_samples=40):
         d.baseline = bl
     return records
 
+
 def integrate(records):
     for i, r in enumerate(records):
         records[i]['area'] = r['data'].sum()
     return records
 
 
-                                #        for event in self.get_events():
-                                #            event = self.process_event(event)
-def pax_to_records(self,samples_per_record = 110,events_per_chunk=10):
+def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
     results = []
     samples_per_record = 110
+        
     def finish_results():
         nonlocal results
         records = np.concatenate(results)
-        if len(records)!=0:
-        # In strax data, records are always stored
-        # sorted, baselined and integrated
+        if len(records) != 0:
+            # In strax data, records are always stored
+            # sorted, baselined and integrated
             records = sort_by_time(records)
             records = baseline(records)
             records = integrate(records)
             results = []
-            print(records)
         return records
-    
+
     pulse_lengths = np.array([p.length
                               for p in self.pulses])
     n_records_tot = records_needed(pulse_lengths, samples_per_record).sum()
@@ -124,18 +125,17 @@ def pax_to_records(self,samples_per_record = 110,events_per_chunk=10):
 
     for p in self.pulses:
         n_records = records_needed(p.length, samples_per_record)
-        
         for rec_i in range(n_records):
             r = records[output_record_index]
-            r['time'] = (self.start_time
-                     + p.left * 10
-                     + rec_i * samples_per_record * 10)
+            r['time'] = (self.start_time 
+                         + p.left * 10 
+                         + rec_i * samples_per_record * 10)
             r['channel'] = p.channel
             r['pulse_length'] = p.length
             r['record_i'] = rec_i
             r['dt'] = 10
 
-                # How much are we storing in this record?
+            # How much are we storing in this record?
             if rec_i != n_records - 1:
                 # There's more chunks coming, so we store a full chunk
                 n_store = samples_per_record
@@ -154,10 +154,6 @@ def pax_to_records(self,samples_per_record = 110,events_per_chunk=10):
             output_record_index += 1
 
     results.append(records)
- #   if len(results) >= events_per_chunk:
- #           finish_results()
-
-                        #    self.shutdown()
 
     if len(results):
         records = finish_results()
