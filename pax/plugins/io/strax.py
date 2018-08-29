@@ -2,7 +2,6 @@
 """
 
 import numpy as np
-import numba
 
 from pax import datastructure
 from pax.FolderIO import WriteToFolder
