@@ -3,7 +3,6 @@
 
 import numpy as np
 
-from pax import datastructure
 from pax.FolderIO import WriteToFolder
 
 
