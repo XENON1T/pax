@@ -103,7 +103,7 @@ def integrate(records):
 def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
     results = []
     samples_per_record = 110
-        
+
     def finish_results():
         nonlocal results
         records = np.concatenate(results)
@@ -127,8 +127,8 @@ def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
         n_records = records_needed(p.length, samples_per_record)
         for rec_i in range(n_records):
             r = records[output_record_index]
-            r['time'] = (self.start_time 
-                         + p.left * 10 
+            r['time'] = (self.start_time
+                         + p.left * 10
                          + rec_i * samples_per_record * 10)
             r['channel'] = p.channel
             r['pulse_length'] = p.length
