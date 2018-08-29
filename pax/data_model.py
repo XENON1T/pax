@@ -189,7 +189,7 @@ class Model(object):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
                                              fields_to_ignore=fields_to_ignore,
                                              nan_to_none=nan_to_none))
-    
+
     def to_strax(self, samples_per_record=110, events_per_chunk=10):
         return strax_functions.pax_to_records(self)
 
