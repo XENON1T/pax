@@ -3,10 +3,7 @@
 import six
 import os
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
@@ -39,7 +36,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
     name='pax',
-    version='6.10.0',
+    version='6.10.1',
     description='PAX is the raw data processor for LXe TPCs.',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell and Jelle Aalbers for the XENON1T collaboration',
