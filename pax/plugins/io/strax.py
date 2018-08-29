@@ -8,6 +8,7 @@ from pax import datastructure
 from pax.FolderIO import WriteToFolder
 
 class WriteStrax(WriteToFolder):
+    
 
     """Write raw data to a folder of strax files
     """
@@ -15,8 +16,10 @@ class WriteStrax(WriteToFolder):
 
     def open(self, filename):
         self.current_file = open(filename, mode='wb')
+        
     def write_event_to_current_file(self, event):
-        np.save(self.current_file,event.to_strax(self))
+        np.save(self.current_file, event.to_strax(self))
+        
     def close(self):
         self.current_file.close()
         
