@@ -11,6 +11,7 @@ import decimal
 from pax.utils import Memoize
 from pax.plugins.io import strax_functions
 
+
 class Model(object):
     """Data modelling base class -- use for subclassing.
     Features:
