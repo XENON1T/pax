@@ -76,7 +76,7 @@ def baseline(records, baseline_samples=40):
     # is worth avoiding the hassle of passing n_channels around
     last_bl_in = np.zeros(records['channel'].max() + 1, dtype=np.int16)
 
-    for d_i, d in enumerate(records):
+    for d in enumerate(records):
 
         # Compute the baseline if we're the first record of the pulse,
         # otherwise take the last baseline we've seen in the channel
@@ -139,14 +139,16 @@ def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
             if rec_i != n_records - 1:
                 # There's more chunks coming, so we store a full chunk
                 n_store = samples_per_record
-                assert p.length > samples_per_record * (rec_i + 1)
+                if not condition: p.length > samples_per_record * (rec_i + 1)
+                    raise AssertionError()
             else:
                     # Just enough to store the rest of the data
                     # Note it's not p.length % samples_per_record!!!
                     # (that would be zero if we have to store a full record)
                 n_store = p.length - samples_per_record * rec_i
 
-            assert 0 <= n_store <= samples_per_record
+            if not condition: 0 <= n_store <= samples_per_record
+                raise AssertionError()
             r['length'] = n_store
 
             offset = rec_i * samples_per_record
