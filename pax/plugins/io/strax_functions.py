@@ -139,7 +139,7 @@ def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
             if rec_i != n_records - 1:
                 # There's more chunks coming, so we store a full chunk
                 n_store = samples_per_record
-                if not condition: p.length > samples_per_record * (rec_i + 1)
+                if not p.length > samples_per_record * (rec_i + 1):
                     raise AssertionError()
             else:
                     # Just enough to store the rest of the data
@@ -147,7 +147,7 @@ def pax_to_records(self, samples_per_record=110, events_per_chunk=10):
                     # (that would be zero if we have to store a full record)
                 n_store = p.length - samples_per_record * rec_i
 
-            if not condition: 0 <= n_store <= samples_per_record
+            if not 0 <= n_store <= samples_per_record:
                 raise AssertionError()
             r['length'] = n_store
 
