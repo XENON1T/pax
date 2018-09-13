@@ -9,6 +9,7 @@ import numpy as np
 import decimal
 
 from pax.utils import Memoize
+from pax.plugins.io import strax_functions
 
 
 class Model(object):
@@ -189,6 +190,9 @@ class Model(object):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
                                              fields_to_ignore=fields_to_ignore,
                                              nan_to_none=nan_to_none))
+
+    def to_strax(self, samples_per_record=110, events_per_chunk=10):
+        return strax_functions.pax_to_records(self)
 
     @classmethod
     def from_json(cls, x):

@@ -254,6 +254,7 @@ def get_aliases():
         # Non-zipped formats
         ('json',  'BSON.WriteJSON'),
         ('xed',   'XED.WriteXED'),
+        ('strax',  'strax.WriteStrax'),
 
         # Formats that don't have a plugin to read data back
         ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
