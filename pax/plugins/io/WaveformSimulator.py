@@ -13,6 +13,7 @@ import numpy as np
 import pandas
 
 from pax import plugin, units, utils
+from pax.datastructure import EventProxy
 
 try:
     import ROOT
@@ -50,10 +51,33 @@ def uniform_circle_rv(radius, n_samples=None):
         return xs, ys
 
 
+class WaveformSimulatorDecoder(plugin.TransformPlugin):
+    """Decodes EventProxy objects = actually simulates waveforms
+    enables paralell waveform simulation
+    """
+    do_input_check = False
+
+    def startup(self):
+        self.simulator = self.processor.simulator
+
+    def transform_event(self, event_proxy):
+        data = event_proxy.data
+
+        # Put simulator in right state, i.e. set arrival times per channel
+        self.simulator.arrival_times_per_channel = data['arrival_times_per_channel']
+
+        event = self.simulator.make_pax_event()
+        if hasattr(self, 'dataset_name'):
+            event.dataset_name = data['dataset_name']
+        event.event_number = event_proxy.event_number
+        return event
+
+
 class WaveformSimulator(plugin.InputPlugin):
     """Common input plugin for waveform simulator plugins. Do not use directly, won't work.
     Takes care of truth file writing as well.
     """
+    do_output_check = False
 
     def startup(self):
         self.all_truth_peaks = []
@@ -313,10 +337,10 @@ class WaveformSimulator(plugin.InputPlugin):
         if len(instructions):
             self.s2_after_pulses(g4_id=q['g4_id'])
 
-        event = self.simulator.make_pax_event()
-        if hasattr(self, 'dataset_name'):
-            event.dataset_name = self.dataset_name
-        event.event_number = self.current_event
+        # event = self.simulator.make_pax_event()
+        # if hasattr(self, 'dataset_name'):
+        #    event.dataset_name = self.dataset_name
+        # event.event_number = self.current_event
 
         # Add start time offset to all peak start times in the truth file
         # Can't be done at the time of peak creation, it is only known now...
@@ -328,8 +352,11 @@ class WaveformSimulator(plugin.InputPlugin):
                         continue
                     p[key] += self.config['event_padding']
         self.all_truth_peaks.extend(self.truth_peaks)
-
-        return event
+        # return event
+        return EventProxy(event_number=self.current_event,
+                          block_id=-1,
+                          data=dict(arrival_times_per_channel=self.simulator.arrival_times_per_channel,
+                                    dataset_name=self.dataset_name),)
 
     def get_events(self):
         for instruction_number, instructions in enumerate(self.get_instructions_for_next_event()):
@@ -418,6 +445,7 @@ class WaveformSimulatorFromMC(WaveformSimulator):
         self.config.setdefault('add_to_z', 0)
         self.log.warning('This plugin is completely untested and will probably crash!')
         filename = self.config['input_name']
+        self.dataset_name = os.path.basename(filename)
 
         self.f = ROOT.TFile(utils.data_file_name(filename))
         self.t = self.f.Get("events/events")  # new MC structure, 160622
