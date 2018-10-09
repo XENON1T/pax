@@ -130,3 +130,76 @@ class DesaturatePulses(plugin.TransformPlugin):
         w = self.reference_baseline - p.raw_data.astype(np.float) - p.baseline
         w *= adc_to_pe(self.config, p.channel)
         return w
+
+
+class AfterPulsingCorrections(DesaturatePulses):
+    """Replace the tail of after pulsing channel with scaled sum waveform of other channels
+    """
+
+    def transform_event(self, event):
+        tpc_channels = np.array(self.config['channels_in_detector']['tpc'])
+
+        for pulse_i, pulse in enumerate(event.pulses):
+            # Consider only pulses in after_pulsing channel
+            if pulse.length < 300 or pulse.channel not in self.config['large_after_pulsing_channels']:
+                continue
+
+            w = self.waveform_in_pe(pulse)
+            if max(w) < 10:
+                continue  # Skip if the pulse is too small
+
+            other_pulses = [p for i, p in enumerate(event.pulses)
+                            if p.left < pulse.right and p.right > pulse.left and
+                            p.channel in tpc_channels and
+                            p.channel not in self.config['large_after_pulsing_channels']]
+
+            # Build the (gain-weighted) sum waveform of the non-saturated pulses
+            min_left = min([p.left for p in other_pulses + [pulse]])
+            max_right = max([p.right for p in other_pulses + [pulse]])
+            sumw = np.zeros(max_right - min_left + 1)
+            for p in other_pulses:
+                offset = p.left - min_left
+                sumw[offset:offset + len(p.raw_data)] += self.waveform_in_pe(p)
+
+            # Crop it to include just the part that overlaps with this pulse
+            offset = pulse.left - min_left
+            sumw = sumw[offset:offset + len(pulse.raw_data)]
+
+            # Find all the peaks in this pulse above prominence of 1 pe * (sum(sumw) / sum(w))
+            convx = np.arange(100)/100-0.495  # A mean 0 integer list
+            # find slope by linear regresion with +-50 samples
+            slope = np.convolve(-convx, sumw, mode='same')/np.var(convx*200)
+            peaks = np.where((slope <= 0) & (np.hstack((-10, slope[:-1])) > 0) & (sumw > sumw.sum()/w.sum()))[0]
+
+            lefts, rights = [], []
+            for peak_i, peak in enumerate(peaks):
+                # Find the left and right extention of each peak by conditioning on slope
+                start = rights[peak_i-1] if peak_i > 0 else 0
+                end = peaks[peak_i+1]-100 if peak_i < len(peaks)-1 else len(sumw)-1
+
+                right = np.where((slope < 0.1) & (np.arange(len(slope)) < end))[0]
+                right = right[-1] if len(right) > 0 else end
+
+                left = np.where((slope >= 0.1) & (np.arange(len(slope)) > start))[0]
+                left = left[0] if len(left) > 0 else start
+
+                rights.append(right)
+                lefts.append(left)
+
+                reference_slice = slice(left, peak)
+                ratio = w[reference_slice].sum()/sumw[reference_slice].sum()
+
+                correction_slice = slice(peak, right)
+                w[correction_slice] = np.clip(sumw[correction_slice] * ratio, 0, float('inf'))
+
+            # Convert back to raw ADC counts and store the corrected waveform
+            # Note this changes the type of pulse.w from int16 to float64: we don't have a choice,
+            # int16 probably can't contain the large amplitudes we may be putting in.
+            # As long as the raw data isn't saved again after applying this correction, this should be no problem
+            # (as in later code converting to floats is anyway the first step).
+            w /= adc_to_pe(self.config, pulse.channel)
+            w = self.reference_baseline - w - pulse.baseline
+
+            pulse.raw_data = w
+
+        return event
