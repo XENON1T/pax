@@ -89,6 +89,15 @@ class Simulator(object):
         self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
         self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
 
+        # Load diffusion constant
+        D = self.config['diffusion_constant_liquid']
+        if isinstance(D, str):
+            with open(utils.data_file_name(D), mode='rb') as infile:
+                D_mh = pickle.load(infile)
+            self.diffusion_constant = lambda r, z: D_mh.lookup([r], [z])
+        else:
+            self.diffusion_constant = lambda r, z: D
+        
         # Load transverse field (r,z) distortion map
         if c.get('rz_position_distortion_map'):
             self.rz_position_distortion_map = InterpolatingMap(utils.data_file_name(c['rz_position_distortion_map']))
@@ -531,8 +540,9 @@ class Simulator(object):
             electrons             -   total # of drift electrons generated at the interaction site
             t                     -   Time at which the original energy deposition occurred.
             r                     -   Radius at which " " " " " (needed for (r,z) distortion)
-            z                     -   Depth below the GATE mesh where the interaction occurs.
+            z                     -   Distance above the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
+        In particular, note z must be negative to be in the liquid.
         """
         if not - self.config['tpc_length'] <= z <= 0:
             log.warning("Unphysical depth: %s cm below gate. Not generating S2." % - z)
@@ -545,9 +555,9 @@ class Simulator(object):
 
         # Average drift time of the electrons
         drift_time_mean = - z / self.config['drift_velocity_liquid'] + self.config['drift_time_gate']
-
+        
         # Diffusion model from Sorensen 2011
-        drift_time_stdev = math.sqrt(2 * self.config['diffusion_constant_liquid'] * drift_time_mean)
+        drift_time_stdev = math.sqrt(2 * self.diffusion_constant(r=r, z=z) * drift_time_mean)
         drift_time_stdev /= self.config['drift_velocity_liquid']
 
         # Absorb electrons during the drift
