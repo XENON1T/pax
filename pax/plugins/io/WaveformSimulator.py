@@ -71,18 +71,21 @@ class WaveformSimulator(plugin.InputPlugin):
         """ Saves the truth information about a peak (s1 or s2)
         """
         true_peak = {
-            'instruction':      self.current_instruction,
-            'repetition':       self.current_repetition,
-            'event':            self.current_event,
-            'peak_type':        peak_type,
-            'g4_id':          g4_id,
+            'instruction':       self.current_instruction,
+            'repetition':        self.current_repetition,
+            'event':             self.current_event,
+            'peak_type':         peak_type,
+            'g4_id':             g4_id,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
-            'top_fraction':     peak_top_fraction,
+            'top_fraction':      peak_top_fraction,
         }
+        # Store *all* electron times if the event is small enough
+        if self.config['store_electron_times']:
+            true_peak['electron_times'] = np.asarray(electron_times)
+
         for name, times in (('photon', photon_times), ('electron', electron_times)):
             if len(times) != 0:
-                # This signal type doesn't exist in this peak
                 true_peak.update({
                     ('n_%ss' % name):         len(times),
                     ('t_mean_%ss' % name):    np.mean(times),
@@ -91,6 +94,7 @@ class WaveformSimulator(plugin.InputPlugin):
                     ('t_sigma_%ss' % name):   np.std(times),
                 })
             else:
+                # This signal type doesn't exist in this peak
                 true_peak.update({
                     ('n_%ss' % name):         float('nan'),
                     ('t_mean_%ss' % name):    float('nan'),
@@ -327,6 +331,8 @@ class WaveformSimulator(plugin.InputPlugin):
                     if p[key] == '':
                         continue
                     p[key] += self.config['event_padding']
+            if self.config['store_electron_times']:
+                p['electron_times'] += self.config['event_padding']
         self.all_truth_peaks.extend(self.truth_peaks)
 
         return event
