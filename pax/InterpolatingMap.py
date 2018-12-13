@@ -26,16 +26,24 @@ class InterpolateAndExtrapolate(object):
             neighbours_to_use = points.shape[1] * 2
         self.neighbours_to_use = neighbours_to_use
 
-    def __call__(self, args):
+    def __call__(self, args, data_dim=1):
         # Call with one point at a time only!!!
         # Now can call with multiple points in form of (self, [(x, y, z), (x, y, z)...])
-        if np.any(np.isnan(args)):
-            return np.nan
         distances, indices = self.kdtree.query(args, self.neighbours_to_use)
-        # We are not ruturning sum of weight when using np.average
-        return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
 
-    #v__call__ = np.vectorize(__call__, signature = '(),(i)->()')
+        if data_dim <= 1:
+            if np.any(np.isnan(args)):
+                return np.nan
+            return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
+
+        else:  # Same as https://github.com/XENON1T/s2only/blob/master/s2only/itp_map.py
+            result = np.ones(len(args)) * float('nan')
+            valid = (distances < float('inf')).max(axis=-1)
+            result[valid] = np.average(
+                self.values[indices[valid]],
+                weights=1/np.clip(distances[valid], 1e-6, float('inf')),
+                axis=-1)
+            return result
 
 
 class InterpolatingMap(object):
@@ -114,18 +122,16 @@ class InterpolatingMap(object):
                 raise ValueError("InterpolatingMap.get_value only takes map_name keyword argument")
 
         map_name = kwargs.get('map_name', 'map')
-        if True: #len(np.array(coordinates).shape) <= 1:
-            result = self.interpolators[map_name](coordinates)
+        data_dim = len(np.array(coordinates).shape)
+        if data_dim <= 1:
+            result = self.interpolators[map_name](coordinates, data_dim)
             try:
                 return float(result[0])
             except(TypeError, IndexError):
                 return float(result)
-
-        # Following part is not in use due to couldn't implement np.vectorize for numpy<1.12
         else:
-            coordinates = np.array(coordinates).reshape((self.dimensions,-1)).T
-            result = self.interpolators[map_name].v__call__(self.interpolators[map_name], coordinates)
-
+            coordinates = np.array(coordinates).reshape((self.dimensions, -1)).T
+            result = self.interpolators[map_name](coordinates, data_dim)
             if len(result) == 1:
                 return float(result[0])
             else:
