@@ -229,3 +229,50 @@ def find_intervals_above_threshold(w, threshold, result_buffer):
 
     n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
     return n_intervals
+
+
+@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.int64[:, :]),
+           nopython=True)
+def find_intervals_above_threshold_no_splitting(w, threshold, result_buffer):
+    """Fills result_buffer with l, r bounds of intervals in w > threshold.
+    Unlike find_intervals_above_threshold(), does not smooth and split hits,
+    which allows speed increase in ZLE simulation.
+    :param w: Waveform to do hitfinding in
+    :param threshold: Threshold for including an interval
+    :param result_buffer: numpy N*2 array of ints, will be filled by function.
+                          if more than N intervals are found, none past the first N will be processed.
+    :returns : number of intervals processed
+    Boundary indices are inclusive, i.e. the right boundary is the last index which was > threshold
+    """
+    result_buffer_size = len(result_buffer)
+    last_index_in_w = len(w) - 1
+
+    in_interval = False
+    current_interval = 0
+    current_interval_start = -1
+
+    for i, x in enumerate(w):
+
+        if not in_interval and x > threshold:
+            # Start of an interval
+            in_interval = True
+            current_interval_start = i
+
+        if in_interval and (x <= threshold or i == last_index_in_w):
+            # End of the current interval
+            in_interval = False
+
+            # The interval ended just before this index
+            # Unless we ended ONLY because this is the last index, then the interval ends right here
+            itv_end = i - 1 if x <= threshold else i
+
+            # Add bounds to result buffer
+            result_buffer[current_interval, 0] = current_interval_start
+            result_buffer[current_interval, 1] = itv_end
+            current_interval += 1
+
+            if current_interval == result_buffer_size:
+                break
+
+    n_intervals = current_interval      # No +1, as current_interval was incremented also when the last interval closed
+    return n_intervals

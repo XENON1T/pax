@@ -2,7 +2,7 @@ import numpy as np
 
 from pax import plugin, datastructure
 
-from pax.dsputils import find_intervals_above_threshold
+from pax.dsputils import find_intervals_above_threshold_no_splitting
 
 import matplotlib.pyplot as plt
 
@@ -52,7 +52,8 @@ class SoftwareZLE(plugin.TransformPlugin):
                 threshold = self.config['zle_threshold'] + 1
 
             # Find intervals above ZLE threshold
-            n_itvs_found = find_intervals_above_threshold(w.astype(np.float64),
+            # We need to call the version with numba boost
+            n_itvs_found = find_intervals_above_threshold_no_splitting(w.astype(np.float64),
                                                           threshold=threshold,
                                                           result_buffer=zle_intervals_buffer,
                                                           )
