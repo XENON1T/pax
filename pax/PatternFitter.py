@@ -255,7 +255,7 @@ class PatternFitter(object):
         confidence_tuples = []
 
         if cls is not None and n_dim == 2 and _cntr is not None:
-            
+
             x, y = np.mgrid[:gofs.shape[0], :gofs.shape[1]]
             # Use matplotlib _Cntr module to trace contours (without plotting)
             c = _cntr.Cntr(x, y, gofs)
