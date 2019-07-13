@@ -8,7 +8,11 @@ import logging
 import numpy as np
 import numexpr as ne
 import matplotlib.pyplot as plt
-from matplotlib import _cntr
+try:
+    from matplotlib import _cntr
+except ImportError:
+    print("matplotlib._cntr did not import, confidence tuple generation in PatternFitter disabled")
+    _cntr = None
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
 
@@ -250,7 +254,8 @@ class PatternFitter(object):
         # Store (dx, dy) for each CL for output
         confidence_tuples = []
 
-        if cls is not None and n_dim == 2:
+        if cls is not None and n_dim == 2 and _cntr is not None:
+
             x, y = np.mgrid[:gofs.shape[0], :gofs.shape[1]]
             # Use matplotlib _Cntr module to trace contours (without plotting)
             c = _cntr.Cntr(x, y, gofs)
