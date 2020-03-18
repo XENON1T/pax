@@ -23,12 +23,12 @@ class RejectNoiseHits(plugin.ClusteringPlugin):
         # Penalty for each lone hit
         lone_hits = event.get_peaks_by_type(desired_type='lone_hit', detector='all')
         self.log.debug("This event has %d lone hits" % len(lone_hits))
-        for lone_hit_peak in lone_hits if lone_hit_peak.center_time < 1e6:
-            # only count lone-hits before trigger positions
-            channel = lone_hit_peak.hits[0]['channel']
-            event.lone_hits_per_channel_before[channel] += 1
-            penalty_per_ch[channel] += self.config['penalty_per_lone_hit']
-
+        for lone_hit_peak in lone_hits:
+            if lone_hit_peak.left < 1e5:
+                # only count lone-hits before trigger positions
+                channel = lone_hit_peak.hits[0]['channel']
+                event.lone_hits_per_channel_before[channel] += 1
+                penalty_per_ch[channel] += self.config['penalty_per_lone_hit']
         # Add base penalties
         for channel, penalty in self.base_penalties.items():
             penalty_per_ch[channel] += penalty
