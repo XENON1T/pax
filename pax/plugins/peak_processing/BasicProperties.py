@@ -1,7 +1,7 @@
 import numpy as np
 # import numba
 
-from pax import plugin, dsputils
+from pax import plugin, dsputils, units
 
 
 class BasicProperties(plugin.TransformPlugin):
@@ -56,8 +56,8 @@ class SumWaveformProperties(plugin.TransformPlugin):
     def startup(self):
         self.dt = dt = self.config['sample_duration']
         self.wv_field_len = int(self.config['peak_waveform_length'] / dt) + 1
-        self.tight_coincidence_samples_left = self.config['tight_coincidence_window_left'] // dt
-        self.tight_coincidence_samples_right = self.config['tight_coincidence_window_right'] // dt
+        self.tight_coincidence_window_left = self.config['tight_coincidence_window_left']
+        self.tight_coincidence_window_right = self.config['tight_coincidence_window_right']
         if not self.wv_field_len % 2:
             raise ValueError('peak_waveform_length must be an even multiple of the sample size')
 
@@ -119,23 +119,23 @@ class SumWaveformProperties(plugin.TransformPlugin):
             peak.area_decile_from_midpoint = area_times[::2] - area_midpoint
 
             # Compute a tight coincidence count (useful for distinguishing S1s from junk)
-            x = peak.hits['index_of_maximum']
-            left = peak.index_of_maximum - self.tight_coincidence_samples_left
-            right = peak.index_of_maximum + self.tight_coincidence_samples_right
+            x = peak.hits['center']
+            left = peak.center_time - self.tight_coincidence_window_left
+            right = peak.center_time + self.tight_coincidence_window_right
             peak.tight_coincidence = len(np.unique(peak.hits['channel'][(x >= left) & (x <= right)]))
 
             # list of pmts that contribute to tight coincidence of the peak
             peak.coincidence_per_channel = np.zeros_like(peak.hits_per_channel)
             for hitt in peak.hits:
-                if hitt['index_of_maximum'] >= left and hitt['index_of_maximum'] <= right:
+                if hitt['center'] >= left and hitt['center'] <= right:
                     pmt_index = hitt['channel']
                     peak.coincidence_per_channel[pmt_index] = 1
 
             # varying tight coincidence intervals
-            peak.tight_coincidence_thresholds = np.zeros(5, dtype=np.int16)
-            for ip, window in enumerate([5, 4, 3, 2, 1]):
-                left = peak.index_of_maximum - window
-                right = peak.index_of_maximum + window
+            peak.tight_coincidence_thresholds = np.zeros(3, dtype=np.int16)
+            for ip, window in enumerate([30, 40, 50]):
+                left = peak.center_time - (window*units.ns)
+                right = peak.center_time + (window*units.ns)
                 peak.tight_coincidence_thresholds[ip] = len(np.unique(peak.hits['channel'][(x >= left) & (x <= right)]))
 
             # Store the waveform; for tpc also store the top waveform
