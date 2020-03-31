@@ -12,6 +12,22 @@ pax.plugins.interaction_processing.BuildInteractions module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.interaction_processing.RZCorrection module
+------------------------------------------------------
+
+.. automodule:: pax.plugins.interaction_processing.RZCorrection
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.interaction_processing.S1AreaFractionTopProbability module
+----------------------------------------------------------------------
+
+.. automodule:: pax.plugins.interaction_processing.S1AreaFractionTopProbability
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

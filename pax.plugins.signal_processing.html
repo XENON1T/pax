@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
+    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 6.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.9.0',
+        VERSION:     '6.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,16 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.11.0 documentation" href="index.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,138 +41,14 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.signal_processing.CheckPulses">
-<span id="pax-plugins-signal-processing-checkpulses-module"></span><h2>pax.plugins.signal_processing.CheckPulses module<a class="headerlink" href="#module-pax.plugins.signal_processing.CheckPulses" title="Permalink to this headline">¶</a></h2>
-<dl class="attribute">
-<dt id="pax.plugins.signal_processing.CheckPulses.CheckBounds">
-<code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">CheckBounds</code><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBounds" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount" title="pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount"><code class="xref py py-class docutils literal"><span class="pre">CheckBoundsAndCount</span></code></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">CheckBoundsAndCount</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBoundsAndCount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Check if pulses extend beyond event bounds
-If so, truncate them or raise exception, depending on config</p>
-<dl class="method">
-<dt id="pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBoundsAndCount.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBoundsAndCount.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBoundsAndCount.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">ConcatenateAdjacentPulses</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Concatenates directly adjacent pulses in the same channel
-This ensures baselines / noise levels won&#8217;t get recalculated in the middle
-of some data region (possibly containing hits).
-Assumes pulses are already sorted by channel, then left. Use SortPulses if this is not automatic.</p>
-<dl class="method">
-<dt id="pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.signal_processing.CheckPulses.SortPulses">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">SortPulses</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Sorts pulses by channel, then left</p>
-<dl class="method">
-<dt id="pax.plugins.signal_processing.CheckPulses.SortPulses.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-signal-processing-checkpulses-module">
+<h2>pax.plugins.signal_processing.CheckPulses module<a class="headerlink" href="#pax-plugins-signal-processing-checkpulses-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="pax-plugins-signal-processing-cluster-module">
 <h2>pax.plugins.signal_processing.Cluster module<a class="headerlink" href="#pax-plugins-signal-processing-cluster-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.signal_processing.HitFinder">
-<span id="pax-plugins-signal-processing-hitfinder-module"></span><h2>pax.plugins.signal_processing.HitFinder module<a class="headerlink" href="#module-pax.plugins.signal_processing.HitFinder" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.signal_processing.HitFinder.FindHits">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">FindHits</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#FindHits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.FindHits" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<dl class="docutils">
-<dt>Finds hits in pulses, proceeding in a few stages</dt>
-<dd><ol class="first last arabic simple">
-<li>The waveform is baseline-corrected (with baseline as determined by PulseProperties.PulseProperties)</li>
-<li>Hits are found based on a threshold, which can be set on three different quantities (see below)</li>
-<li>Hits are extended left and right depending on the left_extension and right_extension settings.</li>
-</ol>
-</dd>
-</dl>
-<p>Types of thresholds:</p>
-<ol class="arabic">
-<li><p class="first">Height over noise threshold
-This threshold operates on the height above baseline / noise level
-The noise level is deteremined in each pulse as</p>
-<blockquote>
-<div><p>(&lt;(w - baseline)**2&gt;)**0.5</p>
-</div></blockquote>
-<p>with the average running <em>only</em> over samples &lt; baseline!</p>
-</li>
-<li><p class="first">Absolute ADC counts above baseline
-If there is measurable noise in the waveform, you don&#8217;t want the thresholds to fall to 0 and crash pax.
-This happens for pulses constant on initial_baseline_samples.
-Please use this as a deep fallback only, unless you know what mess you&#8217;re getting yourself into!</p>
-</li>
-<li><ul class="first simple">
-<li>Height / minimum</li>
-</ul>
-<p>Using this threshold protects you against sudden up &amp; down fluctuations, especially in large pulses
-However, keep in mind that one large downfluctuation will cause a sensitivity loss throughout an entire pulse;
-if you have ZLE off, this may be a bad idea...
-This threshold operates on the (-) height above baseline / height below baseline of the lowest sample in pulse</p>
-</li>
-</ol>
-<p>The threshold is computed and stored per pulse.
-Here high/positive means &#8216;signal like&#8217; (i.e. the PMT voltage becomes more negative). If multiple thresholds are
-given, the highest is used.</p>
-<p>Edge case:</p>
-<dl class="docutils">
-<dt><a href="#id1"><span class="problematic" id="id2">*</span></a>) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.</dt>
-<dd>If more than max_hits_per_pulse hits are found in a pulse, the rest will be ignored.
-If this threshold is set too low, you risk missing some hits in such events.
-If set too high, it will degrade performance. Don&#8217;t set to infinity, we need to allocate memory for this...</dd>
-</dl>
-<p>Debugging tip:
-If you get an error from one of the numba methods in this plugin (exception from native function blahblah)
-Try commenting the &#64;jit decorators, which will run a slow, pure-python version of the methods,
-allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; otherwise it will run quite slow!</p>
-<dl class="method">
-<dt id="pax.plugins.signal_processing.HitFinder.FindHits.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#FindHits.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.FindHits.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.signal_processing.HitFinder.FindHits.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#FindHits.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.FindHits.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.signal_processing.HitFinder.build_hits">
-<code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">build_hits</code><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#build_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.build_hits" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Populates hits_buffer with properties from hits indicated by hit_bounds.</dt>
-<dd>hit_bounds should be a numpy array of (left, right) bounds (inclusive) in w</dd>
-</dl>
-<p>Returns nothing.</p>
-</dd></dl>
-
+<div class="section" id="pax-plugins-signal-processing-hitfinder-module">
+<h2>pax.plugins.signal_processing.HitFinder module<a class="headerlink" href="#pax-plugins-signal-processing-hitfinder-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.signal_processing">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.signal_processing" title="Permalink to this headline">¶</a></h2>
@@ -192,9 +65,9 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.signal_processing package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.signal_processing.CheckPulses">pax.plugins.signal_processing.CheckPulses module</a></li>
+<li><a class="reference internal" href="#pax-plugins-signal-processing-checkpulses-module">pax.plugins.signal_processing.CheckPulses module</a></li>
 <li><a class="reference internal" href="#pax-plugins-signal-processing-cluster-module">pax.plugins.signal_processing.Cluster module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.signal_processing.HitFinder">pax.plugins.signal_processing.HitFinder module</a></li>
+<li><a class="reference internal" href="#pax-plugins-signal-processing-hitfinder-module">pax.plugins.signal_processing.HitFinder module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.signal_processing">Module contents</a></li>
 </ul>
 </li>
@@ -216,11 +89,14 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -231,8 +107,8 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.plugins.signal_processing.txt"

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.plotting package &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
+    <title>pax.plugins.plotting package &mdash; Processor for Analyzing XENON1T 6.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.9.0',
+        VERSION:     '6.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,16 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.11.0 documentation" href="index.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,268 +41,11 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.plotting.HitfinderDiagnosticPlots">
-<span id="pax-plugins-plotting-hitfinderdiagnosticplots-module"></span><h2>pax.plugins.plotting.HitfinderDiagnosticPlots module<a class="headerlink" href="#module-pax.plugins.plotting.HitfinderDiagnosticPlots" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.HitfinderDiagnosticPlots.</code><code class="descname">HitfinderDiagnosticPlots</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/HitfinderDiagnosticPlots.html#HitfinderDiagnosticPlots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Make some useful diagnostic plots of the hitfinder&#8217;s behaviour.</p>
-<p>The &#8216;make_diagnostic_plots&#8217; option controls when to make these plots
-(since it takes a very long time to make them all).</p>
-<blockquote>
-<div>never - obvious. This is the default, which you always want to use this in production.
-always - obvious
-no hits - only pulses which have no hits
-hits only - only pulses which have hits
-tricky cases - pulses with hits that only just crossed the threshold, or no hits but almost one
-saturated - pulses whose ADC waveform is maximum (clips outside the dynamic range)</div></blockquote>
-<p>&#8216;make_diagnostic_plots_in&#8217; sets the directory where the diagnostic plots are created.</p>
-<dl class="method">
-<dt id="pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/HitfinderDiagnosticPlots.html#HitfinderDiagnosticPlots.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/HitfinderDiagnosticPlots.html#HitfinderDiagnosticPlots.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.HitfinderDiagnosticPlots.HitfinderDiagnosticPlots.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-plotting-hitfinderdiagnosticplots-module">
+<h2>pax.plugins.plotting.HitfinderDiagnosticPlots module<a class="headerlink" href="#pax-plugins-plotting-hitfinderdiagnosticplots-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.plotting.Plotting">
-<span id="pax-plugins-plotting-plotting-module"></span><h2>pax.plugins.plotting.Plotting module<a class="headerlink" href="#module-pax.plugins.plotting.Plotting" title="Permalink to this headline">¶</a></h2>
-<p>Interactive plotting</p>
-<p>Use matplotlib to display various things about the event.</p>
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PeakViewer</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.block_view">
-<code class="descname">block_view</code><em class="property"> = True</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.block_view" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.draw_main_s1">
-<code class="descname">draw_main_s1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.draw_main_s1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.draw_main_s1" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.draw_main_s2">
-<code class="descname">draw_main_s2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.draw_main_s2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.draw_main_s2" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.draw_next_peak">
-<code class="descname">draw_next_peak</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.draw_next_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.draw_next_peak" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.draw_peak">
-<code class="descname">draw_peak</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.draw_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.draw_peak" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.draw_prev_peak">
-<code class="descname">draw_prev_peak</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.draw_prev_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.draw_prev_peak" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.hates_tight_layout">
-<code class="descname">hates_tight_layout</code><em class="property"> = True</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.hates_tight_layout" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.make_button">
-<code class="descname">make_button</code><span class="sig-paren">(</span><em>rect</em>, <em>label</em>, <em>on_click</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.make_button"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.make_button" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.max_characters">
-<code class="descname">max_characters</code><em class="property"> = 70</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.max_characters" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.substartup">
-<code class="descname">substartup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.substartup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.substartup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="staticmethod">
-<dt id="pax.plugins.plotting.Plotting.PeakViewer.wrap_multiline">
-<em class="property">static </em><code class="descname">wrap_multiline</code><span class="sig-paren">(</span><em>text</em>, <em>max_characters</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PeakViewer.wrap_multiline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PeakViewer.wrap_multiline" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotBase">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotBase</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.annotation_filter">
-<code class="descname">annotation_filter</code><span class="sig-paren">(</span><em>event</em>, <em>nsamples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.annotation_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.annotation_filter" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.block_view">
-<code class="descname">block_view</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.block_view" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.color_peak_ranges">
-<code class="descname">color_peak_ranges</code><span class="sig-paren">(</span><em>source</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.color_peak_ranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.color_peak_ranges" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.draw_trigger_signals">
-<code class="descname">draw_trigger_signals</code><span class="sig-paren">(</span><em>event</em>, <em>y=0</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.draw_trigger_signals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.draw_trigger_signals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Draw markers (stars) indicating the signals found by the trigger</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.finalize_plot">
-<code class="descname">finalize_plot</code><span class="sig-paren">(</span><em>event_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.hates_tight_layout">
-<code class="descname">hates_tight_layout</code><em class="property"> = False</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.hates_tight_layout" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.plot_hitpattern">
-<code class="descname">plot_hitpattern</code><span class="sig-paren">(</span><em>peak</em>, <em>event</em>, <em>array='top'</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.plot_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.plot_hitpattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.plot_waveform">
-<code class="descname">plot_waveform</code><span class="sig-paren">(</span><em>event</em>, <em>left=0</em>, <em>right=None</em>, <em>pad=0</em>, <em>show_peaks=False</em>, <em>show_legend=True</em>, <em>log_y_axis=False</em>, <em>scale=1</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.plot_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot part of an event&#8217;s sum waveform. Defined in base class to ensure a uniform style</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.substartup">
-<code class="descname">substartup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.substartup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.substartup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotBase.write_event">
-<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotBase.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotBase.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotChannelWaveforms2D">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotChannelWaveforms2D</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotChannelWaveforms2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotChannelWaveforms2D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<p>Plots the pulses in each channel, like like PlotChannelWaveforms3D, but seen from above</p>
-<p>Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
-Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.</p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotChannelWaveforms2D.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>source</em>, <em>ax=None</em>, <em>pad=0</em>, <em>event=None</em>, <em>show_channel_group_labels=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotChannelWaveforms2D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotChannelWaveforms2D.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Source can be Event or Peak, if peak, must also pass event</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotChannelWaveforms3D">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotChannelWaveforms3D</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotChannelWaveforms3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotChannelWaveforms3D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<p>Plot the waveform of several channels in 3D, with different y positions for all channels.</p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotChannelWaveforms3D.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotChannelWaveforms3D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotChannelWaveforms3D.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotEventSummary">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotEventSummary</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotEventSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotEventSummary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="attribute">
-<dt id="pax.plugins.plotting.Plotting.PlotEventSummary.hates_tight_layout">
-<code class="descname">hates_tight_layout</code><em class="property"> = True</em><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotEventSummary.hates_tight_layout" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotEventSummary.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotEventSummary.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotEventSummary.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Combines several plots into a nice summary plot</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotSumWaveformEntireEvent</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformEntireEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em>, <em>show_legend=True</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformEntireEvent.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformEntireEvent.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformMainS1">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotSumWaveformMainS1</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformMainS1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformMainS1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformMainS1.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em>, <em>show_legend=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformMainS1.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformMainS1.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformMainS2">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlotSumWaveformMainS2</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformMainS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformMainS2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlotSumWaveformMainS2.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em>, <em>show_legend=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlotSumWaveformMainS2.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlotSumWaveformMainS2.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.plotting.Plotting.PlottingHitPattern">
-<em class="property">class </em><code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">PlottingHitPattern</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlottingHitPattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlottingHitPattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.plotting.Plotting.PlotBase" title="pax.plugins.plotting.Plotting.PlotBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.plotting.Plotting.PlotBase</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.plotting.Plotting.PlottingHitPattern.plot_event">
-<code class="descname">plot_event</code><span class="sig-paren">(</span><em>event</em>, <em>show=('S1'</em>, <em>'S2')</em>, <em>show_dominant_array_only=True</em>, <em>subplots_to_use=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.plotting.Plotting.epoch_to_human_time">
-<code class="descclassname">pax.plugins.plotting.Plotting.</code><code class="descname">epoch_to_human_time</code><span class="sig-paren">(</span><em>timestamp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/plotting/Plotting.html#epoch_to_human_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.plotting.Plotting.epoch_to_human_time" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="pax-plugins-plotting-plotting-module">
+<h2>pax.plugins.plotting.Plotting module<a class="headerlink" href="#pax-plugins-plotting-plotting-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.plotting">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.plotting" title="Permalink to this headline">¶</a></h2>
@@ -322,8 +62,8 @@ Circle color indicates log(peak amplitude / noise amplitude), size indicates pea
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.plotting package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.plotting.HitfinderDiagnosticPlots">pax.plugins.plotting.HitfinderDiagnosticPlots module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.plotting.Plotting">pax.plugins.plotting.Plotting module</a></li>
+<li><a class="reference internal" href="#pax-plugins-plotting-hitfinderdiagnosticplots-module">pax.plugins.plotting.HitfinderDiagnosticPlots module</a></li>
+<li><a class="reference internal" href="#pax-plugins-plotting-plotting-module">pax.plugins.plotting.Plotting module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.plotting">Module contents</a></li>
 </ul>
 </li>
@@ -345,11 +85,14 @@ Circle color indicates log(peak amplitude / noise amplitude), size indicates pea
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -360,8 +103,8 @@ Circle color indicates log(peak amplitude / noise amplitude), size indicates pea
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.plugins.plotting.txt"

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing package &#8212; Processor for Analyzing XENON1T 6.9.0 documentation</title>
+    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 6.11.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '6.9.0',
+        VERSION:     '6.11.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,16 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 6.9.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 6.11.0 documentation" href="index.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,54 +41,14 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.interaction_processing.BuildInteractions">
-<span id="pax-plugins-interaction-processing-buildinteractions-module"></span><h2>pax.plugins.interaction_processing.BuildInteractions module<a class="headerlink" href="#module-pax.plugins.interaction_processing.BuildInteractions" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties">
-<em class="property">class </em><code class="descclassname">pax.plugins.interaction_processing.BuildInteractions.</code><code class="descname">BasicInteractionProperties</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Compute basic properties of each interaction
-S1 and S2 x, y, z corrections, S1 hitpattern fit</p>
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions">
-<em class="property">class </em><code class="descclassname">pax.plugins.interaction_processing.BuildInteractions.</code><code class="descname">BuildInteractions</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<dl class="docutils">
-<dt>Construct interactions from combinations of S1 and S2, as long as</dt>
-<dd><ul class="first last simple">
-<li>The S2 occurs after the S1</li>
-<li>The S2 is larger than s2_pairing_threshold (avoids single electrons)</li>
-</ul>
-</dd>
-</dl>
-<p>Mo more than pair_n_s2s S2s and pair_n_s1s S1s will be paired with each other
-Pairing will start from the S1 with largest tight_coincidence and the largest S2,
-then move down S2s in tight_coincidence and eventually down S1s in area.</p>
-<p>xy_posrec_preference = [&#8216;algo1&#8217;, &#8216;algo2&#8217;, ...]</p>
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BuildInteractions.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BuildInteractions.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-interaction-processing-buildinteractions-module">
+<h2>pax.plugins.interaction_processing.BuildInteractions module<a class="headerlink" href="#pax-plugins-interaction-processing-buildinteractions-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-plugins-interaction-processing-rzcorrection-module">
+<h2>pax.plugins.interaction_processing.RZCorrection module<a class="headerlink" href="#pax-plugins-interaction-processing-rzcorrection-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-plugins-interaction-processing-s1areafractiontopprobability-module">
+<h2>pax.plugins.interaction_processing.S1AreaFractionTopProbability module<a class="headerlink" href="#pax-plugins-interaction-processing-s1areafractiontopprobability-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.interaction_processing">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.interaction_processing" title="Permalink to this headline">¶</a></h2>
@@ -108,7 +65,9 @@ then move down S2s in tight_coincidence and eventually down S1s in area.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.interaction_processing package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.interaction_processing.BuildInteractions">pax.plugins.interaction_processing.BuildInteractions module</a></li>
+<li><a class="reference internal" href="#pax-plugins-interaction-processing-buildinteractions-module">pax.plugins.interaction_processing.BuildInteractions module</a></li>
+<li><a class="reference internal" href="#pax-plugins-interaction-processing-rzcorrection-module">pax.plugins.interaction_processing.RZCorrection module</a></li>
+<li><a class="reference internal" href="#pax-plugins-interaction-processing-s1areafractiontopprobability-module">pax.plugins.interaction_processing.S1AreaFractionTopProbability module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.interaction_processing">Module contents</a></li>
 </ul>
 </li>
@@ -130,11 +89,14 @@ then move down S2s in tight_coincidence and eventually down S1s in area.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -145,8 +107,8 @@ then move down S2s in tight_coincidence and eventually down S1s in area.</p>
       &copy;2014, Christopher Tunnell.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.plugins.interaction_processing.txt"
