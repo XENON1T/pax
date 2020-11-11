@@ -72,6 +72,7 @@ before_install:
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels defaults 
   - conda config --add channels http://conda.anaconda.org/NLeSC  
+  - conda config --add channels http://conda.anaconda.org/conda-forge  
   - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy h5py pyqt matplotlib pandas cython numba pip python-snappy pytables scikit-learn rootpy psutil jupyter root_pandas
   - source activate pax
 
