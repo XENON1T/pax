@@ -122,7 +122,10 @@ class EncodeROOTClass(plugin.TransformPlugin):
                 root_field = getattr(root_object, field_name)
                 root_field_type = root_field.typecode
                 if six.PY3:
-                    root_field_type = root_field_type.decode("UTF-8")
+                    # In recent builds this is already a string, but
+                    # in some older builds it apparently still had to be decoded
+                    if not isinstance(root_field_type, str):
+                        root_field_type = root_field_type.decode("UTF-8")
                 root_field_new = array.array(root_field_type, field_value.tolist())
                 setattr(root_object, field_name, root_field_new)
             else:
