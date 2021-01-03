@@ -30,7 +30,8 @@ before_install:
   - source activate pax
 
   # root and root_pandas are on conda-forge
-  - conda install -c conda-forge root root_pandas
+  # Root > 6.18 will break rootpy (https://github.com/rootpy/rootpy/issues/811)
+  - conda install -c conda-forge root==6.18 root_pandas
   # Recent rootpy versions are only on pip... cross fingers...
   - pip install rootpy
 
