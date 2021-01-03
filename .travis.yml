@@ -8,8 +8,6 @@ cache: pip
 
 jobs:
   include:
-    - name: "Python 3.4"
-      env: PYTHON=3.4
     - name: "Python 3.6"
       env: PYTHON=3.6
     - name: "Python 3.8"
@@ -32,7 +30,7 @@ before_install:
   - source activate pax
 
   # root and root_pandas are on conda-forge
-  - conda install -c conda-forge root rootpy root_pandas
+  - conda install -c conda-forge root root_pandas
   # Recent rootpy versions are only on pip... cross fingers...
   - pip install rootpy
 
