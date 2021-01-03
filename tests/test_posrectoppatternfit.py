@@ -59,8 +59,15 @@ class TestPosRecTopPatternFit(unittest.TestCase):
         y_truth = -10.0172
         self.assertAlmostEqual(rp.x, x_truth, delta=0.3)
         self.assertAlmostEqual(rp.y, y_truth, delta=0.3)
-        cts = rp.confidence_tuples
-        self.assertEqual(len(cts), 2)
+
+        try:
+            from matplotlib import _cntr
+        except ImportError:
+            # Cannot test confidence tuple generation
+            pass
+        else:
+            cts = rp.confidence_tuples
+            self.assertEqual(len(cts), 2)
 
 
 if __name__ == '__main__':
